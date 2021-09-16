@@ -15,6 +15,7 @@ def test_configuracoes_validas():
     c = Configuracoes.le_variaveis_ambiente()
     assert c.nome_estudo == "Estudo de Teste"
     assert c.arquivo_lista_casos == "main.py"
+    assert c.nome_diretorio_newave == "deck_newave"
 
 
 def test_nome_estudo_invalido():
@@ -31,3 +32,11 @@ def test_arquivo_lista_casos_inexistente():
                          "invalido_arquivo_lista_casos.cfg"),
                     override=True)
         Configuracoes.le_variaveis_ambiente()
+
+def test_nome_diretorio_newave_invalido():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_nome_diretorio_newave.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()
+

@@ -35,6 +35,7 @@
 from os import getenv, curdir
 from os.path import isfile, join
 from abc import abstractmethod
+import re
 
 
 class Configuracoes:
@@ -45,12 +46,14 @@ class Configuracoes:
     def __init__(self):
         self._nome_estudo = None
         self._arquivo_lista_casos = None
+        self._nome_diretorio_newave = None
 
     @classmethod
     def le_variaveis_ambiente(cls) -> "Configuracoes":
         cb = BuilderConfiguracoesENV()
         c = cb.nome_estudo("NOME_ESTUDO")\
             .arquivo_lista_casos("ARQUIVO_LISTA_CASOS")\
+            .nome_diretorio_newave("NOME_DIRETORIO_NEWAVE")\
             .build()
         return c
 
@@ -67,6 +70,13 @@ class Configuracoes:
         Arquivo que contém a lista de casos a serem encadeados.
         """
         return self._arquivo_lista_casos
+
+    @property
+    def nome_diretorio_newave(self) -> str:
+        """
+        Nome do diretório que contém os casos de NEWAVE.
+        """
+        return self._nome_diretorio_newave
 
 
 class BuilderConfiguracoes:
@@ -87,10 +97,15 @@ class BuilderConfiguracoes:
     def arquivo_lista_casos(self, arquivo: str):
         pass
 
+    @abstractmethod
+    def nome_diretorio_newave(self, diretorio: str):
+        pass
+
 
 class BuilderConfiguracoesENV(BuilderConfiguracoes):
     """
     """
+    regex_alfanum = r"^([\w\/\\:.\-])+$"
     def __init__(self, configuracoes=Configuracoes()) -> None:
         super().__init__(configuracoes=configuracoes)
 
@@ -119,5 +134,14 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
             raise FileNotFoundError("Arquivo com os casos não " +
                                     f"encontrado: {valor}")
         self._configuracoes._arquivo_lista_casos = valor
+        # Fluent method
+        return self
+
+    def nome_diretorio_newave(self, variavel: str):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        # Confere se existe o arquivo no diretorio raiz de encadeamento
+        if not re.match(BuilderConfiguracoesENV.regex_alfanum, valor):
+             raise ValueError(f"Nome de diretório {valor} inválido")
+        self._configuracoes._nome_diretorio_newave = valor
         # Fluent method
         return self
