@@ -1,19 +1,33 @@
-
+from os.path import join
 from dotenv import load_dotenv
 
-from modelos.configuracoes import BuilderConfiguracoesENV
+import pytest
+
+from encadeador.modelos.configuracoes import Configuracoes
+
+DIRETORIO_TESTE = "tests/modelos/_arquivos"
 
 
 def test_configuracoes_validas():
-    load_dotenv("teste_configuracoes_valido.cfg", override=True)
-    cb = BuilderConfiguracoesENV()
-    c = cb\
-        .nome_estudo("NOME_ESTUDO")\
-        .arquivo_lista_casos("ARQUIVO_LISTA_CASOS").build()
+    load_dotenv(join(DIRETORIO_TESTE,
+                     "valido.cfg"),
+                override=True)
+    c = Configuracoes.le_variaveis_ambiente()
     assert c.nome_estudo == "Estudo de Teste"
     assert c.arquivo_lista_casos == "main.py"
 
 
-def test_configuracoes_invalidas():
-    pass
+def test_nome_estudo_invalido():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_nome_estudo.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()
 
+
+def test_arquivo_lista_casos_inexistente():
+    with pytest.raises(FileNotFoundError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_arquivo_lista_casos.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()

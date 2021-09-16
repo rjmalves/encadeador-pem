@@ -43,17 +43,40 @@ class Configuracoes:
     encadeado NEWAVE/DECOMP.
     """
     def __init__(self):
-        self.nome_estudo = None
-        self.arquivo_lista_casos = None
+        self._nome_estudo = None
+        self._arquivo_lista_casos = None
+
+    @classmethod
+    def le_variaveis_ambiente(cls) -> "Configuracoes":
+        cb = BuilderConfiguracoesENV()
+        c = cb.nome_estudo("NOME_ESTUDO")\
+            .arquivo_lista_casos("ARQUIVO_LISTA_CASOS")\
+            .build()
+        return c
+
+    @property
+    def nome_estudo(self) -> str:
+        """
+        Nome do estudo encadeado, considerado para os logs.
+        """
+        return self._nome_estudo
+
+    @property
+    def arquivo_lista_casos(self) -> str:
+        """
+        Arquivo que contém a lista de casos a serem encadeados.
+        """
+        return self._arquivo_lista_casos
 
 
 class BuilderConfiguracoes:
     """
     """
-    def __init__(self, configuracoes=Configuracoes()):
+    def __init__(self,
+                 configuracoes: Configuracoes = Configuracoes()):
         self._configuracoes = configuracoes
 
-    def build(self):
+    def build(self) -> Configuracoes:
         return self._configuracoes
 
     @abstractmethod
@@ -76,7 +99,7 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         # Lê a variável de ambiente do nome do estudo
         valor = getenv(variavel)
         # Valida o conteúdo do nome do estudo
-        if valor == None:
+        if valor is None:
             raise ValueError(f"Variável {variavel} não encontrada")
         return valor
 
@@ -85,7 +108,7 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         # Confere tamanho != 0
         if len(valor) == 0:
             raise ValueError(f"Valor da variável {variavel} inválido: {valor}")
-        self._configuracoes.nome_estudo = valor
+        self._configuracoes._nome_estudo = valor
         # Fluent method
         return self
 
@@ -93,16 +116,8 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
         # Confere se existe o arquivo no diretorio raiz de encadeamento
         if not isfile(join(curdir, valor)):
-            raise ValueError(f"Arquivo com os casos não encontrado: {valor}")
-        # Armazena o conteúdo
-        self._configuracoes.arquivo_lista_casos = valor
+            raise FileNotFoundError("Arquivo com os casos não " +
+                                    f"encontrado: {valor}")
+        self._configuracoes._arquivo_lista_casos = valor
         # Fluent method
         return self
-
-
-cb = BuilderConfiguracoesENV()
-c = cb.\
-    nome_estudo("NOME_ESTUDO").\
-    arquivo_lista_casos("ARQUIVO_LISTA_CASOS").build()
-
-c.arquivo_lista_casos
