@@ -47,6 +47,7 @@ class Configuracoes:
         self._nome_estudo = None
         self._arquivo_lista_casos = None
         self._nome_diretorio_newave = None
+        self._nome_diretorio_decomp = None
 
     @classmethod
     def le_variaveis_ambiente(cls) -> "Configuracoes":
@@ -54,6 +55,7 @@ class Configuracoes:
         c = cb.nome_estudo("NOME_ESTUDO")\
             .arquivo_lista_casos("ARQUIVO_LISTA_CASOS")\
             .nome_diretorio_newave("NOME_DIRETORIO_NEWAVE")\
+            .nome_diretorio_decomp("NOME_DIRETORIO_DECOMP")\
             .build()
         return c
 
@@ -78,6 +80,13 @@ class Configuracoes:
         """
         return self._nome_diretorio_newave
 
+    @property
+    def nome_diretorio_decomp(self) -> str:
+        """
+        Nome do diretório que contém os casos de NEWAVE.
+        """
+        return self._nome_diretorio_decomp
+
 
 class BuilderConfiguracoes:
     """
@@ -99,6 +108,10 @@ class BuilderConfiguracoes:
 
     @abstractmethod
     def nome_diretorio_newave(self, diretorio: str):
+        pass
+
+    @abstractmethod
+    def nome_diretorio_decomp(self, diretorio: str):
         pass
 
 
@@ -143,5 +156,14 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         if not re.match(BuilderConfiguracoesENV.regex_alfanum, valor):
              raise ValueError(f"Nome de diretório {valor} inválido")
         self._configuracoes._nome_diretorio_newave = valor
+        # Fluent method
+        return self
+
+    def nome_diretorio_decomp(self, variavel: str):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        # Confere se existe o arquivo no diretorio raiz de encadeamento
+        if not re.match(BuilderConfiguracoesENV.regex_alfanum, valor):
+             raise ValueError(f"Nome de diretório {valor} inválido")
+        self._configuracoes._nome_diretorio_decomp = valor
         # Fluent method
         return self
