@@ -17,6 +17,7 @@ def test_configuracoes_validas():
     assert c.arquivo_lista_casos == "main.py"
     assert c.nome_diretorio_newave == "newave"
     assert c.nome_diretorio_decomp == "decomp"
+    assert c.gerenciador_fila == "PBS"
 
 
 def test_nome_estudo_invalido():
@@ -48,3 +49,9 @@ def test_nome_diretorio_decomp_invalido():
                     override=True)
         Configuracoes.le_variaveis_ambiente()
 
+def test_gerenciador_fila():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_gerenciador_fila.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()

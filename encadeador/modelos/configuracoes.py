@@ -48,6 +48,7 @@ class Configuracoes:
         self._arquivo_lista_casos = None
         self._nome_diretorio_newave = None
         self._nome_diretorio_decomp = None
+        self._gerenciador_fila = None
 
     @classmethod
     def le_variaveis_ambiente(cls) -> "Configuracoes":
@@ -56,6 +57,7 @@ class Configuracoes:
             .arquivo_lista_casos("ARQUIVO_LISTA_CASOS")\
             .nome_diretorio_newave("NOME_DIRETORIO_NEWAVE")\
             .nome_diretorio_decomp("NOME_DIRETORIO_DECOMP")\
+            .gerenciador_fila("GERENCIADOR_DE_FILA")\
             .build()
         return c
 
@@ -87,6 +89,13 @@ class Configuracoes:
         """
         return self._nome_diretorio_decomp
 
+    @property
+    def gerenciador_fila(self) -> str:
+        """
+        Gerenciador de fila a ser utilizado: PBS, SGE, OGS.
+        """
+        return self._gerenciador_fila
+
 
 class BuilderConfiguracoes:
     """
@@ -112,6 +121,10 @@ class BuilderConfiguracoes:
 
     @abstractmethod
     def nome_diretorio_decomp(self, diretorio: str):
+        pass
+
+    @abstractmethod
+    def gerenciador_fila(self, gerenciador: str):
         pass
 
 
@@ -152,7 +165,7 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
 
     def nome_diretorio_newave(self, variavel: str):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
-        # Confere se existe o arquivo no diretorio raiz de encadeamento
+        # Confere se o caminho do diretorio é válido
         if not re.match(BuilderConfiguracoesENV.regex_alfanum, valor):
              raise ValueError(f"Nome de diretório {valor} inválido")
         self._configuracoes._nome_diretorio_newave = valor
@@ -161,9 +174,19 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
 
     def nome_diretorio_decomp(self, variavel: str):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
-        # Confere se existe o arquivo no diretorio raiz de encadeamento
+        # Confere se o caminho do diretorio é válido
         if not re.match(BuilderConfiguracoesENV.regex_alfanum, valor):
              raise ValueError(f"Nome de diretório {valor} inválido")
         self._configuracoes._nome_diretorio_decomp = valor
+        # Fluent method
+        return self
+
+    def gerenciador_fila(self, variavel: str):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        # Confere se é uma das possibilidades: PBS, SGE ou OGS
+        gerenciadores_validos = ["PBS","SGE","OGS"]
+        if (valor not in gerenciadores_validos):
+             raise ValueError(f"Nome do gerenciador de filas {valor} inválido. Deve ser PBS, SGE ou OGS.")
+        self._configuracoes._gerenciador_fila = valor
         # Fluent method
         return self
