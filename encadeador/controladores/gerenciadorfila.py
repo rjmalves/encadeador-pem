@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from os.path import getmtime
+from os.path import getmtime, isfile
 from typing import List
 import time
 
@@ -78,7 +78,10 @@ class GerenciadorFila:
             escrita de saída.
         :rtype: float
         """
-        return time.time() - getmtime(self.arquivo_stdout)
+        if not isfile(self.arquivo_stdout):
+            return 0.0
+        else:
+            return time.time() - getmtime(self.arquivo_stdout)
 
     def agenda_job(self,
                    caminho_job: str,
@@ -171,11 +174,12 @@ class GerenciadorFilaSGE(GerenciadorFila):
             achou = False
             estado = ""
             for linha in saidas[2:]:
-                if linha.split(" ")[0] == "":
+                lin = linha.strip()
+                if lin.split(" ")[0] == "":
                     break
-                if int(linha.split(" ")[0]) == self.id_job:
+                if int(lin.split(" ")[0]) == self.id_job:
                     achou = True
-                    estado = linha[30:40].strip()
+                    estado = linha[35:45].strip()
                     break
             if not achou:
                 raise KeyError(f"Não foi encontrado o job {self.id_job} na fila")

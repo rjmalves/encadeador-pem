@@ -7,7 +7,7 @@ import time
 
 from encadeador.modelos.caso import Caso, CasoNEWAVE
 from encadeador.modelos.estadojob import EstadoJob
-from encadeador.modelos.gerenciadorfila import GerenciadorFila
+from encadeador.controladores.gerenciadorfila import GerenciadorFila
 
 
 # STUB para o objeto verdadeiro
@@ -109,6 +109,7 @@ class MonitorNEWAVE(MonitorCaso):
             self._gerenciador.agenda_job(self._caminho_job,
                                          self._nome_job,
                                          self.caso.numero_processadores)
+            ultimo_estado = EstadoJob.ESPERANDO
             retry = False
             iniciou = False
             while True:
@@ -123,9 +124,11 @@ class MonitorNEWAVE(MonitorCaso):
                 elif estado == EstadoJob.EXECUTANDO:
                     retry, iniciou = self._trata_caso_executando(log,
                                                                  iniciou)
+                elif estado == EstadoJob.DELETANDO:
+                    pass
                 elif estado == EstadoJob.ERRO:
-                    self._gerenciador.deleta_job()
-                    retry = True
+                    retry = self._trata_caso_erro(log)
+                ultimo_estado = estado
                 time.sleep(MonitorNEWAVE.INTERVALO_POLL)
         except TimeoutError as e:
             log.error(f"Timeout na execução do job {self.caso.nome}: {e}")
@@ -133,3 +136,9 @@ class MonitorNEWAVE(MonitorCaso):
         except ValueError as e:
             log.error(f"Erro na execução do job {self.caso.nome}: {e}")
             return False
+        except KeyError as e:
+            if ultimo_estado == EstadoJob.EXECUTANDO:
+                return True
+            else:
+                log.error(f"Erro na execução do job {self.caso.nome}: {e}")
+                return False

@@ -7,8 +7,8 @@ class Configuracoes:
         self.diretorio_newave = "newave"
         self.versao_newave = "newave"
         self.diretorio_instalacao_newaves = "./tests/_arquivos"
-        self.processadores_minimos_newave = 0
-        self.processadores_maximos_newave = 0
+        self.processadores_minimos_newave = 72
+        self.processadores_maximos_newave = 72
         self.ajuste_processadores_newave = False
         self.gerenciador_fila = "SGE"
 
@@ -23,6 +23,9 @@ class Caso:
     def __init__(self,) -> None:
         self._caminho_caso: str = None  # type: ignore
         self._nome_caso: str = None  # type: ignore
+        self._ano_caso: int = None  # type: ignore
+        self._mes_caso: int = None  # type: ignore
+        self._revisao_caso: int = None  # type: ignore
         self._configuracoes: Configuracoes = None  # type: ignore
         self._instante_entrada_fila: float = None  # type: ignore
         self._instante_inicio_execucao: float = None  # type: ignore
@@ -34,9 +37,15 @@ class Caso:
     def configura_caso(self,
                        caminho: str,
                        nome: str,
+                       ano: int,
+                       mes: int,
+                       revisao: int,
                        cfg: Configuracoes):
         self._caminho_caso = caminho
         self._nome_caso = nome
+        self._ano_caso = ano
+        self._mes_caso = mes
+        self._revisao_caso = revisao
         self._configuracoes = cfg
 
     @abstractmethod
@@ -115,6 +124,21 @@ class Caso:
         return t_exec
 
     @property
+    def ano(self) -> int:
+        CasoNEWAVE._verifica_caso_configurado(self._ano_caso)
+        return self._ano_caso
+
+    @property
+    def mes(self) -> int:
+        CasoNEWAVE._verifica_caso_configurado(self._mes_caso)
+        return self._mes_caso
+
+    @property
+    def revisao(self) -> int:
+        CasoNEWAVE._verifica_caso_configurado(self._revisao_caso)
+        return self._revisao_caso
+
+    @property
     def numero_tentativas(self) -> int:
         Caso._verifica_caso_configurado(self._numero_tentativas)
         return self._numero_tentativas
@@ -137,13 +161,9 @@ class CasoNEWAVE(Caso):
         self._ano: int = None  # type: ignore
         self._mes: int = None  # type: ignore
 
-    def configura_dados_caso(self,
-                             ano: int,
-                             mes: int):
-        self._ano = ano
-        self._mes = mes
-
     def _obtem_numero_processadores(self) -> int:
+        # TODO - Ler o dger.dat e conferir as restrições de número
+        # de processadores (séries forward)
         CasoNEWAVE._verifica_caso_configurado(self._configuracoes)
         minimo = self.configuracoes.processadores_minimos_newave
         maximo = self.configuracoes.processadores_maximos_newave
@@ -152,13 +172,3 @@ class CasoNEWAVE(Caso):
         if ajuste:
             num_proc = maximo
         return num_proc
-
-    @property
-    def ano(self) -> int:
-        CasoNEWAVE._verifica_caso_configurado(self._ano)
-        return self._ano
-
-    @property
-    def mes(self) -> int:
-        CasoNEWAVE._verifica_caso_configurado(self._mes)
-        return self._mes
