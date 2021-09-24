@@ -1,7 +1,7 @@
-from enum import Enum, auto
+from enum import Enum
 
 class EstadoJob(Enum):
-    ESPERANDO = auto()
-    EXECUTANDO = auto()
-    DELETANDO = auto()
-    ERRO = auto()
+    ESPERANDO = "ESPERANDO"
+    EXECUTANDO = "EXECUTANDO"
+    DELETANDO = "DELETANDO"
+    ERRO = "ERRO"
