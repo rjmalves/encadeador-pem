@@ -22,6 +22,7 @@ def test_configuracoes_validas():
     assert c.gerenciador_fila == "PBS"
     assert c.versao_newave == "27.0.1"
     assert c.versao_decomp == "30.1"
+    assert c.variaveis_encadeadas == ["EARM","TVIAGEM","GNL"]
     assert c.flexibiliza_deficit == 1
     assert c.maximo_flexibilizacoes_revisao == 30
     assert c.ultimas_iteracoes_flexibilizacao == 0
@@ -148,5 +149,12 @@ def test_ajuste_processadores():
     with pytest.raises(ValueError):
         load_dotenv(join(DIRETORIO_TESTE,
                          "invalido_ajuste_processadores.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()
+
+def test_variaveis_encadeadas():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_variaveis_encadeadas.cfg"),
                     override=True)
         Configuracoes.le_variaveis_ambiente()

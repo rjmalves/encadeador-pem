@@ -60,6 +60,7 @@ class Configuracoes:
         self._processadores_maximos_decomp = None
         self._ajuste_processadores_newave = None
         self._ajuste_processadores_decomp = None
+        self._variaveis_encadeadas = None
         self._flexibiliza_deficit = None
         self._maximo_flexibilizacoes_revisao = None
         self._ultimas_iteracoes_flexibilizacao = None
@@ -88,6 +89,7 @@ class Configuracoes:
             .processadores_maximos_decomp("PROCESSADORES_MAXIMOS_DECOMP")\
             .ajuste_processadores_newave("AJUSTE_PROCESSADORES_NEWAVE")\
             .ajuste_processadores_decomp("AJUSTE_PROCESSADORES_DECOMP")\
+            .variaveis_encadeadas("VARIAVEIS_ENCADEADAS")\
             .flexibiliza_deficit("FLEXIBILIZA_DEFICIT")\
             .maximo_flexibilizacoes_revisao("MAXIMO_FLEXIBILIZACOES_REVISAO")\
             .ultimas_iteracoes_flexibilizacao("ULTIMAS_ITERACOES_PARA_FLEXIBILIZACAO")\
@@ -209,6 +211,16 @@ class Configuracoes:
         Ajuste no número de processadores para modelo DECOMP.
         """
         return self._ajuste_processadores_decomp
+
+    @property
+    def variaveis_encadeadas(self) -> str:
+        """
+        Variáveis a serem encadeadas no estudo. Podem ser: 
+        EARM (armazenamento inicial de todas as usinas),
+        TVIAGEM (tempo de viagem para usinas com tempo de viagem),
+        GNL (geração GNL para usinas com geração antecipada).
+        """
+        return self._variaveis_encadeadas
 
     @property
     def flexibiliza_deficit(self) -> int:
@@ -333,6 +345,10 @@ class BuilderConfiguracoes:
 
     @abstractmethod
     def ajuste_processadores_decomp(self, ajuste: int):
+        pass
+
+    @abstractmethod
+    def variaveis_encadeadas(self, variaveis: int):
         pass
 
     @abstractmethod
@@ -555,6 +571,17 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
         valor = BuilderConfiguracoesENV.__valida_bool(valor)
         self._configuracoes._ajuste_processadores_decomp = valor
+        # Fluent method
+        return self
+
+    def variaveis_encadeadas(self, variavel: str):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        # Confere se as variáveis informadas está dentro das possibilidades: GNL, TVIAGEM, EARM
+        valor = valor.split(',')
+        variaveis_validas = set(["GNL","TVIAGEM","EARM"])
+        if not set(valor).issubset(variaveis_validas):
+            raise ValueError(f"Variáveis encadeadas informadas {valor} são inválidas. Variáveis válidas: EARM, TVIAGEM e/ou GNL.")    
+        self._configuracoes._variaveis_encadeadas = valor
         # Fluent method
         return self
 
