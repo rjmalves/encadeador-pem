@@ -21,6 +21,8 @@ def test_configuracoes_validas():
     assert c.versao_newave == "27.0.1"
     assert c.versao_decomp == "30.1"
     assert c.flexibiliza_deficit == 1
+    assert c.maximo_flexibilizacoes_revisao == 30
+    assert c.ultimas_iteracoes_flexibilizacao == 0
 
 def test_nome_estudo_invalido():
     with pytest.raises(ValueError):
@@ -69,5 +71,19 @@ def test_flexibiliza_deficit():
     with pytest.raises(ValueError):
         load_dotenv(join(DIRETORIO_TESTE,
                          "invalido_flex_deficit.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()
+
+def test_maximo_flebilizacoes_revisao():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_maximo_flexibilizacoes.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()
+
+def test_ultimas_iteracoes_flexibilizacao():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_ultimas_iteracoes.cfg"),
                     override=True)
         Configuracoes.le_variaveis_ambiente()

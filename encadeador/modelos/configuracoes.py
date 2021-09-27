@@ -52,6 +52,8 @@ class Configuracoes:
         self._versao_newave = None
         self._versao_decomp = None
         self._flexibiliza_deficit = None
+        self._maximo_flexibilizacoes_revisao = None
+        self._ultimas_iteracoes_flexibilizacao = None
 
     @classmethod
     def le_variaveis_ambiente(cls) -> "Configuracoes":
@@ -64,6 +66,8 @@ class Configuracoes:
             .versao_newave("VERSAO_NEWAVE")\
             .versao_decomp("VERSAO_DECOMP")\
             .flexibiliza_deficit("FLEXIBILIZA_DEFICIT")\
+            .maximo_flexibilizacoes_revisao("MAXIMO_FLEXIBILIZACOES_REVISAO")\
+            .ultimas_iteracoes_flexibilizacao("ULTIMAS_ITERACOES_PARA_FLEXIBILIZACAO")\
             .build()
         return c
 
@@ -123,6 +127,19 @@ class Configuracoes:
         """
         return self._flexibiliza_deficit
 
+    @property
+    def maximo_flexibilizacoes_revisao(self) -> int:
+        """
+        Número máximo de flexibilizações por revisão.
+        """
+        return self._maximo_flexibilizacoes_revisao
+
+    @property
+    def ultimas_iteracoes_flexibilizacao(self) -> int:
+        """
+        Últimas iterações consideradas para flexibilização.
+        """
+        return self._ultimas_iteracoes_flexibilizacao
 
 class BuilderConfiguracoes:
     """
@@ -164,6 +181,14 @@ class BuilderConfiguracoes:
 
     @abstractmethod
     def flexibiliza_deficit(self, flexiblizacao: int):
+        pass
+
+    @abstractmethod
+    def maximo_flexibilizacoes_revisao(self, max_flexiblizacoes: int):
+        pass
+
+    @abstractmethod
+    def ultimas_iteracoes_flexibilizacao(self, ultimas_iteracoes_flexiblizacao: int):
         pass
 
 
@@ -260,8 +285,26 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
     def flexibiliza_deficit(self, variavel: int):
             valor = BuilderConfiguracoesENV.__le_e_confere_variavel_int(variavel)
             # Conferir se é 0 (não) ou 1 (sim)
-            if (valor not in [0,1]):
-                raise ValueError(f"Valor da variável {variavel} informada deve ser 0 ou 1")
+            if (valor not in [0,1]) or (not isinstance(valor,int)):
+                raise ValueError(f"Valor da variável {variavel} informada deve ser 0 ou 1.")
             self._configuracoes._flexibiliza_deficit = valor
+            # Fluent method
+            return self
+
+    def maximo_flexibilizacoes_revisao(self, variavel: int):
+            valor = BuilderConfiguracoesENV.__le_e_confere_variavel_int(variavel)
+            # Conferir se é >= 0
+            if (valor < 0) or (not isinstance(valor,int)):
+                raise ValueError(f"Valor da variável {variavel} informada deve ser inteiro maior ou igual a 0.")
+            self._configuracoes._maximo_flexibilizacoes_revisao = valor
+            # Fluent method
+            return self
+
+    def ultimas_iteracoes_flexibilizacao(self, variavel: int):
+            valor = BuilderConfiguracoesENV.__le_e_confere_variavel_int(variavel)
+            # Conferir se é >= 0
+            if (valor < 0) or (not isinstance(valor,int)):
+                raise ValueError(f"Valor da variável {variavel} informada deve ser inteiro maior ou igual a 0.")
+            self._configuracoes._ultimas_iteracoes_flexibilizacao = valor
             # Fluent method
             return self
