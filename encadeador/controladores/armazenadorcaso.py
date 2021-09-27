@@ -60,8 +60,8 @@ class ArmazenadorCaso:
             raise FileNotFoundError("Não encontrado arquivo de resumo" +
                                     f"de caso no diretório {caminho}.")
         # Se tem, então o caso pelo menos começou
-        df = pd.read_csv(arq)
-        prog = str(df.loc[:, "Programa"])
+        df = pd.read_csv(arq, index_col=0)
+        prog = str(df.loc[:, "Programa"].tolist()[0])
         if prog == "NEWAVE":
             c = CasoNEWAVE()
         elif prog == "DECOMP":

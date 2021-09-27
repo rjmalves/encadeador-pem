@@ -3,10 +3,10 @@ import pytest
 
 from encadeador.modelos.caso import Caso
 from encadeador.modelos.caso import CasoNEWAVE
+from encadeador.modelos.caso import CasoDECOMP
 from encadeador.modelos.caso import Configuracoes
 
 CAMINHO_TESTE = "/home/user"
-NOME_TESTE = "teste"
 ANO_TESTE = 2021
 MES_TESTE = 1
 REVISAO_TESTE = 0
@@ -57,19 +57,16 @@ def test_caso_nao_configurado_sucesso():
 def test_configura_caso():
     c = Caso()
     c.configura_caso(CAMINHO_TESTE,
-                     NOME_TESTE,
                      ANO_TESTE,
                      MES_TESTE,
                      REVISAO_TESTE,
                      Configuracoes())
     assert c.caminho == CAMINHO_TESTE
-    assert c.nome == NOME_TESTE
 
 
 def test_inicializa_parametros():
     c = Caso()
     c.configura_caso(CAMINHO_TESTE,
-                     NOME_TESTE,
                      ANO_TESTE,
                      MES_TESTE,
                      REVISAO_TESTE,
@@ -84,7 +81,6 @@ def test_inicializa_parametros():
 def test_reseta_parametros():
     c = Caso()
     c.configura_caso(CAMINHO_TESTE,
-                     NOME_TESTE,
                      ANO_TESTE,
                      MES_TESTE,
                      REVISAO_TESTE,
@@ -101,7 +97,6 @@ def test_reseta_parametros():
 def test_tempo_fila():
     c = Caso()
     c.configura_caso(CAMINHO_TESTE,
-                     NOME_TESTE,
                      ANO_TESTE,
                      MES_TESTE,
                      REVISAO_TESTE,
@@ -119,7 +114,6 @@ def test_tempo_fila():
 def test_tempo_execucao():
     c = Caso()
     c.configura_caso(CAMINHO_TESTE,
-                     NOME_TESTE,
                      ANO_TESTE,
                      MES_TESTE,
                      REVISAO_TESTE,
@@ -138,7 +132,6 @@ def test_tempo_execucao():
 def test_numero_tentativas():
     c = Caso()
     c.configura_caso(CAMINHO_TESTE,
-                     NOME_TESTE,
                      ANO_TESTE,
                      MES_TESTE,
                      REVISAO_TESTE,
@@ -154,7 +147,6 @@ def test_numero_tentativas():
 def test_sucesso():
     c = Caso()
     c.configura_caso(CAMINHO_TESTE,
-                     NOME_TESTE,
                      ANO_TESTE,
                      MES_TESTE,
                      REVISAO_TESTE,
@@ -177,7 +169,6 @@ def test_caso_newave_nao_configurado():
 def test_caso_newave_configurado():
     c = CasoNEWAVE()
     c.configura_caso(CAMINHO_TESTE,
-                     NOME_TESTE,
                      ANO_TESTE,
                      MES_TESTE,
                      REVISAO_TESTE,
@@ -189,7 +180,36 @@ def test_caso_newave_configurado():
 def test_caso_newave_numero_processadores():
     c = CasoNEWAVE()
     c.configura_caso(CAMINHO_TESTE,
-                     NOME_TESTE,
+                     ANO_TESTE,
+                     MES_TESTE,
+                     REVISAO_TESTE,
+                     Configuracoes())
+    c.inicializa_parametros_execucao()
+    assert c.numero_processadores == 72
+
+
+def test_caso_decomp_nao_configurado():
+    with pytest.raises(ValueError):
+        c = CasoDECOMP()
+        c.ano
+        c.mes
+        c.revisao
+
+
+def test_caso_decomp_configurado():
+    c = CasoDECOMP()
+    c.configura_caso(CAMINHO_TESTE,
+                     ANO_TESTE,
+                     MES_TESTE,
+                     REVISAO_TESTE,
+                     Configuracoes())
+    assert c.ano == ANO_TESTE
+    assert c.mes == MES_TESTE
+
+
+def test_caso_decomp_numero_processadores():
+    c = CasoDECOMP()
+    c.configura_caso(CAMINHO_TESTE,
                      ANO_TESTE,
                      MES_TESTE,
                      REVISAO_TESTE,

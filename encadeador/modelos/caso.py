@@ -11,8 +11,8 @@ class Configuracoes:
         self.processadores_minimos_newave = 72
         self.processadores_maximos_newave = 72
         self.ajuste_processadores_newave = False
-        self.diretorio_decomp = "newave"
-        self.versao_decomp = "newave"
+        self.diretorio_decomp = "decomp"
+        self.versao_decomp = "decomp"
         self.diretorio_instalacao_decomps = "./tests/_arquivos"
         self.processadores_minimos_decomp = 72
         self.processadores_maximos_decomp = 72
@@ -221,3 +221,7 @@ class CasoDECOMP(Caso):
         if ajuste:
             num_proc = maximo
         return num_proc
+
+    def _constroi_nome_caso(self) -> str:
+        return (f"{self.configuracoes.nome_estudo} - DCP" +
+                f" {self.mes}/{self.ano} rv{self.revisao}")

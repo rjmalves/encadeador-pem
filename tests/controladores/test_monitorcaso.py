@@ -6,10 +6,11 @@ from pytest_mock.plugin import MockerFixture
 
 from encadeador.modelos.caso import Configuracoes
 from encadeador.modelos.caso import CasoNEWAVE
+from encadeador.modelos.caso import CasoDECOMP
 from encadeador.controladores.monitorcaso import MonitorNEWAVE
+from encadeador.controladores.monitorcaso import MonitorDECOMP
 
 CAMINHO_TESTE = "/home/user"
-NOME_TESTE = "teste"
 ANO_TESTE = 2021
 MES_TESTE = 1
 REVISAO_TESTE = 0
@@ -24,12 +25,27 @@ def test_monitor_newave_nao_inicializado():
 def test_monitor_newave_inicializado():
     c = CasoNEWAVE()
     c.configura_caso(CAMINHO_TESTE,
-                     NOME_TESTE,
                      ANO_TESTE,
                      MES_TESTE,
                      REVISAO_TESTE,
                      Configuracoes())
     m = MonitorNEWAVE(c)
+
+
+def test_monitor_decomp_nao_inicializado():
+    with pytest.raises(ValueError):
+        c = CasoDECOMP()
+        m = MonitorDECOMP(c)
+
+
+def test_monitor_decomp_inicializado():
+    c = CasoDECOMP()
+    c.configura_caso(CAMINHO_TESTE,
+                     ANO_TESTE,
+                     MES_TESTE,
+                     REVISAO_TESTE,
+                     Configuracoes())
+    m = MonitorDECOMP(c)
 
 
 class GerenteChamadasTerminal:
@@ -57,7 +73,6 @@ class GerenteChamadasTerminal:
 def test_monitor_newave_execucao_sucesso(mocker: MockerFixture):
     c = CasoNEWAVE()
     c.configura_caso(CAMINHO_TESTE,
-                     NOME_TESTE,
                      ANO_TESTE,
                      MES_TESTE,
                      REVISAO_TESTE,
@@ -85,7 +100,6 @@ def test_monitor_newave_execucao_sucesso(mocker: MockerFixture):
 def test_monitor_newave_execucao_timeout_comunicacao(mocker: MockerFixture):
     c = CasoNEWAVE()
     c.configura_caso(CAMINHO_TESTE,
-                     NOME_TESTE,
                      ANO_TESTE,
                      MES_TESTE,
                      REVISAO_TESTE,
@@ -112,6 +126,67 @@ def test_monitor_newave_execucao_timeout_comunicacao(mocker: MockerFixture):
                  return_value=True)
     MonitorNEWAVE.INTERVALO_POLL = 2
     MonitorNEWAVE.MAX_RETRY = 2
+    r = m.executa_caso(log)
+    assert m.caso.numero_tentativas == 2
+    assert not r
+
+
+def test_monitor_decomp_execucao_sucesso(mocker: MockerFixture):
+    c = CasoDECOMP()
+    c.configura_caso(CAMINHO_TESTE,
+                     ANO_TESTE,
+                     MES_TESTE,
+                     REVISAO_TESTE,
+                     Configuracoes())
+    m = MonitorDECOMP(c)
+    log = logging.getLogger()
+    g = GerenteChamadasTerminal()
+    g.respostas = [
+                   ['Your job 123 ("pmo") has been submitted'],
+                   ["", "",
+                   "    123 0.00000 pmo        pem          qw    09/22/2021" +
+                   " 13:17:19                                   72           "],
+                   ["", "",
+                   "    123 0.00000 pmo        pem          r     09/22/2021" +
+                   " 13:17:19                                   72           "]
+                  ]
+    mocker.patch("encadeador.controladores.gerenciadorfila.executa_terminal",
+                 side_effect = g.mock_executa_terminal)
+    MonitorDECOMP.INTERVALO_POLL = 1
+    r = m.executa_caso(log)
+    assert m.caso.numero_tentativas == 1
+    assert r
+
+
+def test_monitor_decomp_execucao_timeout_comunicacao(mocker: MockerFixture):
+    c = CasoDECOMP()
+    c.configura_caso(CAMINHO_TESTE,
+                     ANO_TESTE,
+                     MES_TESTE,
+                     REVISAO_TESTE,
+                     Configuracoes())
+    m = MonitorDECOMP(c)
+    log = logging.getLogger()
+    g = GerenteChamadasTerminal()
+    g.respostas = [
+                   ['Your job 123 ("pmo") has been submitted'],
+                   ["", "",
+                   "    123 0.00000 pmo        pem          qw    09/22/2021" +
+                   " 13:17:19                                   72           "],
+                   ["", "",
+                   "    123 0.00000 pmo        pem          r     09/22/2021" +
+                   " 13:17:19                                   72           "],
+                   ["", "", ""]
+                  ]
+    g.respostas = 3 * g.respostas
+    mocker.patch("encadeador.controladores.gerenciadorfila.executa_terminal",
+                 side_effect=g.mock_executa_terminal)
+    mocker.patch("encadeador.controladores.gerenciadorfila.getmtime",
+                 return_value=0.)
+    mocker.patch("encadeador.controladores.gerenciadorfila.isfile",
+                 return_value=True)
+    MonitorDECOMP.INTERVALO_POLL = 2
+    MonitorDECOMP.MAX_RETRY = 2
     r = m.executa_caso(log)
     assert m.caso.numero_tentativas == 2
     assert not r

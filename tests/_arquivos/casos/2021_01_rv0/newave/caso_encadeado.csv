@@ -1,0 +1,2 @@
+,Caminho,Nome,Ano,Mes,Revisao,Estado,Tentativas,Processadores,Sucesso,Entrada Fila,Inicio Execucao,Fim Execucao,Programa
+0,./tests/_arquivos/casos/2021_01_rv0/newave,Backtest CPAMP 2015-2021 CVAR AxL - NW 01/2021,2021,1,0,EXECUTANDO,1,72,1,0.,10.,20.,NEWAVE
