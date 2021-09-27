@@ -49,6 +49,9 @@ class Configuracoes:
         self._nome_diretorio_newave = None
         self._nome_diretorio_decomp = None
         self._gerenciador_fila = None
+        self._versao_newave = None
+        self._versao_decomp = None
+        self._flexibiliza_deficit = None
 
     @classmethod
     def le_variaveis_ambiente(cls) -> "Configuracoes":
@@ -58,6 +61,9 @@ class Configuracoes:
             .nome_diretorio_newave("NOME_DIRETORIO_NEWAVE")\
             .nome_diretorio_decomp("NOME_DIRETORIO_DECOMP")\
             .gerenciador_fila("GERENCIADOR_DE_FILA")\
+            .versao_newave("VERSAO_NEWAVE")\
+            .versao_decomp("VERSAO_DECOMP")\
+            .flexibiliza_deficit("FLEXIBILIZA_DEFICIT")\
             .build()
         return c
 
@@ -96,6 +102,27 @@ class Configuracoes:
         """
         return self._gerenciador_fila
 
+    @property
+    def versao_newave(self) -> str:
+        """
+        Versão do modelo NEWAVE.
+        """
+        return self._versao_newave
+
+    @property
+    def versao_decomp(self) -> str:
+        """
+        Versão do modelo DECOMP.
+        """
+        return self._versao_decomp
+
+    @property
+    def flexibiliza_deficit(self) -> int:
+        """
+        Sinalização de flexibilização ou não de déficit.
+        """
+        return self._flexibiliza_deficit
+
 
 class BuilderConfiguracoes:
     """
@@ -127,6 +154,18 @@ class BuilderConfiguracoes:
     def gerenciador_fila(self, gerenciador: str):
         pass
 
+    @abstractmethod
+    def versao_newave(self, versao: str):
+        pass
+
+    @abstractmethod
+    def versao_decomp(self, versao: str):
+        pass
+
+    @abstractmethod
+    def flexibiliza_deficit(self, flexiblizacao: int):
+        pass
+
 
 class BuilderConfiguracoesENV(BuilderConfiguracoes):
     """
@@ -137,8 +176,17 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
 
     @staticmethod
     def __le_e_confere_variavel(variavel: str):
-        # Lê a variável de ambiente do nome do estudo
+        # Lê a variável de ambiente 
         valor = getenv(variavel)
+        # Valida o conteúdo 
+        if valor is None:
+            raise ValueError(f"Variável {variavel} não encontrada")
+        return valor
+
+    @staticmethod # mariana 
+    def __le_e_confere_variavel_int(variavel: int):
+        # Lê a variável de ambiente do nome do estudo
+        valor = int(getenv(variavel))
         # Valida o conteúdo do nome do estudo
         if valor is None:
             raise ValueError(f"Variável {variavel} não encontrada")
@@ -190,3 +238,30 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         self._configuracoes._gerenciador_fila = valor
         # Fluent method
         return self
+
+    def versao_newave(self, variavel: str):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        # Confere tamanho != 0
+        if len(valor) == 0:
+            raise ValueError(f"Valor da variável {variavel} inválido: {valor}")
+        self._configuracoes._versao_newave = valor
+        # Fluent method
+        return self
+    
+    def versao_decomp(self, variavel: str):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        # Confere tamanho != 0
+        if len(valor) == 0:
+            raise ValueError(f"Valor da variável {variavel} inválido: {valor}")
+        self._configuracoes._versao_decomp = valor
+        # Fluent method
+        return self
+
+    def flexibiliza_deficit(self, variavel: int):
+            valor = BuilderConfiguracoesENV.__le_e_confere_variavel_int(variavel)
+            # Conferir se é 0 (não) ou 1 (sim)
+            if (valor not in [0,1]):
+                raise ValueError(f"Valor da variável {variavel} informada deve ser 0 ou 1")
+            self._configuracoes._flexibiliza_deficit = valor
+            # Fluent method
+            return self

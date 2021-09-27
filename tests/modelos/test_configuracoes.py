@@ -18,7 +18,9 @@ def test_configuracoes_validas():
     assert c.nome_diretorio_newave == "newave"
     assert c.nome_diretorio_decomp == "decomp"
     assert c.gerenciador_fila == "PBS"
-
+    assert c.versao_newave == "27.0.1"
+    assert c.versao_decomp == "30.1"
+    assert c.flexibiliza_deficit == 1
 
 def test_nome_estudo_invalido():
     with pytest.raises(ValueError):
@@ -53,5 +55,19 @@ def test_gerenciador_fila():
     with pytest.raises(ValueError):
         load_dotenv(join(DIRETORIO_TESTE,
                          "invalido_gerenciador_fila.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()
+
+def test_versoes():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_versoes.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()
+
+def test_flexibiliza_deficit():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_flex_deficit.cfg"),
                     override=True)
         Configuracoes.le_variaveis_ambiente()
