@@ -48,9 +48,16 @@ class Configuracoes:
         self._arquivo_lista_casos = None
         self._nome_diretorio_newave = None
         self._nome_diretorio_decomp = None
+        self._diretorio_instalacao_newaves = None
+        self._diretorio_instalacao_decomps = None
         self._gerenciador_fila = None
         self._versao_newave = None
         self._versao_decomp = None
+        self._processadores_no = None
+        self._processadores_minimos_newave = None
+        self._processadores_maximos_newave = None
+        self._processadores_minimos_decomp = None
+        self._processadores_maximos_decomp = None
         self._flexibiliza_deficit = None
         self._maximo_flexibilizacoes_revisao = None
         self._ultimas_iteracoes_flexibilizacao = None
@@ -67,9 +74,16 @@ class Configuracoes:
             .arquivo_lista_casos("ARQUIVO_LISTA_CASOS")\
             .nome_diretorio_newave("NOME_DIRETORIO_NEWAVE")\
             .nome_diretorio_decomp("NOME_DIRETORIO_DECOMP")\
+            .diretorio_instalacao_newaves("DIRETORIO_INSTALACAO_NEWAVES")\
+            .diretorio_instalacao_decomps("DIRETORIO_INSTALACAO_DECOMPS")\
             .gerenciador_fila("GERENCIADOR_DE_FILA")\
             .versao_newave("VERSAO_NEWAVE")\
             .versao_decomp("VERSAO_DECOMP")\
+            .processadores_no("PROCESSADORES_POR_NO")\
+            .processadores_minimos_newave("PROCESSADORES_MINIMOS_NEWAVE")\
+            .processadores_maximos_newave("PROCESSADORES_MAXIMOS_NEWAVE")\
+            .processadores_minimos_decomp("PROCESSADORES_MINIMOS_DECOMP")\
+            .processadores_maximos_decomp("PROCESSADORES_MAXIMOS_DECOMP")\
             .flexibiliza_deficit("FLEXIBILIZA_DEFICIT")\
             .maximo_flexibilizacoes_revisao("MAXIMO_FLEXIBILIZACOES_REVISAO")\
             .ultimas_iteracoes_flexibilizacao("ULTIMAS_ITERACOES_PARA_FLEXIBILIZACAO")\
@@ -97,16 +111,30 @@ class Configuracoes:
     @property
     def nome_diretorio_newave(self) -> str:
         """
-        Nome do diretório que contém os casos de NEWAVE.
+        Nome do diretório que contém os casos de NEWAVE no estudo encadeado.
         """
         return self._nome_diretorio_newave
 
     @property
     def nome_diretorio_decomp(self) -> str:
         """
-        Nome do diretório que contém os casos de NEWAVE.
+        Nome do diretório que contém os casos de DECOMP no estudo encadeado.
         """
         return self._nome_diretorio_decomp
+
+    @property
+    def diretorio_instalacao_newaves(self) -> str:
+        """
+        Nome do diretório com a instalação das versões de NEWAVE.
+        """
+        return self._diretorio_instalacao_newaves
+
+    @property
+    def diretorio_instalacao_decomps(self) -> str:
+        """
+        Nome do diretório com a instalação das versões de DECOMP.
+        """
+        return self._diretorio_instalacao_decomps
 
     @property
     def gerenciador_fila(self) -> str:
@@ -128,6 +156,41 @@ class Configuracoes:
         Versão do modelo DECOMP.
         """
         return self._versao_decomp
+
+    @property
+    def processadores_no(self) -> int:
+        """
+        Número de processadores por nó.
+        """
+        return self._processadores_no
+
+    @property
+    def processadores_minimos_newave(self) -> int:
+        """
+        Número mínimo de processadores para modelo NEWAVE.
+        """
+        return self._processadores_minimos_newave
+
+    @property
+    def processadores_maximos_newave(self) -> int:
+        """
+        Número máximo de processadores para modelo NEWAVE.
+        """
+        return self._processadores_maximos_newave
+
+    @property
+    def processadores_minimos_decomp(self) -> int:
+        """
+        Número mínimo de processadores para modelo DECOMP.
+        """
+        return self._processadores_minimos_decomp
+
+    @property
+    def processadores_maximos_decomp(self) -> int:
+        """
+        Número máximo de processadores para modelo DECOMP.
+        """
+        return self._processadores_maximos_decomp
 
     @property
     def flexibiliza_deficit(self) -> int:
@@ -207,6 +270,14 @@ class BuilderConfiguracoes:
         pass
 
     @abstractmethod
+    def diretorio_instalacao_newaves(self, diretorio: str):
+        pass
+
+    @abstractmethod
+    def diretorio_instalacao_decomps(self, diretorio: str):
+        pass
+
+    @abstractmethod
     def gerenciador_fila(self, gerenciador: str):
         pass
 
@@ -216,6 +287,26 @@ class BuilderConfiguracoes:
 
     @abstractmethod
     def versao_decomp(self, versao: str):
+        pass
+
+    @abstractmethod
+    def processadores_no(self, processadores: int):
+        pass
+
+    @abstractmethod
+    def processadores_minimos_newave(self, processadores: int):
+        pass
+
+    @abstractmethod
+    def processadores_maximos_newave(self, processadores: int):
+        pass
+
+    @abstractmethod
+    def processadores_minimos_decomp(self, processadores: int):
+        pass
+
+    @abstractmethod
+    def processadores_maximos_decomp(self, processadores: int):
         pass
 
     @abstractmethod
@@ -330,6 +421,24 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         self._configuracoes._nome_diretorio_decomp = valor
         # Fluent method
         return self
+    
+    def diretorio_instalacao_newaves(self, variavel: str):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        # Confere se o caminho do diretorio é válido
+        if not re.match(BuilderConfiguracoesENV.regex_alfanum, valor):
+             raise ValueError(f"Nome de diretório {valor} inválido.")
+        self._configuracoes._diretorio_instalacao_newaves = valor
+        # Fluent method
+        return self
+
+    def diretorio_instalacao_decomps(self, variavel: str):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        # Confere se o caminho do diretorio é válido
+        if not re.match(BuilderConfiguracoesENV.regex_alfanum, valor):
+             raise ValueError(f"Nome de diretório {valor} inválido.")
+        self._configuracoes._diretorio_instalacao_decomps = valor
+        # Fluent method
+        return self
 
     def gerenciador_fila(self, variavel: str):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
@@ -359,32 +468,82 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         # Fluent method
         return self
 
+    def processadores_no(self, variavel: int):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        valor = BuilderConfiguracoesENV.__valida_int(valor)
+        # Conferir se é >= 0
+        if (valor <= 0):
+            raise ValueError(f"Valor da variável {variavel} informada deve ser inteiro maior ou igual a 1.")
+        self._configuracoes._processadores_no = valor
+        # Fluent method
+        return self
+
+    def processadores_minimos_newave(self, variavel: int):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        valor = BuilderConfiguracoesENV.__valida_int(valor)
+        # Conferir se é >= 0
+        if (valor <= 0):
+            raise ValueError(f"Valor da variável {variavel} informada deve ser inteiro maior ou igual a 1.")
+        self._configuracoes._processadores_minimos_newave = valor
+        # Fluent method
+        return self
+
+    def processadores_maximos_newave(self, variavel: int):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        valor = BuilderConfiguracoesENV.__valida_int(valor)
+        # Conferir se é >= 0
+        if (valor <= 0):
+            raise ValueError(f"Valor da variável {variavel} informada deve ser inteiro maior ou igual a 1.")
+        self._configuracoes._processadores_maximos_newave = valor
+        # Fluent method
+        return self
+    
+    def processadores_minimos_decomp(self, variavel: int):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        valor = BuilderConfiguracoesENV.__valida_int(valor)
+        # Conferir se é >= 0
+        if (valor <= 0):
+            raise ValueError(f"Valor da variável {variavel} informada deve ser inteiro maior ou igual a 1.")
+        self._configuracoes._processadores_minimos_decomp = valor
+        # Fluent method
+        return self
+
+    def processadores_maximos_decomp(self, variavel: int):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        valor = BuilderConfiguracoesENV.__valida_int(valor)
+        # Conferir se é >= 0
+        if (valor <= 0):
+            raise ValueError(f"Valor da variável {variavel} informada deve ser inteiro maior ou igual a 1.")
+        self._configuracoes._processadores_maximos_decomp = valor
+        # Fluent method
+        return self
+
     def flexibiliza_deficit(self, variavel: int):
-            valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
-            valor = BuilderConfiguracoesENV.__valida_bool(valor)
-            self._configuracoes._flexibiliza_deficit = valor
-            # Fluent method
-            return self
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        valor = BuilderConfiguracoesENV.__valida_bool(valor)
+        self._configuracoes._flexibiliza_deficit = valor
+        # Fluent method
+        return self
 
     def maximo_flexibilizacoes_revisao(self, variavel: int):
-            valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
-            valor = BuilderConfiguracoesENV.__valida_int(valor)
-            # Conferir se é >= 0
-            if (valor < 0):
-                raise ValueError(f"Valor da variável {variavel} informada deve ser inteiro maior ou igual a 0.")
-            self._configuracoes._maximo_flexibilizacoes_revisao = valor
-            # Fluent method
-            return self
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        valor = BuilderConfiguracoesENV.__valida_int(valor)
+        # Conferir se é >= 0
+        if (valor < 0):
+            raise ValueError(f"Valor da variável {variavel} informada deve ser inteiro maior ou igual a 0.")
+        self._configuracoes._maximo_flexibilizacoes_revisao = valor
+        # Fluent method
+        return self
 
     def ultimas_iteracoes_flexibilizacao(self, variavel: int):
-            valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
-            valor = BuilderConfiguracoesENV.__valida_int(valor)
-            # Conferir se é >= 0
-            if (valor < 0):
-                raise ValueError(f"Valor da variável {variavel} informada deve ser inteiro maior ou igual a 0.")
-            self._configuracoes._ultimas_iteracoes_flexibilizacao = valor
-            # Fluent method
-            return self
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        valor = BuilderConfiguracoesENV.__valida_int(valor)
+        # Conferir se é >= 0
+        if (valor < 0):
+            raise ValueError(f"Valor da variável {variavel} informada deve ser inteiro maior ou igual a 0.")
+        self._configuracoes._ultimas_iteracoes_flexibilizacao = valor
+        # Fluent method
+        return self
 
     def metodo_flexibilizacao(self, variavel: str):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
@@ -424,3 +583,4 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         self._configuracoes._gap_maximo_decomp = valor
         # Fluent method
         return self
+

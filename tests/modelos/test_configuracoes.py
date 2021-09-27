@@ -17,6 +17,8 @@ def test_configuracoes_validas():
     assert c.arquivo_lista_casos == "main.py"
     assert c.nome_diretorio_newave == "newave"
     assert c.nome_diretorio_decomp == "decomp"
+    assert c.diretorio_instalacao_newaves == "/home/USER/gmc2/versoes"
+    assert c.diretorio_instalacao_decomps == "/home/USER/gmc2/versoes/DECOMP"
     assert c.gerenciador_fila == "PBS"
     assert c.versao_newave == "27.0.1"
     assert c.versao_decomp == "30.1"
@@ -27,6 +29,12 @@ def test_configuracoes_validas():
     assert c.maximo_iteracoes_decomp == 500
     assert c.fator_aumento_gap_decomp == 0.01
     assert c.gap_maximo_decomp == 0.1
+    assert c.processadores_no == 72
+    assert c.processadores_minimos_newave==1
+    assert c.processadores_maximos_newave==1
+    assert c.processadores_minimos_decomp==1
+    assert c.processadores_maximos_decomp==1
+    
 
 def test_nome_estudo_invalido():
     with pytest.raises(ValueError):
@@ -117,5 +125,20 @@ def test_gap_maximo():
     with pytest.raises(ValueError):
         load_dotenv(join(DIRETORIO_TESTE,
                          "invalido_gap_maximo.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()
+
+def test_diretorio_instalacao():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_diretorio_instalacao.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()
+
+
+def test_processadores():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_processadores.cfg"),
                     override=True)
         Configuracoes.le_variaveis_ambiente()
