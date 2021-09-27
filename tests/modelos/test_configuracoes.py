@@ -23,6 +23,10 @@ def test_configuracoes_validas():
     assert c.flexibiliza_deficit == 1
     assert c.maximo_flexibilizacoes_revisao == 30
     assert c.ultimas_iteracoes_flexibilizacao == 0
+    assert c.metodo_flexibilizacao == "absoluto"
+    assert c.maximo_iteracoes_decomp == 500
+    assert c.fator_aumento_gap_decomp == 0.01
+    assert c.gap_maximo_decomp == 0.1
 
 def test_nome_estudo_invalido():
     with pytest.raises(ValueError):
@@ -85,5 +89,33 @@ def test_ultimas_iteracoes_flexibilizacao():
     with pytest.raises(ValueError):
         load_dotenv(join(DIRETORIO_TESTE,
                          "invalido_ultimas_iteracoes.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()
+
+def test_metodo_flexibilizacao():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_metodo_flexibilizacao.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()
+
+def test_maximo_iteracoes_decomp():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_maximo_iteracoes_decomp.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()
+
+def test_fator_aumento_gap():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_fator_aumento_gap.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()
+
+def test_gap_maximo():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_gap_maximo.cfg"),
                     override=True)
         Configuracoes.le_variaveis_ambiente()

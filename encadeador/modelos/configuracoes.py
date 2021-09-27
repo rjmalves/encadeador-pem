@@ -54,6 +54,11 @@ class Configuracoes:
         self._flexibiliza_deficit = None
         self._maximo_flexibilizacoes_revisao = None
         self._ultimas_iteracoes_flexibilizacao = None
+        self._metodo_flexibilizacao = None
+        self._maximo_iteracoes_decomp = None
+        self._fator_aumento_gap_decomp = None
+        self._gap_maximo_decomp = None
+
 
     @classmethod
     def le_variaveis_ambiente(cls) -> "Configuracoes":
@@ -68,6 +73,10 @@ class Configuracoes:
             .flexibiliza_deficit("FLEXIBILIZA_DEFICIT")\
             .maximo_flexibilizacoes_revisao("MAXIMO_FLEXIBILIZACOES_REVISAO")\
             .ultimas_iteracoes_flexibilizacao("ULTIMAS_ITERACOES_PARA_FLEXIBILIZACAO")\
+            .metodo_flexibilizacao("METODO_FLEXIBILIZACAO")\
+            .maximo_iteracoes_decomp("MAXIMO_ITERACOES_DECOMP")\
+            .fator_aumento_gap_decomp("FATOR_AUMENTO_GAP_DECOMP")\
+            .gap_maximo_decomp("GAP_MAXIMO_DECOMP")\
             .build()
         return c
 
@@ -140,6 +149,36 @@ class Configuracoes:
         Últimas iterações consideradas para flexibilização.
         """
         return self._ultimas_iteracoes_flexibilizacao
+    
+    @property
+    def metodo_flexibilizacao(self) -> str:
+        """
+        Método de flexibilização: valor absoluto ou percentual.
+        """
+        return self._metodo_flexibilizacao
+
+    @property
+    def maximo_iteracoes_decomp(self) -> int:
+        """
+        Número máximo de iterações do DECOMP.
+        Alterar no DADGER de cada caso sempre que for rodar pela primeira vez (NI).
+        """
+        return self._maximo_iteracoes_decomp
+
+    @property
+    def fator_aumento_gap_decomp(self) -> int:
+        """
+        Fator de acréscimo no gap original.
+        Alterar no DADGER caso tenha chegado ao limite de iterações sem convergir (GP). 
+        """
+        return self._fator_aumento_gap_decomp
+
+    @property
+    def gap_maximo_decomp(self) -> int:
+        """
+        Valor máximo de gap de convergência do DECOMP.
+        """
+        return self._gap_maximo_decomp
 
 class BuilderConfiguracoes:
     """
@@ -180,15 +219,31 @@ class BuilderConfiguracoes:
         pass
 
     @abstractmethod
-    def flexibiliza_deficit(self, flexiblizacao: int):
+    def flexibiliza_deficit(self, flexibliza: int):
         pass
 
     @abstractmethod
-    def maximo_flexibilizacoes_revisao(self, max_flexiblizacoes: int):
+    def maximo_flexibilizacoes_revisao(self, maximo: int):
         pass
 
     @abstractmethod
-    def ultimas_iteracoes_flexibilizacao(self, ultimas_iteracoes_flexiblizacao: int):
+    def ultimas_iteracoes_flexibilizacao(self, iteracao: int):
+        pass
+
+    @abstractmethod
+    def metodo_flexibilizacao(self, metodo: str):
+        pass
+
+    @abstractmethod
+    def maximo_iteracoes_decomp(self, iteracoes: int):
+        pass
+
+    @abstractmethod
+    def fator_aumento_gap_decomp(self, fator: float):
+        pass
+
+    @abstractmethod
+    def gap_maximo_decomp(self, gap: float):
         pass
 
 
@@ -208,14 +263,36 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
             raise ValueError(f"Variável {variavel} não encontrada")
         return valor
 
-    @staticmethod # mariana 
-    def __le_e_confere_variavel_int(variavel: int):
-        # Lê a variável de ambiente do nome do estudo
-        valor = int(getenv(variavel))
-        # Valida o conteúdo do nome do estudo
-        if valor is None:
-            raise ValueError(f"Variável {variavel} não encontrada")
+    @staticmethod  
+    def __valida_int(variavel: str):
+        try:
+            valor=int(variavel)
+            valorfloat=float(variavel)
+            if valor != valorfloat:
+                raise ValueError()
+        except ValueError:
+            raise ValueError(f"Variável {variavel} não é inteira")
         return valor
+
+    @staticmethod 
+    def __valida_float(variavel: str):
+        try:
+            valor=float(variavel)
+        except ValueError:
+            raise ValueError(f"Variável {variavel} não é real")
+        return valor
+
+    @staticmethod 
+    def __valida_bool(variavel: str):
+        try:
+            valor=int(variavel)
+            if valor not in [0,1]:
+                raise ValueError()
+            valor=bool(valor)
+        except ValueError:
+            raise ValueError(f"Variável {variavel} não é booleana")
+        return valor
+
 
     def nome_estudo(self, variavel: str):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
@@ -259,7 +336,7 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         # Confere se é uma das possibilidades: PBS, SGE ou OGS
         gerenciadores_validos = ["PBS","SGE","OGS"]
         if (valor not in gerenciadores_validos):
-             raise ValueError(f"Nome do gerenciador de filas {valor} inválido. Deve ser PBS, SGE ou OGS.")
+             raise ValueError(f"Nome do gerenciador de filas {valor} inválido. Gerenciadores válidos: PBS, SGE ou OGS.")
         self._configuracoes._gerenciador_fila = valor
         # Fluent method
         return self
@@ -283,28 +360,67 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         return self
 
     def flexibiliza_deficit(self, variavel: int):
-            valor = BuilderConfiguracoesENV.__le_e_confere_variavel_int(variavel)
-            # Conferir se é 0 (não) ou 1 (sim)
-            if (valor not in [0,1]) or (not isinstance(valor,int)):
-                raise ValueError(f"Valor da variável {variavel} informada deve ser 0 ou 1.")
+            valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+            valor = BuilderConfiguracoesENV.__valida_bool(valor)
             self._configuracoes._flexibiliza_deficit = valor
             # Fluent method
             return self
 
     def maximo_flexibilizacoes_revisao(self, variavel: int):
-            valor = BuilderConfiguracoesENV.__le_e_confere_variavel_int(variavel)
+            valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+            valor = BuilderConfiguracoesENV.__valida_int(valor)
             # Conferir se é >= 0
-            if (valor < 0) or (not isinstance(valor,int)):
+            if (valor < 0):
                 raise ValueError(f"Valor da variável {variavel} informada deve ser inteiro maior ou igual a 0.")
             self._configuracoes._maximo_flexibilizacoes_revisao = valor
             # Fluent method
             return self
 
     def ultimas_iteracoes_flexibilizacao(self, variavel: int):
-            valor = BuilderConfiguracoesENV.__le_e_confere_variavel_int(variavel)
+            valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+            valor = BuilderConfiguracoesENV.__valida_int(valor)
             # Conferir se é >= 0
-            if (valor < 0) or (not isinstance(valor,int)):
+            if (valor < 0):
                 raise ValueError(f"Valor da variável {variavel} informada deve ser inteiro maior ou igual a 0.")
             self._configuracoes._ultimas_iteracoes_flexibilizacao = valor
             # Fluent method
             return self
+
+    def metodo_flexibilizacao(self, variavel: str):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        # Confere se é uma das possibilidades: absoluta ou percentual
+        metodos_validos = ["absoluto","percentual"]
+        if (valor not in metodos_validos):
+             raise ValueError(f"Método de flexibilização {valor} inválido. Métodos válidos: absoluto ou percentual.")
+        self._configuracoes._metodo_flexibilizacao = valor
+        # Fluent method
+        return self
+
+    def maximo_iteracoes_decomp(self, variavel: int):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        valor = BuilderConfiguracoesENV.__valida_int(valor)
+        # Conferir se é >= 0 e inferior a 500 (máximo da versão 30.13)
+        if (valor < 0) or (valor > 500):
+            raise ValueError(f"Valor da variável {variavel} informada deve ser inteiro entre 1 e 500.")
+        self._configuracoes._maximo_iteracoes_decomp = valor
+        # Fluent method
+        return self
+
+    def fator_aumento_gap_decomp(self, variavel: float):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        valor = BuilderConfiguracoesENV.__valida_float(valor)
+        if (valor < 0):
+            raise ValueError(f"Valor da variável {variavel} informada deve ser do tipo float maior ou igual a 0.")
+        self._configuracoes._fator_aumento_gap_decomp = valor
+        # Fluent method
+        return self
+
+    def gap_maximo_decomp(self, variavel: float):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        valor = BuilderConfiguracoesENV.__valida_float(valor)
+        # Conferir se é >= 0 e inferior a 500 (máximo da versão 30.13)
+        if (valor < 0):
+            raise ValueError(f"Valor da variável {variavel} informada deve ser do tipo float maior ou igual a 0.")
+        self._configuracoes._gap_maximo_decomp = valor
+        # Fluent method
+        return self
