@@ -34,6 +34,8 @@ def test_configuracoes_validas():
     assert c.processadores_maximos_newave==1
     assert c.processadores_minimos_decomp==1
     assert c.processadores_maximos_decomp==1
+    assert c.ajuste_processadores_newave==0
+    assert c.ajuste_processadores_decomp==0
     
 
 def test_nome_estudo_invalido():
@@ -135,10 +137,16 @@ def test_diretorio_instalacao():
                     override=True)
         Configuracoes.le_variaveis_ambiente()
 
-
 def test_processadores():
     with pytest.raises(ValueError):
         load_dotenv(join(DIRETORIO_TESTE,
                          "invalido_processadores.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()
+
+def test_ajuste_processadores():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_ajuste_processadores.cfg"),
                     override=True)
         Configuracoes.le_variaveis_ambiente()

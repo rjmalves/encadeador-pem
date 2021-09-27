@@ -58,6 +58,8 @@ class Configuracoes:
         self._processadores_maximos_newave = None
         self._processadores_minimos_decomp = None
         self._processadores_maximos_decomp = None
+        self._ajuste_processadores_newave = None
+        self._ajuste_processadores_decomp = None
         self._flexibiliza_deficit = None
         self._maximo_flexibilizacoes_revisao = None
         self._ultimas_iteracoes_flexibilizacao = None
@@ -84,6 +86,8 @@ class Configuracoes:
             .processadores_maximos_newave("PROCESSADORES_MAXIMOS_NEWAVE")\
             .processadores_minimos_decomp("PROCESSADORES_MINIMOS_DECOMP")\
             .processadores_maximos_decomp("PROCESSADORES_MAXIMOS_DECOMP")\
+            .ajuste_processadores_newave("AJUSTE_PROCESSADORES_NEWAVE")\
+            .ajuste_processadores_decomp("AJUSTE_PROCESSADORES_DECOMP")\
             .flexibiliza_deficit("FLEXIBILIZA_DEFICIT")\
             .maximo_flexibilizacoes_revisao("MAXIMO_FLEXIBILIZACOES_REVISAO")\
             .ultimas_iteracoes_flexibilizacao("ULTIMAS_ITERACOES_PARA_FLEXIBILIZACAO")\
@@ -191,6 +195,20 @@ class Configuracoes:
         Número máximo de processadores para modelo DECOMP.
         """
         return self._processadores_maximos_decomp
+
+    @property
+    def ajuste_processadores_newave(self) -> int:
+        """
+        Ajuste no número de processadores para modelo NEWAVE.
+        """
+        return self._ajuste_processadores_newave
+
+    @property
+    def ajuste_processadores_decomp(self) -> int:
+        """
+        Ajuste no número de processadores para modelo DECOMP.
+        """
+        return self._ajuste_processadores_decomp
 
     @property
     def flexibiliza_deficit(self) -> int:
@@ -307,6 +325,14 @@ class BuilderConfiguracoes:
 
     @abstractmethod
     def processadores_maximos_decomp(self, processadores: int):
+        pass
+
+    @abstractmethod
+    def ajuste_processadores_newave(self, ajuste: int):
+        pass
+
+    @abstractmethod
+    def ajuste_processadores_decomp(self, ajuste: int):
         pass
 
     @abstractmethod
@@ -515,6 +541,20 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         if (valor <= 0):
             raise ValueError(f"Valor da variável {variavel} informada deve ser inteiro maior ou igual a 1.")
         self._configuracoes._processadores_maximos_decomp = valor
+        # Fluent method
+        return self
+
+    def ajuste_processadores_newave(self, variavel: int):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        valor = BuilderConfiguracoesENV.__valida_bool(valor)
+        self._configuracoes._ajuste_processadores_newave = valor
+        # Fluent method
+        return self
+
+    def ajuste_processadores_decomp(self, variavel: int):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        valor = BuilderConfiguracoesENV.__valida_bool(valor)
+        self._configuracoes._ajuste_processadores_decomp = valor
         # Fluent method
         return self
 
