@@ -1,5 +1,7 @@
 import subprocess
 import time
+from os import listdir
+from os.path import isfile
 from typing import List, Tuple
 
 
@@ -41,3 +43,18 @@ def executa_terminal(cmds: List[str],
         time.sleep(0.5)
     processo.terminate()
     return codigo, linhas_saida
+
+
+def converte_codificacao(caminho: str,
+                         script_converte: str):
+    arqs = [a for a in listdir(caminho)
+            if ".dat" in a and isfile(a)]
+    for a in arqs:
+        _, out = executa_terminal([f"file -i {a}"])
+        cod = out[0].split("charset=")[1].strip()
+        if all([cod != "utf-8",
+                cod != "us-ascii",
+                cod != "binary"]):
+            cod = cod.upper()
+            c, _ = executa_terminal([f"{script_converte}" +
+                                     f" {a} {cod}"])

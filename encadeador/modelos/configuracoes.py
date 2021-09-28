@@ -68,6 +68,7 @@ class Configuracoes:
         self._maximo_iteracoes_decomp = None
         self._fator_aumento_gap_decomp = None
         self._gap_maximo_decomp = None
+        self._script_converte_codificacao = None
 
 
     @classmethod
@@ -97,6 +98,7 @@ class Configuracoes:
             .maximo_iteracoes_decomp("MAXIMO_ITERACOES_DECOMP")\
             .fator_aumento_gap_decomp("FATOR_AUMENTO_GAP_DECOMP")\
             .gap_maximo_decomp("GAP_MAXIMO_DECOMP")\
+            .script_converte_codificacao("SCRIPT_CONVERTE_CODIFICACAO")\
             .build()
         return c
 
@@ -273,6 +275,14 @@ class Configuracoes:
         """
         return self._gap_maximo_decomp
 
+    @property
+    def script_converte_codificacao(self) -> str:
+        """
+        Caminho do script para converter os arquivos do diretorio para UTF-8.
+        """
+        return self._script_converte_codificacao
+
+
 class BuilderConfiguracoes:
     """
     """
@@ -377,6 +387,10 @@ class BuilderConfiguracoes:
 
     @abstractmethod
     def gap_maximo_decomp(self, gap: float):
+        pass
+
+    @abstractmethod
+    def script_converte_codificacao(self, script: str):
         pass
 
 
@@ -651,3 +665,11 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         # Fluent method
         return self
 
+    def script_converte_codificacao(self, script: str):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(script)
+        # Confere se o caminho do diretorio é válido
+        if not re.match(BuilderConfiguracoesENV.regex_alfanum, valor):
+             raise ValueError(f"Nome de arquivo {valor} inválido.")
+        self._configuracoes._script_converte_codificacao = valor
+        # Fluent method
+        return self

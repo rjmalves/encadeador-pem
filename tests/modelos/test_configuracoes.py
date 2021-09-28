@@ -158,3 +158,10 @@ def test_variaveis_encadeadas():
                          "invalido_variaveis_encadeadas.cfg"),
                     override=True)
         Configuracoes.le_variaveis_ambiente()
+
+def test_script_converte_codificacao():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_script_converte.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()

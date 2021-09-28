@@ -5,6 +5,7 @@ from typing import Optional
 
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 from encadeador.controladores.sintetizadorcaso import SintetizadorCasoNEWAVE
+from encadeador.utils.terminal import converte_codificacao
 from inewave.newave import DGer, Arquivos  # type: ignore
 from idecomp.decomp.dadger import Dadger  # type: ignore
 
@@ -95,6 +96,8 @@ class PreparadorCasoDECOMP(PreparadorCaso):
                      **kwargs) -> bool:
         log.info(f"Adequando caso do DECOMP: {self.caso.nome}")
         try:
+            converte_codificacao(self.caso.caminho,
+                                 self.caso._configuracoes)
             dadger = Dadger.le_arquivo(self.caso.caminho,
                                        f"dadger.rv{self.caso.revisao}")
             log.info("Dadger lido com sucesso")
