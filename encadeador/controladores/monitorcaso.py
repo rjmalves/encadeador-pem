@@ -78,7 +78,7 @@ class MonitorNEWAVE(MonitorCaso):
                                log: Logger,
                                iniciado: bool) -> Tuple[bool, bool]:
         retry = False
-        iniciou = False
+        iniciou = iniciado
         if (self._gerenciador.tempo_job_idle >
                 MonitorNEWAVE.TIMEOUT_COMUNICACAO):
             log.info(f"Erro de comunicacao no caso: {self.caso.nome}.")
@@ -198,7 +198,7 @@ class MonitorDECOMP(MonitorCaso):
                                log: Logger,
                                iniciado: bool) -> Tuple[bool, bool]:
         retry = False
-        iniciou = False
+        iniciou = iniciado
         if (self._gerenciador.tempo_job_idle >
                 MonitorDECOMP.TIMEOUT_COMUNICACAO):
             log.info(f"Erro de comunicacao no caso: {self.caso.nome}.")
