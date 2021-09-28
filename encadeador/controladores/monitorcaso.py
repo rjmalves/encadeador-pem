@@ -144,9 +144,11 @@ class MonitorNEWAVE(MonitorCaso):
         except KeyError as e:
             if ultimo_estado == EstadoJob.EXECUTANDO:
                 sintetizador = SintetizadorCasoNEWAVE(self.caso, log)
-                if not armazenador.armazena_caso(EstadoJob.CONCLUIDO):
-                    return False
                 if not sintetizador.sintetiza_caso():
+                    return False
+                self.caso.finaliza_caso(True)
+                log.info("Caso concluído com sucesso")
+                if not armazenador.armazena_caso(EstadoJob.CONCLUIDO):
                     return False
                 return True
             else:
@@ -264,9 +266,11 @@ class MonitorDECOMP(MonitorCaso):
         except KeyError as e:
             if ultimo_estado == EstadoJob.EXECUTANDO:
                 sintetizador = SintetizadorCasoDECOMP(self.caso, log)
-                if not armazenador.armazena_caso(EstadoJob.CONCLUIDO):
-                    return False
                 if not sintetizador.sintetiza_caso():
+                    return False
+                self.caso.finaliza_caso(True)
+                log.info("Caso concluído com sucesso")
+                if not armazenador.armazena_caso(EstadoJob.CONCLUIDO):
                     return False
                 return True
             else:
