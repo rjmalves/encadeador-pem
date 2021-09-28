@@ -5,7 +5,7 @@ from typing import Optional
 
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 from encadeador.controladores.sintetizadorcaso import SintetizadorCasoNEWAVE
-from inewave.newave import DGer  # type: ignore
+from inewave.newave import DGer, Arquivos  # type: ignore
 from idecomp.decomp.dadger import Dadger  # type: ignore
 
 
@@ -122,11 +122,11 @@ class PreparadorCasoDECOMP(PreparadorCaso):
                 if not sintetizador.verifica_cortes_extraidos():
                     sintetizador.extrai_cortes()
                 # Altera os registros FC
-                deck = DeckEntrada.le_deck(caso_cortes.caminho)
+                arq = Arquivos.le_arquivo(caso_cortes.caminho)
                 dadger.fc("NEWV21").caminho = join(caso_cortes.caminho,
-                                                   deck.arquivos.cortesh)
+                                                   arq.cortesh)
                 dadger.fc("NEWCUT").caminho = join(caso_cortes.caminho,
-                                                   deck.arquivos.cortes)
+                                                   arq.cortes)
                 # Salva o dadger
                 dadger.escreve_arquivo(self.caso.caminho,
                                        f"dadger.rv{self.caso.revisao}")
