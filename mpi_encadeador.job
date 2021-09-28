@@ -1,0 +1,18 @@
+# Variaveis importantes
+
+CASO=`basename $PWD`
+WORKDIR=$PWD
+DIR_SCRIPTS=~/rotinas/encadeador-pem
+ENCADEIA=$DIR_SCRIPTS/main.py
+
+echo Ativando o ambiente virtual
+source $DIR_SCRIPTS/venv/bin/activate
+
+echo Mudando o diretorio para $WORKDIR
+cd $WORKDIR
+
+echo Executando o Encadeador
+python3 $ENCADEIA
+
+echo Desativando o ambiente virtual
+deactivate
