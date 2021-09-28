@@ -12,6 +12,7 @@ from encadeador.modelos.arvorecasos import ArvoreCasos
 DIR_INICIAL = pathlib.Path().resolve()
 DIR_TESTE = join(DIR_INICIAL, "tests/_arquivos/casos")
 
+
 def test_arvorecasos_le_arquivos_casos():
     log = getLogger()
     cfg = Configuracoes()
@@ -90,3 +91,52 @@ def test_arvorecasos_proximo_decomp():
     assert c.ano == 2021
     assert c.mes == 1
     assert c.revisao == 1
+
+
+def test_arvorecasos_ultimo_caso():
+    log = getLogger()
+    cfg = Configuracoes()
+    chdir(DIR_TESTE)
+    a = ArvoreCasos(Configuracoes(),
+                    log)
+    a.le_arquivo_casos()
+    r = a.constroi_casos()
+    chdir(DIR_INICIAL)
+    c = a.ultimo_caso
+    assert c is not None
+    assert c.ano == 2021
+    assert c.mes == 1
+    assert c.revisao == 0
+    assert isinstance(c, CasoDECOMP)
+
+
+def test_arvorecasos_ultimo_newave():
+    log = getLogger()
+    cfg = Configuracoes()
+    chdir(DIR_TESTE)
+    a = ArvoreCasos(Configuracoes(),
+                    log)
+    a.le_arquivo_casos()
+    r = a.constroi_casos()
+    chdir(DIR_INICIAL)
+    c = a.ultimo_newave
+    assert c is not None
+    assert c.ano == 2021
+    assert c.mes == 1
+    assert c.revisao == 0
+
+
+def test_arvorecasos_ultimo_decomp():
+    log = getLogger()
+    cfg = Configuracoes()
+    chdir(DIR_TESTE)
+    a = ArvoreCasos(Configuracoes(),
+                    log)
+    a.le_arquivo_casos()
+    r = a.constroi_casos()
+    chdir(DIR_INICIAL)
+    c = a.ultimo_decomp
+    assert c is not None
+    assert c.ano == 2021
+    assert c.mes == 1
+    assert c.revisao == 0

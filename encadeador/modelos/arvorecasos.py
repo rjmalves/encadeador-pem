@@ -111,3 +111,36 @@ class ArvoreCasos:
                     return c
             except ValueError:
                 return c
+
+    @property
+    def ultimo_caso(self) -> Optional[Caso]:
+        c_convergido = None
+        for c in self.casos:
+            try:
+                if c.sucesso:
+                    c_convergido = c
+            except ValueError:
+                break
+        return c_convergido
+
+    @property
+    def ultimo_newave(self) -> Optional[CasoNEWAVE]:
+        c_convergido = None
+        for c in self.casos:
+            try:
+                if isinstance(c, CasoNEWAVE) and c.sucesso:
+                    c_convergido = c
+            except ValueError:
+                break
+        return c_convergido
+
+    @property
+    def ultimo_decomp(self) -> Optional[CasoDECOMP]:
+        c_convergido = None
+        for c in self.casos:
+            try:
+                if isinstance(c, CasoDECOMP) and c.sucesso:
+                    c_convergido = c
+            except ValueError:
+                break
+        return c_convergido

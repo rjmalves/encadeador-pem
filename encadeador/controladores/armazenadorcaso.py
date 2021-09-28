@@ -1,6 +1,6 @@
-from genericpath import isfile
 import pandas as pd
 from logging import Logger
+from os.path import isfile
 from os.path import join
 
 from encadeador.modelos.estadojob import EstadoJob
@@ -58,7 +58,7 @@ class ArmazenadorCaso:
         arq = join(caminho, NOME_ARQUIVO_ESTADO)
         if not isfile(arq):
             raise FileNotFoundError("Não encontrado arquivo de resumo" +
-                                    f"de caso no diretório {caminho}.")
+                                    f" de caso no diretório {caminho}.")
         # Se tem, então o caso pelo menos começou
         df = pd.read_csv(arq, index_col=0)
         prog = str(df.loc[:, "Programa"].tolist()[0])
@@ -69,18 +69,20 @@ class ArmazenadorCaso:
         else:
             raise ValueError(f"Programa {prog} não suportado")
         # Atribui os dados armazenados
-        c._caminho_caso = str(df.loc[:, "Caminho"])
-        c._nome_caso = str(df.loc[:, "Nome"])
-        c._ano_caso = int(df.loc[:, "Ano"])
-        c._mes_caso = int(df.loc[:, "Mes"])
-        c._revisao_caso = int(df.loc[:, "Revisao"])
+        c._caminho_caso = str(df.loc[:, "Caminho"].tolist()[0])
+        c._nome_caso = str(df.loc[:, "Nome"].tolist()[0])
+        c._ano_caso = int(df.loc[:, "Ano"].tolist()[0])
+        c._mes_caso = int(df.loc[:, "Mes"].tolist()[0])
+        c._revisao_caso = int(df.loc[:, "Revisao"].tolist()[0])
         c._configuracoes = cfg
-        c._instante_entrada_fila = str(df.loc[:, "Entrada Fila"])
-        c._instante_inicio_execucao = str(df.loc[:, "Inicio Execucao"])
-        c._instante_fim_execucao = str(df.loc[:, "Fim Execucao"])
-        c._numero_tentativas = str(df.loc[:, "Tentativas"])
-        c._numero_processadores = str(df.loc[:, "Processadores"])
-        c._sucesso = str(df.loc[:, "Sucesso"])
+        c._instante_entrada_fila = str(df.loc[:, "Entrada Fila"].tolist()[0])
+        c._instante_inicio_execucao = str(df.loc[:,
+                                                 "Inicio Execucao"].tolist()
+                                          [0])
+        c._instante_fim_execucao = str(df.loc[:, "Fim Execucao"].tolist()[0])
+        c._numero_tentativas = str(df.loc[:, "Tentativas"].tolist()[0])
+        c._numero_processadores = str(df.loc[:, "Processadores"].tolist()[0])
+        c._sucesso = str(df.loc[:, "Sucesso"].tolist()[0])
         return c
 
     @property
