@@ -64,7 +64,7 @@ class App:
         while not self._arvore.terminou:
             prox = self._arvore.proximo_caso
             if (self._arvore._dados_casos[prox.nome] >=
-                    self._cfg.max_flex_decomp):
+                    self._cfg._maximo_flexibilizacoes_revisao):
                 raise RuntimeError("Máximo de flexibilizações" +
                                    f" no caso: {prox.nome}")
             if isinstance(prox, CasoNEWAVE):

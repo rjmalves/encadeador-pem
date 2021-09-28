@@ -44,7 +44,8 @@ class PreparadorCasoNEWAVE(PreparadorCaso):
         try:
             deck = DeckEntrada.le_deck(self.caso.caminho)
             log.info("Deck de entrada lido com sucesso")
-            if self.caso.configuracoes.adequa_decks_newave:
+            # TODO
+            if True:
                 # Adequa o nome do caso
                 nome_estudo = self.caso.configuracoes.nome_estudo
                 ano = self.caso.ano
@@ -54,7 +55,8 @@ class PreparadorCasoNEWAVE(PreparadorCaso):
                 # TODO
                 # Adequa opção do PAR(p)-A
                 parpa = deck.dger.afluencia_anual_parp
-                parpa[0] = self.caso.configuracoes.parpa
+                # TODO
+                parpa[0] = 3
                 deck.dger.afluencia_anual_parp = parpa
                 log.info(f"Opção do PAR(p)-A alterada para {parpa}")
                 # Salva o deck de entrada
@@ -95,7 +97,7 @@ class PreparadorCasoDECOMP(PreparadorCaso):
             dadger = Dadger.le_arquivo(self.caso.caminho,
                                        f"dadger.rv{self.caso.revisao}")
             log.info("Dadger lido com sucesso")
-            if self.caso.configuracoes.adequa_decks_decomp:
+            if True:
                 # Adequa registro TE
                 nome_estudo = self.caso.configuracoes.nome_estudo
                 ano = self.caso.ano

@@ -29,11 +29,11 @@ class ArvoreCasos:
         def __le_diretorios():
             for d in self._diretorios_revisoes:
                 subd = [a for a in listdir(d) if isdir(join(d, a))]
-                if self._configuracoes.diretorio_newave in subd:
-                    c = join(d, self._configuracoes.diretorio_newave)
+                if self._configuracoes._nome_diretorio_newave in subd:
+                    c = join(d, self._configuracoes._nome_diretorio_newave)
                     self._diretorios_casos.append(c)
-                if self._configuracoes.diretorio_decomp in subd:
-                    c = join(d, self._configuracoes.diretorio_decomp)
+                if self._configuracoes._nome_diretorio_decomp in subd:
+                    c = join(d, self._configuracoes._nome_diretorio_decomp)
                     self._diretorios_casos.append(c)
 
         lista = self._configuracoes.arquivo_lista_casos
@@ -55,12 +55,12 @@ class ArvoreCasos:
             rv = int(componentes_caso[2].split("rv")[1])
             # Identifica o programa
             diretorio_prog = pastas[-1]
-            if self._configuracoes.diretorio_newave == diretorio_prog:
+            if self._configuracoes._nome_diretorio_newave == diretorio_prog:
                 caso_nw = CasoNEWAVE()
                 caso_nw.configura_caso(c, ano, mes, rv, self._configuracoes)
                 self._casos.append(caso_nw)
                 return True
-            elif self._configuracoes.diretorio_decomp == diretorio_prog:
+            elif self._configuracoes._nome_diretorio_decomp == diretorio_prog:
                 caso_dcp = CasoDECOMP()
                 caso_dcp.configura_caso(c, ano, mes, rv, self._configuracoes)
                 self._casos.append(caso_dcp)

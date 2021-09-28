@@ -12,10 +12,10 @@ load_dotenv(override=True)
 
 DIR_BASE = pathlib.Path().resolve()
 
-load_dotenv(join(DIR_BASE, "estudo.cfg"), override=True)
+load_dotenv(join(DIR_BASE, "encadeia.cfg"), override=True)
 
 
-def configura_logging_fila() -> logging.Logger:
+def configura_logging() -> logging.Logger:
     root = logging.getLogger()
     h = logging.handlers.RotatingFileHandler(join(DIR_BASE,
                                                   "encadeia.log"),
@@ -36,7 +36,7 @@ def configura_logging_fila() -> logging.Logger:
 
 if __name__ == "__main__":
 
-    log = configura_logging_fila()
+    log = configura_logging()
 
     cfg = Configuracoes.le_variaveis_ambiente()
     app = App(cfg, log)
