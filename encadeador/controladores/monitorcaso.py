@@ -76,7 +76,7 @@ class MonitorNEWAVE(MonitorCaso):
 
     def _trata_caso_executando(self,
                                log: Logger,
-                               iniciou: bool) -> Tuple[bool, bool]:
+                               iniciado: bool) -> Tuple[bool, bool]:
         retry = False
         iniciou = False
         if (self._gerenciador.tempo_job_idle >
@@ -87,7 +87,7 @@ class MonitorNEWAVE(MonitorCaso):
                 raise ValueError("Erro ao deletar o job " +
                                  f"{self.caso.nome}")
             retry = True
-        if not iniciou:
+        if not iniciado:
             iniciou = True
             self.caso.inicia_caso()
             log.info(f"Iniciando execução do caso: {self.caso.nome}")
@@ -196,7 +196,7 @@ class MonitorDECOMP(MonitorCaso):
 
     def _trata_caso_executando(self,
                                log: Logger,
-                               iniciou: bool) -> Tuple[bool, bool]:
+                               iniciado: bool) -> Tuple[bool, bool]:
         retry = False
         iniciou = False
         if (self._gerenciador.tempo_job_idle >
@@ -207,7 +207,7 @@ class MonitorDECOMP(MonitorCaso):
                 raise ValueError("Erro ao deletar o job " +
                                  f"{self.caso.nome}")
             retry = True
-        if not iniciou:
+        if not iniciado:
             iniciou = True
             self.caso.inicia_caso()
             log.info(f"Iniciando execução do caso: {self.caso.nome}")

@@ -179,7 +179,7 @@ class GerenciadorFilaSGE(GerenciadorFila):
                     break
                 if int(lin.split(" ")[0]) == self.id_job:
                     achou = True
-                    estado = linha[35:45].strip()
+                    estado = linha[35:38].strip()
                     break
             if not achou:
                 raise KeyError(f"Não encontrado job {self.id_job} na fila")

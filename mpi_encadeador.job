@@ -2,11 +2,11 @@
 
 CASO=`basename $PWD`
 WORKDIR=$PWD
-DIR_SCRIPTS=~/rotinas/encadeador-pem
-ENCADEIA=$DIR_SCRIPTS/main.py
+DIR_ENCADEADOR=~/rotinas/encadeador-pem
+ENCADEIA=$DIR_ENCADEADOR/main.py
 
 echo Ativando o ambiente virtual
-source $DIR_SCRIPTS/venv/bin/activate
+source $DIR_ENCADEADOR/venv/bin/activate
 
 echo Mudando o diretorio para $WORKDIR
 cd $WORKDIR

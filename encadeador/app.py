@@ -1,3 +1,4 @@
+from os import chdir
 from logging import Logger
 
 from encadeador.modelos.arvorecasos import ArvoreCasos
@@ -14,12 +15,14 @@ class App:
 
     def __init__(self,
                  cfg: Configuracoes,
-                 log: Logger) -> None:
+                 log: Logger,
+                 dir_base: str) -> None:
         self._cfg = cfg
         self._log = log
+        self._dir_base = dir_base
 
     def __constroi_arvore_casos(self) -> ArvoreCasos:
-        self._arvore = ArvoreCasos(self._cfg, self._log)
+        self._arvore = ArvoreCasos(self._cfg, self._log, self._dir_base)
         self._arvore.le_arquivo_casos()
         if not self._arvore.constroi_casos():
             raise RuntimeError("Erro na construção dos Casos")
@@ -62,11 +65,13 @@ class App:
     def executa(self):
         self.__constroi_arvore_casos()
         while not self._arvore.terminou:
+            chdir(self._dir_base)
             prox = self._arvore.proximo_caso
             if (self._arvore._dados_casos[prox.nome] >=
                     self._cfg._maximo_flexibilizacoes_revisao):
                 raise RuntimeError("Máximo de flexibilizações" +
                                    f" no caso: {prox.nome}")
+            chdir(prox.caminho)
             if isinstance(prox, CasoNEWAVE):
                 self.__executa_newave(prox)
             elif isinstance(prox, CasoDECOMP):

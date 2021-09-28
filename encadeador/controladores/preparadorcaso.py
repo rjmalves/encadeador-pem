@@ -5,7 +5,7 @@ from typing import Optional
 
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 from encadeador.controladores.sintetizadorcaso import SintetizadorCasoNEWAVE
-from inewave.newave import DeckEntrada  # type: ignore
+from inewave.newave import DGer  # type: ignore
 from idecomp.decomp.dadger import Dadger  # type: ignore
 
 
@@ -42,25 +42,26 @@ class PreparadorCasoNEWAVE(PreparadorCaso):
                      **kwargs) -> bool:
         log.info(f"Adequando caso do NEWAVE: {self.caso.nome}")
         try:
-            deck = DeckEntrada.le_deck(self.caso.caminho)
-            log.info("Deck de entrada lido com sucesso")
+
             # TODO
             if True:
                 # Adequa o nome do caso
                 nome_estudo = self.caso.configuracoes.nome_estudo
                 ano = self.caso.ano
                 mes = self.caso.mes
-                deck.dger.nome_caso = f"{nome_estudo} - NW {mes}/{ano}"
+                dger = DGer.le_arquivo(self.caso.caminho)
+                log.info("DGer lido com sucesso")
+                dger.nome_caso = f"{nome_estudo} - NW {mes}/{ano}"
                 # Adequa parâmetros de CVAR
                 # TODO
                 # Adequa opção do PAR(p)-A
-                parpa = deck.dger.afluencia_anual_parp
+                parpa = dger.afluencia_anual_parp
                 # TODO
                 parpa[0] = 3
-                deck.dger.afluencia_anual_parp = parpa
+                dger.afluencia_anual_parp = parpa
                 log.info(f"Opção do PAR(p)-A alterada para {parpa}")
                 # Salva o deck de entrada
-                deck.escreve_deck(self.caso.caminho)
+                dger.escreve_arquivo(self.caso.caminho)
                 log.info("Adequação do caso concluída com sucesso")
             return True
         except FileNotFoundError as e:
