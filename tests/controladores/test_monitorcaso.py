@@ -4,7 +4,7 @@ import time
 from typing import List
 from pytest_mock.plugin import MockerFixture
 
-from encadeador.modelos.caso import Configuracoes
+from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.caso import CasoNEWAVE
 from encadeador.modelos.caso import CasoDECOMP
 from encadeador.controladores.monitorcaso import MonitorNEWAVE
@@ -91,6 +91,12 @@ def test_monitor_newave_execucao_sucesso(mocker: MockerFixture):
                   ]
     mocker.patch("encadeador.controladores.gerenciadorfila.executa_terminal",
                  side_effect = g.mock_executa_terminal)
+    mocker.patch("encadeador.controladores.monitorcaso.ArmazenadorCaso" +
+                 ".armazena_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.monitorcaso" +
+                 ".SintetizadorCasoNEWAVE.sintetiza_caso",
+                 return_value=True)
     MonitorNEWAVE.INTERVALO_POLL = 1
     r = m.executa_caso(log)
     assert m.caso.numero_tentativas == 1
@@ -124,6 +130,12 @@ def test_monitor_newave_execucao_timeout_comunicacao(mocker: MockerFixture):
                  return_value=0.)
     mocker.patch("encadeador.controladores.gerenciadorfila.isfile",
                  return_value=True)
+    mocker.patch("encadeador.controladores.monitorcaso.ArmazenadorCaso" +
+                 ".armazena_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.monitorcaso" +
+                 ".SintetizadorCasoNEWAVE.sintetiza_caso",
+                 return_value=True)
     MonitorNEWAVE.INTERVALO_POLL = 2
     MonitorNEWAVE.MAX_RETRY = 2
     r = m.executa_caso(log)
@@ -151,7 +163,13 @@ def test_monitor_decomp_execucao_sucesso(mocker: MockerFixture):
                    " 13:17:19                                   72           "]
                   ]
     mocker.patch("encadeador.controladores.gerenciadorfila.executa_terminal",
-                 side_effect = g.mock_executa_terminal)
+                 side_effect=g.mock_executa_terminal)
+    mocker.patch("encadeador.controladores.monitorcaso.ArmazenadorCaso" +
+                 ".armazena_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.monitorcaso" +
+                 ".SintetizadorCasoDECOMP.sintetiza_caso",
+                 return_value=True)
     MonitorDECOMP.INTERVALO_POLL = 1
     r = m.executa_caso(log)
     assert m.caso.numero_tentativas == 1
@@ -184,6 +202,12 @@ def test_monitor_decomp_execucao_timeout_comunicacao(mocker: MockerFixture):
     mocker.patch("encadeador.controladores.gerenciadorfila.getmtime",
                  return_value=0.)
     mocker.patch("encadeador.controladores.gerenciadorfila.isfile",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.monitorcaso.ArmazenadorCaso" +
+                 ".armazena_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.monitorcaso" +
+                 ".SintetizadorCasoDECOMP.sintetiza_caso",
                  return_value=True)
     MonitorDECOMP.INTERVALO_POLL = 2
     MonitorDECOMP.MAX_RETRY = 2

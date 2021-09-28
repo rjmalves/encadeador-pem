@@ -1,0 +1,10 @@
+inewave
+idecomp
+mypy
+pylama
+numpy
+pandas
+python-dotenv
+pytest
+pytest-cov
+pytest-mock

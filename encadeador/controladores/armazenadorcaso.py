@@ -1,11 +1,11 @@
-import pandas as pd
+import pandas as pd  # type: ignore
 from logging import Logger
 from os.path import isfile
 from os.path import join
 
+from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.estadojob import EstadoJob
 from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
-from encadeador.modelos.caso import Configuracoes
 
 NOME_ARQUIVO_ESTADO = "caso_encadeado.csv"
 
@@ -29,7 +29,7 @@ class ArmazenadorCaso:
                      "Estado": [str(estado.value)],
                      "Tentativas": [self.caso.numero_tentativas],
                      "Processadores": [self.caso.numero_processadores],
-                     "Sucesso": [self.caso.sucesso],
+                     "Sucesso": [int(self.caso.sucesso)],
                      "Entrada Fila": [self.caso.instante_entrada_fila],
                      "Inicio Execucao": [self.caso.instante_inicio_execucao],
                      "Fim Execucao": [self.caso.instante_fim_execucao],
@@ -43,17 +43,25 @@ class ArmazenadorCaso:
                                  f" suportado: {type(self.caso)}")
             df = pd.DataFrame(data=dados)
             df.to_csv(join(self.caso.caminho, NOME_ARQUIVO_ESTADO),
-                    header=True,
-                    encoding="utf-8")
+                      header=True,
+                      encoding="utf-8")
             return True
         except Exception as e:
             self._log.error("Erro no armazenamento do caso" +
                             f" {self._caso.nome}: {e}")
             return False
-    
+
     @staticmethod
     def recupera_caso(cfg: Configuracoes,
                       caminho: str) -> Caso:
+
+        def escolhe_programa_caso(prog: str) -> Caso:
+            if prog == "NEWAVE":
+                return CasoNEWAVE()
+            elif prog == "DECOMP":
+                return CasoDECOMP()
+            else:
+                raise ValueError(f"Programa {prog} não suportado")
         # Se não tem arquivo de resumo, o caso não começou a ser rodado
         arq = join(caminho, NOME_ARQUIVO_ESTADO)
         if not isfile(arq):
@@ -62,12 +70,7 @@ class ArmazenadorCaso:
         # Se tem, então o caso pelo menos começou
         df = pd.read_csv(arq, index_col=0)
         prog = str(df.loc[:, "Programa"].tolist()[0])
-        if prog == "NEWAVE":
-            c = CasoNEWAVE()
-        elif prog == "DECOMP":
-            c = CasoDECOMP()
-        else:
-            raise ValueError(f"Programa {prog} não suportado")
+        c = escolhe_programa_caso(prog)
         # Atribui os dados armazenados
         c._caminho_caso = str(df.loc[:, "Caminho"].tolist()[0])
         c._nome_caso = str(df.loc[:, "Nome"].tolist()[0])
@@ -75,14 +78,14 @@ class ArmazenadorCaso:
         c._mes_caso = int(df.loc[:, "Mes"].tolist()[0])
         c._revisao_caso = int(df.loc[:, "Revisao"].tolist()[0])
         c._configuracoes = cfg
-        c._instante_entrada_fila = str(df.loc[:, "Entrada Fila"].tolist()[0])
-        c._instante_inicio_execucao = str(df.loc[:,
-                                                 "Inicio Execucao"].tolist()
-                                          [0])
-        c._instante_fim_execucao = str(df.loc[:, "Fim Execucao"].tolist()[0])
-        c._numero_tentativas = str(df.loc[:, "Tentativas"].tolist()[0])
-        c._numero_processadores = str(df.loc[:, "Processadores"].tolist()[0])
-        c._sucesso = str(df.loc[:, "Sucesso"].tolist()[0])
+        c._instante_entrada_fila = float(df.loc[:, "Entrada Fila"].tolist()[0])
+        c._instante_inicio_execucao = float(df.loc[:,
+                                                   "Inicio Execucao"].tolist()
+                                            [0])
+        c._instante_fim_execucao = float(df.loc[:, "Fim Execucao"].tolist()[0])
+        c._numero_tentativas = int(df.loc[:, "Tentativas"].tolist()[0])
+        c._numero_processadores = int(df.loc[:, "Processadores"].tolist()[0])
+        c._sucesso = bool(int(df.loc[:, "Sucesso"].tolist()[0]))
         return c
 
     @property

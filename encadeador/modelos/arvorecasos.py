@@ -1,9 +1,9 @@
 from logging import Logger
 from os import listdir, sep
-from typing import List, Optional
+from typing import List, Dict, Optional
 from os.path import isdir, join, normpath
 
-from encadeador.modelos.caso import Configuracoes
+from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 
@@ -18,10 +18,11 @@ class ArvoreCasos:
         self._diretorios_revisoes: List[str] = []
         self._diretorios_casos: List[str] = []
         self._casos: List[Caso] = []
+        self._dados_casos: Dict[str, int] = {}
 
     def __verifica_inicializacao(self, valor):
         if len(valor) == 0:
-            raise ValueError(f"ArvoreCasos não inicializada!")
+            raise ValueError("ArvoreCasos não inicializada!")
 
     def le_arquivo_casos(self):
 
@@ -55,14 +56,14 @@ class ArvoreCasos:
             # Identifica o programa
             diretorio_prog = pastas[-1]
             if self._configuracoes.diretorio_newave == diretorio_prog:
-                caso = CasoNEWAVE()
-                caso.configura_caso(c, ano, mes, rv, self._configuracoes)
-                self._casos.append(caso)
+                caso_nw = CasoNEWAVE()
+                caso_nw.configura_caso(c, ano, mes, rv, self._configuracoes)
+                self._casos.append(caso_nw)
                 return True
             elif self._configuracoes.diretorio_decomp == diretorio_prog:
-                caso = CasoDECOMP()
-                caso.configura_caso(c, ano, mes, rv, self._configuracoes)
-                self._casos.append(caso)
+                caso_dcp = CasoDECOMP()
+                caso_dcp.configura_caso(c, ano, mes, rv, self._configuracoes)
+                self._casos.append(caso_dcp)
                 return True
             else:
                 self._log.error(f"Diretório inválido: {diretorio_prog}")
@@ -73,11 +74,12 @@ class ArvoreCasos:
                 caso = ArmazenadorCaso.recupera_caso(self._configuracoes,
                                                      c)
                 self._casos.append(caso)
-            except FileNotFoundError as e:
+            except FileNotFoundError:
                 ret = __le_caso(c)
                 if not ret:
                     return False
-
+        self._dados_casos = {n: 0 for n in
+                             [c.nome for c in self.casos]}
         return True
 
     @property
@@ -93,6 +95,7 @@ class ArvoreCasos:
                     return c
             except ValueError:
                 return c
+        return None
 
     @property
     def proximo_newave(self) -> Optional[CasoNEWAVE]:
@@ -101,7 +104,9 @@ class ArvoreCasos:
                 if isinstance(c, CasoNEWAVE) and not c.sucesso:
                     return c
             except ValueError:
-                return c
+                if isinstance(c, CasoNEWAVE):
+                    return c
+        return None
 
     @property
     def proximo_decomp(self) -> Optional[CasoDECOMP]:
@@ -110,7 +115,9 @@ class ArvoreCasos:
                 if isinstance(c, CasoDECOMP) and not c.sucesso:
                     return c
             except ValueError:
-                return c
+                if isinstance(c, CasoDECOMP):
+                    return c
+        return None
 
     @property
     def ultimo_caso(self) -> Optional[Caso]:
@@ -144,3 +151,13 @@ class ArvoreCasos:
             except ValueError:
                 break
         return c_convergido
+
+    @property
+    def terminou(self) -> bool:
+        sucesso: List[bool] = []
+        try:
+            for c in self.casos:
+                sucesso.append(c.sucesso)
+        except ValueError:
+            return False
+        return all(sucesso)

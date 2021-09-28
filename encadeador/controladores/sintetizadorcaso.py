@@ -1,12 +1,18 @@
 from logging import Logger
-from os.path import join, isdir
-from os import makedirs
+from os.path import join, isdir, isfile
+from os import makedirs, listdir, remove
 from abc import abstractmethod
+from typing import List
+from zipfile import ZipFile
+from logging import Logger
 
-from inewave.newave import PMO
+from inewave.newave import DeckEntrada, PMO  # type: ignore
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 
 DIRETORIO_RESUMO_CASO = "resumo"
+PADRAO_ZIP_DECK_NEWAVE = "deck_"
+PADRAO_ZIP_SAIDAS_NEWAVE = "saidas_"
+PADRAO_ZIP_SAIDAS_NWLISTOP = "_out"
 
 
 class SintetizadorCaso:
@@ -62,6 +68,55 @@ class SintetizadorCasoNEWAVE(SintetizadorCaso):
         except Exception as e:
             self._log.error(f"Erro de síntese do caso {self.caso.nome}: {e}")
             return False
+
+    def __procura_zip_saida(self) -> str:
+        caminho = self.caso.caminho
+        arqs_dir = listdir(caminho)
+        padrao = PADRAO_ZIP_SAIDAS_NEWAVE
+        try:
+            arq_zip = [a for a in arqs_dir if padrao in a][0]
+            if not isfile(join(caminho, arq_zip)):
+                raise ValueError
+            self._log.info(f"Encontrado arquivo com {padrao} em {caminho}")
+            return join(caminho, arq_zip)
+        except Exception as e:
+            self._log.error(f"Nao foi encontrado um zip com {padrao}")
+            raise e
+
+    @property
+    def _nomes_arquivos_cortes(self) -> List[str]:
+        deck = DeckEntrada.le_deck(self.caso.caminho)
+        arq_cortes = deck.arquivos.cortes
+        arq_cortesh = deck.arquivos.cortesh
+        return [arq_cortes, arq_cortesh]
+
+    def extrai_cortes(self):
+        arq_zip = self.__procura_zip_saida()
+        try:
+            with ZipFile(arq_zip, "r") as obj_zip:
+                arqs = obj_zip.namelist()
+                for a in self._nomes_arquivos_cortes:
+                    if a not in arqs:
+                        raise ValueError(a)
+                    self._log.info(f"Extraindo {a} de {arq_zip}...")
+                    obj_zip.extract(a, self.caso.caminho)
+        except ValueError as v:
+            self._log.error(f"Não foi encontrado o arquivo {str(v)}")
+
+    def deleta_cortes(self):
+        for a in self._nomes_arquivos_cortes:
+            caminho = join(self.caso.caminho, a)
+            if isfile(caminho):
+                remove(caminho)
+                self._log.info(f"Arquivo {caminho} deletado")
+            else:
+                raise ValueError(f"Arquivo {caminho} não deletado")
+
+    def verifica_cortes_extraidos(self) -> bool:
+        arqs_dir = listdir(self.caso.caminho)
+        cortes_extraidos = [c in arqs_dir for c in
+                            self._nomes_arquivos_cortes]
+        return all(cortes_extraidos)
 
 
 class SintetizadorCasoDECOMP(SintetizadorCaso):

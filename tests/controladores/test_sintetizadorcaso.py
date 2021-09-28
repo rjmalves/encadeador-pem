@@ -1,7 +1,8 @@
 import logging
 import pytest
+from pytest_mock.plugin import MockerFixture
 
-from encadeador.modelos.caso import Configuracoes
+from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.caso import CasoNEWAVE
 from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
 from encadeador.controladores.sintetizadorcaso import SintetizadorCasoNEWAVE
@@ -35,3 +36,16 @@ def test_sintetizador_decomp():
     s = SintetizadorCasoDECOMP(c, log)
     r = s.sintetiza_caso()
     assert r
+
+
+def test_sintetizador_extrai_deleta_cortes_sucesso(mocker: MockerFixture):
+    c = ArmazenadorCaso.recupera_caso(Configuracoes(),
+                                      CAMINHO_TESTE_NW)
+    s = SintetizadorCasoNEWAVE(c, log)
+    mocker.patch("encadeador.controladores.sintetizadorcaso" +
+                 ".SintetizadorCasoNEWAVE._nomes_arquivos_cortes",
+                 return_value=["cortes.dat", "cortesh.dat"])
+    if not s.verifica_cortes_extraidos():
+        s.extrai_cortes()
+    if s.verifica_cortes_extraidos():
+        s.deleta_cortes()

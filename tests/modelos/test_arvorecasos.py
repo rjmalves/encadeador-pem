@@ -4,7 +4,7 @@ from os import chdir
 from os.path import join
 from logging import getLogger
 
-from encadeador.modelos.caso import Configuracoes
+from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.caso import CasoNEWAVE
 from encadeador.modelos.caso import CasoDECOMP
 from encadeador.modelos.arvorecasos import ArvoreCasos

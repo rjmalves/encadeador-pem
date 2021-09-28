@@ -4,8 +4,9 @@ from logging import Logger
 from typing import Optional
 
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
-from inewave.newave import DeckEntrada
-from idecomp.decomp.dadger import Dadger
+from encadeador.controladores.sintetizadorcaso import SintetizadorCasoNEWAVE
+from inewave.newave import DeckEntrada  # type: ignore
+from idecomp.decomp.dadger import Dadger  # type: ignore
 
 
 class PreparadorCaso:
@@ -107,10 +108,17 @@ class PreparadorCasoDECOMP(PreparadorCaso):
                 # Adequa registro GP
                 # TODO
                 # Adequa os registros FC (cortes e cortesh)
-                caso_cortes: CasoNEWAVE = kwargs.get("caso_cortes")
-                if caso_cortes is None:
-                    log.error(f"Erro na especificação dos cortes da FCF")
+                caso_entrada = kwargs.get("caso_cortes")
+                if caso_entrada is None or not isinstance(caso_entrada,
+                                                          CasoNEWAVE):
+                    log.error("Erro na especificação dos cortes da FCF")
                     return False
+                caso_cortes: CasoNEWAVE = caso_entrada
+                # Verifica se é necessário e extrai os cortes
+                sintetizador = SintetizadorCasoNEWAVE(caso_cortes, log)
+                if not sintetizador.verifica_cortes_extraidos():
+                    sintetizador.extrai_cortes()
+                # Altera os registros FC
                 deck = DeckEntrada.le_deck(caso_cortes.caminho)
                 dadger.fc("NEWV21").caminho = join(caso_cortes.caminho,
                                                    deck.arquivos.cortesh)

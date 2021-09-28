@@ -4,7 +4,7 @@ import time
 from typing import List
 from pytest_mock.plugin import MockerFixture
 
-from encadeador.modelos.caso import Configuracoes
+from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.caso import CasoNEWAVE
 from encadeador.modelos.caso import CasoDECOMP
 from encadeador.modelos.estadojob import EstadoJob

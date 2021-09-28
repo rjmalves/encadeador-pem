@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class EstadoJob(Enum):
     NAO_INICIADO = "NAO INICIADO"
     ESPERANDO = "ESPERANDO"

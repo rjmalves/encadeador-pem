@@ -4,7 +4,7 @@ import pytest
 from encadeador.modelos.caso import Caso
 from encadeador.modelos.caso import CasoNEWAVE
 from encadeador.modelos.caso import CasoDECOMP
-from encadeador.modelos.caso import Configuracoes
+from encadeador.modelos.configuracoes import Configuracoes
 
 CAMINHO_TESTE = "/home/user"
 ANO_TESTE = 2021

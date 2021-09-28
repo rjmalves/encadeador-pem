@@ -19,9 +19,9 @@ def executa_terminal(cmds: List[str],
     """
     cmd = " ".join(cmds)
     processo = subprocess.Popen(cmd,
-                               stdout=subprocess.PIPE,
-                               shell=True,
-                               universal_newlines=True)
+                                stdout=subprocess.PIPE,
+                                shell=True,
+                                universal_newlines=True)
     t_inicio = time.time()
     linhas_saida: List[str] = []
     while True:

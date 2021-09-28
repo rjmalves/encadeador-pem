@@ -24,7 +24,7 @@ class GerenciadorFila:
 
     def __confere_inicializacao(self, valor):
         if valor is None:
-            raise ValueError(f"Gerenciador de Fila não inicializado!")
+            raise ValueError("Gerenciador de Fila não inicializado!")
 
     # Factory Method
     @staticmethod
@@ -182,7 +182,7 @@ class GerenciadorFilaSGE(GerenciadorFila):
                     estado = linha[35:45].strip()
                     break
             if not achou:
-                raise KeyError(f"Não foi encontrado o job {self.id_job} na fila")
+                raise KeyError(f"Não encontrado job {self.id_job} na fila")
             return estado
 
         # Verificações de erro:
@@ -205,7 +205,7 @@ class GerenciadorFilaSGE(GerenciadorFila):
         else:
             raise ValueError(f"Estado de job '{estado}' desconhecido!")
         return estadojob
-        
+
     def deleta_job(self) -> bool:
         ti = time.time()
         try:

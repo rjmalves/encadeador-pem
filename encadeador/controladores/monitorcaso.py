@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import List, Tuple
+from typing import Tuple
 from logging import Logger
 from os.path import join
 from os import listdir
@@ -8,10 +8,9 @@ import time
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 from encadeador.modelos.estadojob import EstadoJob
 from encadeador.controladores.gerenciadorfila import GerenciadorFila
-
-
-# STUB para o objeto verdadeiro
-from encadeador.modelos.caso import Configuracoes
+from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
+from encadeador.controladores.sintetizadorcaso import SintetizadorCasoNEWAVE
+from encadeador.controladores.sintetizadorcaso import SintetizadorCasoDECOMP
 
 
 class MonitorCaso:
@@ -20,6 +19,7 @@ class MonitorCaso:
     de um caso em um gerenciador de filas.
     """
     INTERVALO_POLL = 5.0
+
     def __init__(self, caso: Caso):
         self._caso = caso
         g = caso.configuracoes.gerenciador_fila
@@ -46,6 +46,8 @@ class MonitorNEWAVE(MonitorCaso):
 
     @property
     def caso(self) -> CasoNEWAVE:
+        if not isinstance(self._caso, CasoNEWAVE):
+            raise ValueError("MonitorNEWAVE tem um caso não de NEWAVE")
         return self._caso
 
     def __obtem_caminho_job(self) -> str:
@@ -78,12 +80,12 @@ class MonitorNEWAVE(MonitorCaso):
         retry = False
         iniciou = False
         if (self._gerenciador.tempo_job_idle >
-            MonitorNEWAVE.TIMEOUT_COMUNICACAO):
+                MonitorNEWAVE.TIMEOUT_COMUNICACAO):
             log.info(f"Erro de comunicacao no caso: {self.caso.nome}.")
             s = self._gerenciador.deleta_job()
             if not s:
                 raise ValueError("Erro ao deletar o job " +
-                                    f"{self.caso.nome}")
+                                 f"{self.caso.nome}")
             retry = True
         if not iniciou:
             iniciou = True
@@ -109,6 +111,7 @@ class MonitorNEWAVE(MonitorCaso):
             self._gerenciador.agenda_job(self._caminho_job,
                                          self._nome_job,
                                          self.caso.numero_processadores)
+            armazenador = ArmazenadorCaso(self.caso, log)
             ultimo_estado = EstadoJob.ESPERANDO
             retry = False
             iniciou = False
@@ -129,6 +132,8 @@ class MonitorNEWAVE(MonitorCaso):
                 elif estado == EstadoJob.ERRO:
                     retry = self._trata_caso_erro(log)
                 ultimo_estado = estado
+                if not armazenador.armazena_caso(estado):
+                    raise ValueError()
                 time.sleep(MonitorNEWAVE.INTERVALO_POLL)
         except TimeoutError as e:
             log.error(f"Timeout na execução do job {self.caso.nome}: {e}")
@@ -138,6 +143,11 @@ class MonitorNEWAVE(MonitorCaso):
             return False
         except KeyError as e:
             if ultimo_estado == EstadoJob.EXECUTANDO:
+                sintetizador = SintetizadorCasoNEWAVE(self.caso, log)
+                if not armazenador.armazena_caso(EstadoJob.CONCLUIDO):
+                    return False
+                if not sintetizador.sintetiza_caso():
+                    return False
                 return True
             else:
                 log.error(f"Erro na execução do job {self.caso.nome}: {e}")
@@ -156,19 +166,21 @@ class MonitorDECOMP(MonitorCaso):
 
     @property
     def caso(self) -> CasoDECOMP:
+        if not isinstance(self._caso, CasoDECOMP):
+            raise ValueError("MonitorDECOMP tem um caso não de DECOMP")
         return self._caso
 
     def __obtem_caminho_job(self) -> str:
         cfg = self.caso.configuracoes
         dir_base = cfg.diretorio_instalacao_decomps
-        versao = cfg.versao_newave
+        versao = cfg.versao_decomp
         dir_versao = join(dir_base, versao)
         arquivos_versao = listdir(dir_versao)
         arq_job = [a for a in arquivos_versao if ".job" in a]
         return join(dir_versao, arq_job[0])
 
     def __obtem_nome_job(self) -> str:
-        return f"NW{self.caso.ano}{self.caso.mes}"
+        return f"DC{self.caso.ano}{self.caso.mes}{self.caso.revisao}"
 
     def _trata_caso_retry(self, log: Logger):
         if self.caso.numero_tentativas >= MonitorDECOMP.MAX_RETRY:
@@ -188,12 +200,12 @@ class MonitorDECOMP(MonitorCaso):
         retry = False
         iniciou = False
         if (self._gerenciador.tempo_job_idle >
-            MonitorDECOMP.TIMEOUT_COMUNICACAO):
+                MonitorDECOMP.TIMEOUT_COMUNICACAO):
             log.info(f"Erro de comunicacao no caso: {self.caso.nome}.")
             s = self._gerenciador.deleta_job()
             if not s:
                 raise ValueError("Erro ao deletar o job " +
-                                    f"{self.caso.nome}")
+                                 f"{self.caso.nome}")
             retry = True
         if not iniciou:
             iniciou = True
@@ -219,6 +231,7 @@ class MonitorDECOMP(MonitorCaso):
             self._gerenciador.agenda_job(self._caminho_job,
                                          self._nome_job,
                                          self.caso.numero_processadores)
+            armazenador = ArmazenadorCaso(self.caso, log)
             ultimo_estado = EstadoJob.ESPERANDO
             retry = False
             iniciou = False
@@ -239,6 +252,8 @@ class MonitorDECOMP(MonitorCaso):
                 elif estado == EstadoJob.ERRO:
                     retry = self._trata_caso_erro(log)
                 ultimo_estado = estado
+                if not armazenador.armazena_caso(estado):
+                    raise ValueError()
                 time.sleep(MonitorDECOMP.INTERVALO_POLL)
         except TimeoutError as e:
             log.error(f"Timeout na execução do job {self.caso.nome}: {e}")
@@ -248,6 +263,11 @@ class MonitorDECOMP(MonitorCaso):
             return False
         except KeyError as e:
             if ultimo_estado == EstadoJob.EXECUTANDO:
+                sintetizador = SintetizadorCasoDECOMP(self.caso, log)
+                if not armazenador.armazena_caso(EstadoJob.CONCLUIDO):
+                    return False
+                if not sintetizador.sintetiza_caso():
+                    return False
                 return True
             else:
                 log.error(f"Erro na execução do job {self.caso.nome}: {e}")
