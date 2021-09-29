@@ -36,26 +36,23 @@ class App:
             if sintetizador.verifica_cortes_extraidos():
                 sintetizador.deleta_cortes()
 
-        preparador = PreparadorCasoNEWAVE(caso)
-        monitor = MonitorNEWAVE(caso)
-        if not preparador.prepara_caso(self._log):
+        preparador = PreparadorCasoNEWAVE(caso, self._log)
+        monitor = MonitorNEWAVE(caso, self._log)
+        if not preparador.prepara_caso():
             raise RuntimeError(f"Erro na preparação do NW {caso.nome}")
-        if not preparador.encadeia_variaveis(self._arvore.ultimo_decomp,
-                                             self._log):
+        if not preparador.encadeia_variaveis(self._arvore.ultimo_decomp):
             raise RuntimeError(f"Erro no encadeamento do NW {caso.nome}")
-        if not monitor.executa_caso(self._log):
+        if not monitor.executa_caso():
             raise RuntimeError(f"Erro na execução do NW {caso.nome}")
 
     def __executa_decomp(self, caso: CasoDECOMP):
-        preparador = PreparadorCasoDECOMP(caso)
-        monitor = MonitorDECOMP(caso)
-        if not preparador.prepara_caso(self._log,
-                                       caso_cortes=self._arvore.ultimo_newave):
+        preparador = PreparadorCasoDECOMP(caso, self._log)
+        monitor = MonitorDECOMP(caso, self._log)
+        if not preparador.prepara_caso(caso_cortes=self._arvore.ultimo_newave):
             raise RuntimeError(f"Erro na preparação do DCP {caso.nome}")
-        if not preparador.encadeia_variaveis(self._arvore.ultimo_decomp,
-                                             self._log):
+        if not preparador.encadeia_variaveis(self._arvore.ultimo_decomp):
             raise RuntimeError(f"Erro no encadeamento do DCP {caso.nome}")
-        if not monitor.executa_caso(self._log):
+        if not monitor.executa_caso():
             raise RuntimeError(f"Erro na execução do DCP {caso.nome}")
 
     def __atualiza_informacoes_caso(self, caso: Caso):
