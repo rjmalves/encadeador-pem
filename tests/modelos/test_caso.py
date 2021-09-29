@@ -1,15 +1,28 @@
 import time
 import pytest
+from dotenv import load_dotenv
 
 from encadeador.modelos.caso import Caso
 from encadeador.modelos.caso import CasoNEWAVE
 from encadeador.modelos.caso import CasoDECOMP
 from encadeador.modelos.configuracoes import Configuracoes
 
+ARQ_CFG = "./tests/modelos/_arquivos/valido.cfg"
 CAMINHO_TESTE = "/home/user"
 ANO_TESTE = 2021
 MES_TESTE = 1
 REVISAO_TESTE = 0
+
+
+def constroi_caso_configurado_teste(caso: Caso) -> Caso:
+    load_dotenv(ARQ_CFG, override=True)
+    cfg = Configuracoes.le_variaveis_ambiente()
+    caso.configura_caso(CAMINHO_TESTE,
+                        ANO_TESTE,
+                        MES_TESTE,
+                        REVISAO_TESTE,
+                        cfg)
+    return caso
 
 
 def test_caso_nao_configurado_nome():
@@ -55,22 +68,12 @@ def test_caso_nao_configurado_sucesso():
 
 
 def test_configura_caso():
-    c = Caso()
-    c.configura_caso(CAMINHO_TESTE,
-                     ANO_TESTE,
-                     MES_TESTE,
-                     REVISAO_TESTE,
-                     Configuracoes())
+    c = constroi_caso_configurado_teste(Caso())
     assert c.caminho == CAMINHO_TESTE
 
 
 def test_inicializa_parametros():
-    c = Caso()
-    c.configura_caso(CAMINHO_TESTE,
-                     ANO_TESTE,
-                     MES_TESTE,
-                     REVISAO_TESTE,
-                     Configuracoes())
+    c = constroi_caso_configurado_teste(Caso())
     c.inicializa_parametros_execucao()
     assert c.tempo_fila == 0
     assert c.tempo_execucao == 0
@@ -79,12 +82,7 @@ def test_inicializa_parametros():
 
 
 def test_reseta_parametros():
-    c = Caso()
-    c.configura_caso(CAMINHO_TESTE,
-                     ANO_TESTE,
-                     MES_TESTE,
-                     REVISAO_TESTE,
-                     Configuracoes())
+    c = constroi_caso_configurado_teste(Caso())
     c.inicializa_parametros_execucao()
     c.coloca_caso_na_fila()
     c.reseta_parametros_execucao()
@@ -95,12 +93,7 @@ def test_reseta_parametros():
 
 
 def test_tempo_fila():
-    c = Caso()
-    c.configura_caso(CAMINHO_TESTE,
-                     ANO_TESTE,
-                     MES_TESTE,
-                     REVISAO_TESTE,
-                     Configuracoes())
+    c = constroi_caso_configurado_teste(Caso())
     c.inicializa_parametros_execucao()
     c.coloca_caso_na_fila()
     time.sleep(0.1)
@@ -112,12 +105,7 @@ def test_tempo_fila():
 
 
 def test_tempo_execucao():
-    c = Caso()
-    c.configura_caso(CAMINHO_TESTE,
-                     ANO_TESTE,
-                     MES_TESTE,
-                     REVISAO_TESTE,
-                     Configuracoes())
+    c = constroi_caso_configurado_teste(Caso())
     c.inicializa_parametros_execucao()
     c.coloca_caso_na_fila()
     c.inicia_caso()
@@ -130,12 +118,7 @@ def test_tempo_execucao():
 
 
 def test_numero_tentativas():
-    c = Caso()
-    c.configura_caso(CAMINHO_TESTE,
-                     ANO_TESTE,
-                     MES_TESTE,
-                     REVISAO_TESTE,
-                     Configuracoes())
+    c = constroi_caso_configurado_teste(Caso())
     c.inicializa_parametros_execucao()
     c.coloca_caso_na_fila()
     c.inicia_caso()
@@ -145,12 +128,7 @@ def test_numero_tentativas():
 
 
 def test_sucesso():
-    c = Caso()
-    c.configura_caso(CAMINHO_TESTE,
-                     ANO_TESTE,
-                     MES_TESTE,
-                     REVISAO_TESTE,
-                     Configuracoes())
+    c = constroi_caso_configurado_teste(Caso())
     c.inicializa_parametros_execucao()
     c.coloca_caso_na_fila()
     c.inicia_caso()
@@ -167,25 +145,15 @@ def test_caso_newave_nao_configurado():
 
 
 def test_caso_newave_configurado():
-    c = CasoNEWAVE()
-    c.configura_caso(CAMINHO_TESTE,
-                     ANO_TESTE,
-                     MES_TESTE,
-                     REVISAO_TESTE,
-                     Configuracoes())
+    c = constroi_caso_configurado_teste(CasoNEWAVE())
     assert c.ano == ANO_TESTE
     assert c.mes == MES_TESTE
 
 
 def test_caso_newave_numero_processadores():
-    c = CasoNEWAVE()
-    c.configura_caso(CAMINHO_TESTE,
-                     ANO_TESTE,
-                     MES_TESTE,
-                     REVISAO_TESTE,
-                     Configuracoes())
+    c = constroi_caso_configurado_teste(CasoNEWAVE())
     c.inicializa_parametros_execucao()
-    assert c.numero_processadores == 72
+    assert c.numero_processadores == 1
 
 
 def test_caso_decomp_nao_configurado():
@@ -197,22 +165,12 @@ def test_caso_decomp_nao_configurado():
 
 
 def test_caso_decomp_configurado():
-    c = CasoDECOMP()
-    c.configura_caso(CAMINHO_TESTE,
-                     ANO_TESTE,
-                     MES_TESTE,
-                     REVISAO_TESTE,
-                     Configuracoes())
+    c = constroi_caso_configurado_teste(CasoDECOMP())
     assert c.ano == ANO_TESTE
     assert c.mes == MES_TESTE
 
 
 def test_caso_decomp_numero_processadores():
-    c = CasoDECOMP()
-    c.configura_caso(CAMINHO_TESTE,
-                     ANO_TESTE,
-                     MES_TESTE,
-                     REVISAO_TESTE,
-                     Configuracoes())
+    c = constroi_caso_configurado_teste(CasoDECOMP())
     c.inicializa_parametros_execucao()
-    assert c.numero_processadores == 72
+    assert c.numero_processadores == 1

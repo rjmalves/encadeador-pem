@@ -19,15 +19,15 @@ log = logging.getLogger()
 def test_preparador_caso_nao_inicializado():
     with pytest.raises(ValueError):
         c = CasoNEWAVE()
-        p = PreparadorCasoNEWAVE(c)
-        p.prepara_caso(log)
+        p = PreparadorCasoNEWAVE(c, log)
+        p.prepara_caso()
 
 
 def test_preparador_newave():
     c = ArmazenadorCaso.recupera_caso(Configuracoes(),
                                       CAMINHO_TESTE_NW)
-    p = PreparadorCasoNEWAVE(c)
-    r = p.prepara_caso(log)
+    p = PreparadorCasoNEWAVE(c, log)
+    r = p.prepara_caso()
     assert r
 
 
@@ -36,9 +36,9 @@ def test_preparador_decomp(mocker: MockerFixture):
                                           CAMINHO_TESTE_NW)
     c = ArmazenadorCaso.recupera_caso(Configuracoes(),
                                       CAMINHO_TESTE_DCP)
-    p = PreparadorCasoDECOMP(c)
+    p = PreparadorCasoDECOMP(c, log)
     m = mocker.patch("encadeador.controladores.preparadorcaso" +
                      ".SintetizadorCasoNEWAVE.verifica_cortes_extraidos")
     m.return_value = True
-    r = p.prepara_caso(log, caso_cortes=c_ant)
+    r = p.prepara_caso(caso_cortes=c_ant)
     assert r

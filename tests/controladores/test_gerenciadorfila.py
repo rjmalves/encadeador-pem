@@ -62,7 +62,7 @@ def test_sge_estado_job_fila_qw(mock_executa_terminal: MockerFixture):
                  "nw_teste",
                  72)
     str_stat = ["", "",
-                "    123 0.00000 pmo        pem          qw    09/22/2021" +
+                "123 0.00000 pmo        pem          qw    09/22/2021" +
                 " 13:17:19                                   72           "]
     mock_executa_terminal.return_value = (0, str_stat)
     assert g.estado_job == EstadoJob.ESPERANDO
@@ -76,7 +76,7 @@ def test_sge_estado_job_fila_t(mock_executa_terminal: MockerFixture):
                  "nw_teste",
                  72)
     str_stat = ["", "",
-                "    123 0.00000 pmo        pem          t     09/22/2021" +
+                "123 0.00000 pmo        pem          t     09/22/2021" +
                 " 13:17:19                                   72           "]
     mock_executa_terminal.return_value = (0, str_stat)
     assert g.estado_job == EstadoJob.ESPERANDO
@@ -90,7 +90,7 @@ def test_sge_estado_job_fila_executando(mock_executa_terminal: MockerFixture):
                  "nw_teste",
                  72)
     str_stat = ["", "",
-                "    123 0.00000 pmo        pem          r     09/22/2021" +
+                "123 0.00000 pmo        pem          r     09/22/2021" +
                 " 13:17:19                                   72           "]
     mock_executa_terminal.return_value = (0, str_stat)
     assert g.estado_job == EstadoJob.EXECUTANDO
@@ -104,7 +104,7 @@ def test_sge_estado_job_deletando(mock_executa_terminal: MockerFixture):
                  "nw_teste",
                  72)
     str_stat = ["", "",
-                "    123 0.00000 pmo        pem          dr    09/22/2021" +
+                "123 0.00000 pmo        pem          dr    09/22/2021" +
                 " 13:17:19                                   72           "]
     mock_executa_terminal.return_value = (0, str_stat)
     assert g.estado_job == EstadoJob.DELETANDO
@@ -118,7 +118,7 @@ def test_sge_estado_job_fila_erro(mock_executa_terminal: MockerFixture):
                  "nw_teste",
                  72)
     str_stat = ["", "",
-                "    123 0.00000 pmo        pem          de    09/22/2021" +
+                "123 0.00000 pmo        pem          de    09/22/2021" +
                 " 13:17:19                                   72           "]
     mock_executa_terminal.return_value = (0, str_stat)
     assert g.estado_job == EstadoJob.ERRO
@@ -137,9 +137,10 @@ def test_sge_deleta_job(mock_executa_terminal: MockerFixture):
     assert r
 
 
-def test_sge_erro_agenda_caso():
+def test_sge_erro_agenda_caso(mock_executa_terminal: MockerFixture):
     with pytest.raises(IndexError):
         g = GerenciadorFilaSGE()
+        mock_executa_terminal.return_value = (1, ["", "", ""])
         g.agenda_job("./tests/_arquivos/newave/mpi_newave_test.job",
                      "nw_teste",
                      72)

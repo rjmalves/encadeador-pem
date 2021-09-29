@@ -83,18 +83,18 @@ class MonitorNEWAVE(MonitorCaso):
                                iniciado: bool) -> Tuple[bool, bool]:
         retry = False
         iniciou = iniciado
-        if (self._gerenciador.tempo_job_idle >
-                MonitorNEWAVE.TIMEOUT_COMUNICACAO):
+        if not iniciado:
+            iniciou = True
+            self.caso.inicia_caso()
+            self._log.info(f"Iniciando execução do caso: {self.caso.nome}")
+        elif (self._gerenciador.tempo_job_idle >
+              MonitorNEWAVE.TIMEOUT_COMUNICACAO):
             self._log.info(f"Erro de comunicacao no caso: {self.caso.nome}.")
             s = self._gerenciador.deleta_job()
             if not s:
                 raise ValueError("Erro ao deletar o job " +
                                  f"{self.caso.nome}")
             retry = True
-        if not iniciado:
-            iniciou = True
-            self.caso.inicia_caso()
-            self._log.info(f"Iniciando execução do caso: {self.caso.nome}")
         return retry, iniciou
 
     def _trata_caso_erro(self) -> bool:
@@ -123,6 +123,7 @@ class MonitorNEWAVE(MonitorCaso):
                 if retry:
                     self._trata_caso_retry()
                     retry = False
+                    iniciou = False
                 # Máquina de estados para controlar a execução
                 estado = self._gerenciador.estado_job
                 if estado == EstadoJob.ESPERANDO:
@@ -202,18 +203,18 @@ class MonitorDECOMP(MonitorCaso):
                                iniciado: bool) -> Tuple[bool, bool]:
         retry = False
         iniciou = iniciado
-        if (self._gerenciador.tempo_job_idle >
-                MonitorDECOMP.TIMEOUT_COMUNICACAO):
+        if not iniciado:
+            iniciou = True
+            self.caso.inicia_caso()
+            self._log.info(f"Iniciando execução do caso: {self.caso.nome}")
+        elif (self._gerenciador.tempo_job_idle >
+              MonitorDECOMP.TIMEOUT_COMUNICACAO):
             self._log.info(f"Erro de comunicacao no caso: {self.caso.nome}.")
             s = self._gerenciador.deleta_job()
             if not s:
                 raise ValueError("Erro ao deletar o job " +
                                  f"{self.caso.nome}")
             retry = True
-        if not iniciado:
-            iniciou = True
-            self.caso.inicia_caso()
-            self._log.info(f"Iniciando execução do caso: {self.caso.nome}")
         return retry, iniciou
 
     def _trata_caso_erro(self) -> bool:
@@ -242,6 +243,7 @@ class MonitorDECOMP(MonitorCaso):
                 if retry:
                     self._trata_caso_retry()
                     retry = False
+                    iniciou = False
                 # Máquina de estados para controlar a execução
                 estado = self._gerenciador.estado_job
                 if estado == EstadoJob.ESPERANDO:

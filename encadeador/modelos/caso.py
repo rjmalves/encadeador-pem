@@ -168,7 +168,6 @@ class CasoNEWAVE(Caso):
     def _obtem_numero_processadores(self) -> int:
         # TODO - Ler o dger.dat e conferir as restrições de número
         # de processadores (séries forward)
-        CasoNEWAVE._verifica_caso_configurado(self._configuracoes)
         minimo = self.configuracoes.processadores_minimos_newave
         maximo = self.configuracoes.processadores_maximos_newave
         ajuste = self.configuracoes.ajuste_processadores_newave
@@ -191,7 +190,6 @@ class CasoDECOMP(Caso):
     def _obtem_numero_processadores(self) -> int:
         # TODO - Ler o dadger.rvX e conferir as restrições de número
         # de processadores (séries do 2º mês)
-        CasoDECOMP._verifica_caso_configurado(self._configuracoes)
         minimo = self.configuracoes.processadores_minimos_decomp
         maximo = self.configuracoes.processadores_maximos_decomp
         ajuste = self.configuracoes.ajuste_processadores_decomp
