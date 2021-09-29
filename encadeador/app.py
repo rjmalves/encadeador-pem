@@ -63,6 +63,7 @@ class App:
         self._arvore._dados_casos[caso.nome] = n_anterior + 1
 
     def executa(self):
+        self._log.info(f"Iniciando Encadeador - {self._cfg.nome_estudo}")
         self.__constroi_arvore_casos()
         while not self._arvore.terminou:
             chdir(self._dir_base)
@@ -77,3 +78,4 @@ class App:
             elif isinstance(prox, CasoDECOMP):
                 self.__executa_decomp(prox)
             self.__atualiza_informacoes_caso(prox)
+        self._log.info("Finalizando Encadeador")
