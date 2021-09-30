@@ -1,6 +1,7 @@
 import logging
 import pytest
 import time
+from os.path import join
 from typing import List
 from pytest_mock.plugin import MockerFixture
 
@@ -10,9 +11,9 @@ from encadeador.modelos.caso import CasoDECOMP
 from encadeador.modelos.estadojob import EstadoJob
 from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
 
-CAMINHO_TESTE = "./tests/_arquivos/casos"
-CAMINHO_TESTE_VAL = "./tests/_arquivos/casos/valido"
-CAMINHO_TESTE_INVAL = "./tests/_arquivos/casos/invalido"
+CAMINHO_TESTE = join("tests", "_arquivos", "casos")
+CAMINHO_TESTE_VAL = join("tests", "_arquivos", "casos", "valido")
+CAMINHO_TESTE_INVAL = join("tests", "_arquivos", "casos", "invalido")
 ANO_TESTE = 2021
 MES_TESTE = 1
 REVISAO_TESTE = 0

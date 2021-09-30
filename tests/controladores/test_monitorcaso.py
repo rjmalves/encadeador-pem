@@ -15,7 +15,7 @@ from encadeador.controladores.monitorcaso import MonitorNEWAVE
 from encadeador.controladores.monitorcaso import MonitorDECOMP
 
 DIR_INICIAL = pathlib.Path().resolve()
-DIR_TESTE = join(DIR_INICIAL, "tests/_arquivos/casos")
+DIR_TESTE = join(DIR_INICIAL, "tests", "_arquivos", "casos")
 ARQ_CFG = "encadeia.cfg"
 CAMINHO_TESTE = "/home/user"
 ANO_TESTE = 2021

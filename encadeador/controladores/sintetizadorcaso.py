@@ -25,6 +25,16 @@ class SintetizadorCaso:
         # Cria o diretório de resumos se não existir
         self.__cria_diretorio_resumos()
 
+    @staticmethod
+    def factory(caso: Caso,
+                log: Logger) -> 'SintetizadorCaso':
+        if isinstance(caso, CasoNEWAVE):
+            return SintetizadorCasoNEWAVE(caso, log)
+        elif isinstance(caso, CasoDECOMP):
+            return SintetizadorCasoDECOMP(caso, log)
+        else:
+            raise ValueError(f"Caso do tipo {type(caso)} não suportado")
+
     def __cria_diretorio_resumos(self):
         diretorio = join(self.caso.caminho,
                          DIRETORIO_RESUMO_CASO)

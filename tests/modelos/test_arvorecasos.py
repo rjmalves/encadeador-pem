@@ -10,7 +10,7 @@ from encadeador.modelos.caso import CasoDECOMP
 from encadeador.modelos.arvorecasos import ArvoreCasos
 
 DIR_INICIAL = pathlib.Path().resolve()
-DIR_TESTE = join(DIR_INICIAL, "tests/_arquivos/casos")
+DIR_TESTE = join(DIR_INICIAL, "tests", "_arquivos", "casos")
 
 
 def constroi_arvore_casos_teste() -> ArvoreCasos:
@@ -18,8 +18,7 @@ def constroi_arvore_casos_teste() -> ArvoreCasos:
     load_dotenv("encadeia.cfg", override=True)
     cfg = Configuracoes.le_variaveis_ambiente()
     return ArvoreCasos(cfg,
-                       log,
-                       DIR_TESTE)
+                       log)
 
 
 def test_arvorecasos_le_arquivos_casos():
@@ -57,11 +56,11 @@ def test_arvorecasos_proximo_caso():
     r = a.constroi_casos()
     chdir(DIR_INICIAL)
     c = a.proximo_caso
+    assert isinstance(c, CasoDECOMP)
     assert c is not None
     assert c.ano == 2021
     assert c.mes == 1
     assert c.revisao == 1
-    assert isinstance(c, CasoDECOMP)
 
 
 def test_arvorecasos_proximo_newave():

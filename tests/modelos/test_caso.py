@@ -1,5 +1,6 @@
 import time
 import pytest
+from os.path import join
 from dotenv import load_dotenv
 
 from encadeador.modelos.caso import Caso
@@ -7,7 +8,7 @@ from encadeador.modelos.caso import CasoNEWAVE
 from encadeador.modelos.caso import CasoDECOMP
 from encadeador.modelos.configuracoes import Configuracoes
 
-ARQ_CFG = "./tests/modelos/_arquivos/valido.cfg"
+ARQ_CFG = join("tests", "modelos", "_arquivos", "valido.cfg")
 CAMINHO_TESTE = "/home/user"
 ANO_TESTE = 2021
 MES_TESTE = 1
@@ -27,53 +28,53 @@ def constroi_caso_configurado_teste(caso: Caso) -> Caso:
 
 def test_caso_nao_configurado_nome():
     with pytest.raises(ValueError):
-        c = Caso()
+        c = CasoNEWAVE()
         c.nome
 
 
 def test_caso_nao_configurado_caminho():
     with pytest.raises(ValueError):
-        c = Caso()
+        c = CasoNEWAVE()
         c.caminho
 
 
 def test_caso_nao_configurado_configuracoes():
     with pytest.raises(ValueError):
-        c = Caso()
+        c = CasoNEWAVE()
         c.configuracoes
 
 
 def test_caso_nao_configurado_tempo_fila():
     with pytest.raises(ValueError):
-        c = Caso()
+        c = CasoNEWAVE()
         c.tempo_fila
 
 
 def test_caso_nao_configurado_tempo_execucao():
     with pytest.raises(ValueError):
-        c = Caso()
+        c = CasoNEWAVE()
         c.tempo_execucao
 
 
 def test_caso_nao_configurado_numero_tentativas():
     with pytest.raises(ValueError):
-        c = Caso()
+        c = CasoNEWAVE()
         c.numero_tentativas
 
 
 def test_caso_nao_configurado_sucesso():
     with pytest.raises(ValueError):
-        c = Caso()
+        c = CasoNEWAVE()
         c.sucesso
 
 
 def test_configura_caso():
-    c = constroi_caso_configurado_teste(Caso())
+    c = constroi_caso_configurado_teste(CasoNEWAVE())
     assert c.caminho == CAMINHO_TESTE
 
 
 def test_inicializa_parametros():
-    c = constroi_caso_configurado_teste(Caso())
+    c = constroi_caso_configurado_teste(CasoNEWAVE())
     c.inicializa_parametros_execucao()
     assert c.tempo_fila == 0
     assert c.tempo_execucao == 0
@@ -82,7 +83,7 @@ def test_inicializa_parametros():
 
 
 def test_reseta_parametros():
-    c = constroi_caso_configurado_teste(Caso())
+    c = constroi_caso_configurado_teste(CasoNEWAVE())
     c.inicializa_parametros_execucao()
     c.coloca_caso_na_fila()
     c.reseta_parametros_execucao()
@@ -93,7 +94,7 @@ def test_reseta_parametros():
 
 
 def test_tempo_fila():
-    c = constroi_caso_configurado_teste(Caso())
+    c = constroi_caso_configurado_teste(CasoNEWAVE())
     c.inicializa_parametros_execucao()
     c.coloca_caso_na_fila()
     time.sleep(0.1)
@@ -105,7 +106,7 @@ def test_tempo_fila():
 
 
 def test_tempo_execucao():
-    c = constroi_caso_configurado_teste(Caso())
+    c = constroi_caso_configurado_teste(CasoNEWAVE())
     c.inicializa_parametros_execucao()
     c.coloca_caso_na_fila()
     c.inicia_caso()
@@ -118,7 +119,7 @@ def test_tempo_execucao():
 
 
 def test_numero_tentativas():
-    c = constroi_caso_configurado_teste(Caso())
+    c = constroi_caso_configurado_teste(CasoNEWAVE())
     c.inicializa_parametros_execucao()
     c.coloca_caso_na_fila()
     c.inicia_caso()
@@ -128,7 +129,7 @@ def test_numero_tentativas():
 
 
 def test_sucesso():
-    c = constroi_caso_configurado_teste(Caso())
+    c = constroi_caso_configurado_teste(CasoNEWAVE())
     c.inicializa_parametros_execucao()
     c.coloca_caso_na_fila()
     c.inicia_caso()

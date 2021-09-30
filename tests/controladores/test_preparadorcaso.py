@@ -14,10 +14,10 @@ from encadeador.controladores.preparadorcaso import PreparadorCasoDECOMP
 
 
 DIR_INICIAL = pathlib.Path().resolve()
-DIR_TESTE = join(DIR_INICIAL, "tests/_arquivos/casos")
+DIR_TESTE = join(DIR_INICIAL, "tests", "_arquivos", "casos")
 
-CAMINHO_TESTE_NW = join(DIR_TESTE, "2021_01_rv0/newave")
-CAMINHO_TESTE_DCP = join(DIR_TESTE, "2021_01_rv0/decomp")
+CAMINHO_TESTE_NW = join(DIR_TESTE, "2021_01_rv0", "newave")
+CAMINHO_TESTE_DCP = join(DIR_TESTE, "2021_01_rv0", "decomp")
 log = logging.getLogger()
 
 

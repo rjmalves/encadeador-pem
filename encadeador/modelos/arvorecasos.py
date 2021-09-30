@@ -12,11 +12,9 @@ class ArvoreCasos:
 
     def __init__(self,
                  cfg: Configuracoes,
-                 log: Logger,
-                 dir_base: str) -> None:
+                 log: Logger) -> None:
         self._log = log
         self._configuracoes = cfg
-        self._dir_base = dir_base
         self._diretorios_revisoes: List[str] = []
         self._diretorios_casos: List[str] = []
         self._casos: List[Caso] = []
@@ -32,10 +30,14 @@ class ArvoreCasos:
             for d in self._diretorios_revisoes:
                 subd = [a for a in listdir(d) if isdir(join(d, a))]
                 if self._configuracoes._nome_diretorio_newave in subd:
-                    c = join(self._dir_base, d, self._configuracoes._nome_diretorio_newave)
+                    c = join(self._configuracoes.caminho_base_estudo,
+                             d,
+                             self._configuracoes._nome_diretorio_newave)
                     self._diretorios_casos.append(c)
                 if self._configuracoes._nome_diretorio_decomp in subd:
-                    c = join(self._dir_base, d, self._configuracoes._nome_diretorio_decomp)
+                    c = join(self._configuracoes.caminho_base_estudo,
+                             d,
+                             self._configuracoes._nome_diretorio_decomp)
                     self._diretorios_casos.append(c)
 
         lista = self._configuracoes.arquivo_lista_casos

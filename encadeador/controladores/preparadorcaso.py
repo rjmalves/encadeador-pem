@@ -18,6 +18,16 @@ class PreparadorCaso:
         self._caso = caso
         self._log = log
 
+    @staticmethod
+    def factory(caso: Caso,
+                log: Logger) -> 'PreparadorCaso':
+        if isinstance(caso, CasoNEWAVE):
+            return PreparadorCasoNEWAVE(caso, log)
+        elif isinstance(caso, CasoDECOMP):
+            return PreparadorCasoDECOMP(caso, log)
+        else:
+            raise ValueError(f"Caso do tipo {type(caso)} não suportado")
+
     @abstractmethod
     def prepara_caso(self,
                      log: Logger,

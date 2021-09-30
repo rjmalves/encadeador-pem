@@ -15,14 +15,12 @@ class App:
 
     def __init__(self,
                  cfg: Configuracoes,
-                 log: Logger,
-                 dir_base: str) -> None:
+                 log: Logger) -> None:
         self._cfg = cfg
         self._log = log
-        self._dir_base = dir_base
 
     def __constroi_arvore_casos(self) -> ArvoreCasos:
-        self._arvore = ArvoreCasos(self._cfg, self._log, self._dir_base)
+        self._arvore = ArvoreCasos(self._cfg, self._log)
         self._arvore.le_arquivo_casos()
         if not self._arvore.constroi_casos():
             raise RuntimeError("Erro na construção dos Casos")
@@ -63,7 +61,7 @@ class App:
         self._log.info(f"Iniciando Encadeador - {self._cfg.nome_estudo}")
         self.__constroi_arvore_casos()
         while not self._arvore.terminou:
-            chdir(self._dir_base)
+            chdir(self._cfg.caminho_base_estudo)
             prox = self._arvore.proximo_caso
             if (self._arvore._dados_casos[prox.nome] >=
                     self._cfg._maximo_flexibilizacoes_revisao):

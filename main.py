@@ -39,5 +39,5 @@ if __name__ == "__main__":
     log = configura_logging()
 
     cfg = Configuracoes.le_variaveis_ambiente()
-    app = App(cfg, log, DIR_BASE)
+    app = App(cfg, log)
     app.executa()

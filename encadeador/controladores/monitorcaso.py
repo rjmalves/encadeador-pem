@@ -28,6 +28,16 @@ class MonitorCaso:
         g = caso.configuracoes.gerenciador_fila
         self._gerenciador = GerenciadorFila.factory(g)
 
+    @staticmethod
+    def factory(caso: Caso,
+                log: Logger) -> 'MonitorCaso':
+        if isinstance(caso, CasoNEWAVE):
+            return MonitorNEWAVE(caso, log)
+        elif isinstance(caso, CasoDECOMP):
+            return MonitorDECOMP(caso, log)
+        else:
+            raise ValueError(f"Caso do tipo {type(caso)} não suportado")
+
     @abstractmethod
     def executa_caso(self) -> bool:
         pass

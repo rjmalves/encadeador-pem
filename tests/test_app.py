@@ -3,6 +3,7 @@ from typing import List
 from os import chdir
 from os.path import join
 from logging import getLogger
+from dotenv import load_dotenv
 import pytest
 from pytest_mock.plugin import MockerFixture
 
@@ -11,6 +12,7 @@ from encadeador.app import App
 
 DIR_INICIAL = pathlib.Path().resolve()
 DIR_TESTE = join(DIR_INICIAL, "tests/_arquivos/casos")
+ARQ_CFG = join(DIR_TESTE, "encadeia_app.cfg")
 
 
 class GerenteChamadasTerminal:
@@ -37,33 +39,39 @@ class GerenteChamadasTerminal:
 
 def test_app_executa_caso_sumiu_fila(mocker: MockerFixture):
     log = getLogger()
-    cfg = Configuracoes()
+    chdir(DIR_TESTE)
+    load_dotenv(ARQ_CFG, override=True)
+    cfg = Configuracoes.le_variaveis_ambiente()
     g = GerenteChamadasTerminal()
     g.respostas = [
                    ['Your job 123 ("DC202111") has been submitted'],
                    ["", "",
-                   "    123 0.00000 DC202111   pem          qw    09/22/2021" +
+                   "123 0.00000 DC202111   pem          qw    09/22/2021" +
                    " 13:17:19                                   72           "],
                    ["", "",
-                   "    123 0.00000 DC202111   pem          qw    09/22/2021" +
+                   "123 0.00000 DC202111   pem          qw    09/22/2021" +
                    " 13:17:19                                   72           "]
                   ]
     mocker.patch("encadeador.controladores.gerenciadorfila.executa_terminal",
                  side_effect = g.mock_executa_terminal)
-    cfg.diretorio_instalacao_newaves = "../"
-    cfg.diretorio_instalacao_decomps = "../"
-    chdir(DIR_TESTE)
+    mocker.patch("encadeador.controladores.monitorcaso.ArmazenadorCaso" +
+                 ".armazena_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.monitorcaso" +
+                 ".SintetizadorCasoDECOMP.sintetiza_caso",
+                 return_value=True)
     with pytest.raises(RuntimeError):
         a = App(cfg, log)
         a.executa()
     chdir(DIR_INICIAL)
-    cfg.diretorio_instalacao_newaves = "./tests/_arquivos"
-    cfg.diretorio_instalacao_decomps = "./tests/_arquivos"
+
 
 
 def test_app_executa_caso_deletado(mocker: MockerFixture):
     log = getLogger()
-    cfg = Configuracoes()
+    chdir(DIR_TESTE)
+    load_dotenv(ARQ_CFG, override=True)
+    cfg = Configuracoes.le_variaveis_ambiente()
     g = GerenteChamadasTerminal()
     g.respostas = [
                    ['Your job 123 ("DC202111") has been submitted'],
@@ -79,20 +87,17 @@ def test_app_executa_caso_deletado(mocker: MockerFixture):
                   ]
     mocker.patch("encadeador.controladores.gerenciadorfila.executa_terminal",
                  side_effect = g.mock_executa_terminal)
-    cfg.diretorio_instalacao_newaves = "../"
-    cfg.diretorio_instalacao_decomps = "../"
-    chdir(DIR_TESTE)
     with pytest.raises(RuntimeError):
         a = App(cfg, log)
         a.executa()
     chdir(DIR_INICIAL)
-    cfg.diretorio_instalacao_newaves = "./tests/_arquivos"
-    cfg.diretorio_instalacao_decomps = "./tests/_arquivos"
 
 
 def test_app_executa_max_flex_decomp(mocker: MockerFixture):
     log = getLogger()
-    cfg = Configuracoes()
+    chdir(DIR_TESTE)
+    load_dotenv(ARQ_CFG, override=True)
+    cfg = Configuracoes.le_variaveis_ambiente()
     g = GerenteChamadasTerminal()
     g.respostas = [
                    ['Your job 123 ("DC202111") has been submitted'],
@@ -105,12 +110,7 @@ def test_app_executa_max_flex_decomp(mocker: MockerFixture):
                   ]
     mocker.patch("encadeador.controladores.gerenciadorfila.executa_terminal",
                  side_effect=g.mock_executa_terminal)
-    cfg.diretorio_instalacao_newaves = "../"
-    cfg.diretorio_instalacao_decomps = "../"
-    chdir(DIR_TESTE)
     with pytest.raises(RuntimeError):
         a = App(cfg, log)
         a.executa()
     chdir(DIR_INICIAL)
-    cfg.diretorio_instalacao_newaves = "./tests/_arquivos"
-    cfg.diretorio_instalacao_decomps = "./tests/_arquivos"

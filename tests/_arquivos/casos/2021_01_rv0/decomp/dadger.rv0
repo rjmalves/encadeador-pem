@@ -4,7 +4,7 @@
 &---------------------------------------------------------------------------------------------
 &TE
 &   CENARIOS GERADOS COM HISTORICO DE 1931-2019
-TE  Backtest CPAMP 2015-2021 CVAR AxL - DC 1/2021 RV0
+TE  Estudo de Teste - DC 1/2021 RV0
 &
 &-----------------------------------------------------------------------------------------------
 &       BLOCO 2  *** OS SUBSISTEMAS ***
@@ -3407,8 +3407,8 @@ CI  000  2               1       0    0      0.00    0    0      0.00    0    0 
 &         (REGISTROS FC - FUNCAO CUSTO FUTURO MEDIO PRAZO 
 &----------------------------------------------------------------------------------------------
 &FC
-FC  NEWV21    ./tests/_arquivos/casos/2021_01_rv0/newave\cortesh.dat
-FC  NEWCUT    ./tests/_arquivos/casos/2021_01_rv0/newave\cortes.dat
+FC  NEWV21    ./2021_01_rv0/newave\cortesh.dat
+FC  NEWCUT    ./2021_01_rv0/newave\cortes.dat
 &
 &----------------------------------------------------------------------
 &             TAXA DE IRRIGACAO

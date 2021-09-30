@@ -305,7 +305,7 @@ class BuilderConfiguracoes:
         return self._configuracoes
 
     def caminho_base_estudo(self):
-        self._caminho_base_estudo = pathlib.Path().resolve()
+        self._configuracoes._caminho_base_estudo = pathlib.Path().resolve()
         return self
 
     @abstractmethod

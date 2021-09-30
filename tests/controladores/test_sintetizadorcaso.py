@@ -13,10 +13,10 @@ from encadeador.controladores.sintetizadorcaso import SintetizadorCasoNEWAVE
 from encadeador.controladores.sintetizadorcaso import SintetizadorCasoDECOMP
 
 DIR_INICIAL = pathlib.Path().resolve()
-DIR_TESTE = join(DIR_INICIAL, "tests/_arquivos/casos")
+DIR_TESTE = join(DIR_INICIAL, "tests", "_arquivos", "casos")
 
-CAMINHO_TESTE_NW = join(DIR_TESTE, "2021_01_rv0/newave")
-CAMINHO_TESTE_DCP = join(DIR_TESTE, "2021_01_rv0/decomp")
+CAMINHO_TESTE_NW = join(DIR_TESTE, "2021_01_rv0", "newave")
+CAMINHO_TESTE_DCP = join(DIR_TESTE, "2021_01_rv0", "decomp")
 ANO_TESTE = 2021
 MES_TESTE = 1
 REVISAO_TESTE = 0
