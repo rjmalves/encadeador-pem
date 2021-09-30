@@ -1,5 +1,9 @@
 import logging
 import pytest
+import pathlib
+from dotenv import load_dotenv
+from os import chdir
+from os.path import join
 from pytest_mock.plugin import MockerFixture
 
 from encadeador.modelos.configuracoes import Configuracoes
@@ -8,8 +12,11 @@ from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
 from encadeador.controladores.sintetizadorcaso import SintetizadorCasoNEWAVE
 from encadeador.controladores.sintetizadorcaso import SintetizadorCasoDECOMP
 
-CAMINHO_TESTE_NW = "./tests/_arquivos/casos/2021_01_rv0/newave"
-CAMINHO_TESTE_DCP = "./tests/_arquivos/casos/2021_01_rv0/decomp"
+DIR_INICIAL = pathlib.Path().resolve()
+DIR_TESTE = join(DIR_INICIAL, "tests/_arquivos/casos")
+
+CAMINHO_TESTE_NW = join(DIR_TESTE, "2021_01_rv0/newave")
+CAMINHO_TESTE_DCP = join(DIR_TESTE, "2021_01_rv0/decomp")
 ANO_TESTE = 2021
 MES_TESTE = 1
 REVISAO_TESTE = 0
@@ -23,23 +30,34 @@ def test_sintetizador_caso_nao_inicializado():
 
 
 def test_sintetizador_newave():
-    c = ArmazenadorCaso.recupera_caso(Configuracoes(),
+    chdir(DIR_TESTE)
+    load_dotenv("encadeia.cfg", override=True)
+    cfg = Configuracoes.le_variaveis_ambiente()
+    c = ArmazenadorCaso.recupera_caso(cfg,
                                       CAMINHO_TESTE_NW)
     s = SintetizadorCasoNEWAVE(c, log)
     r = s.sintetiza_caso()
+    chdir(DIR_INICIAL)
     assert r
 
 
 def test_sintetizador_decomp():
-    c = ArmazenadorCaso.recupera_caso(Configuracoes(),
+    chdir(DIR_TESTE)
+    load_dotenv("encadeia.cfg", override=True)
+    cfg = Configuracoes.le_variaveis_ambiente()
+    c = ArmazenadorCaso.recupera_caso(cfg,
                                       CAMINHO_TESTE_DCP)
     s = SintetizadorCasoDECOMP(c, log)
     r = s.sintetiza_caso()
+    chdir(DIR_INICIAL)
     assert r
 
 
 def test_sintetizador_extrai_deleta_cortes_sucesso(mocker: MockerFixture):
-    c = ArmazenadorCaso.recupera_caso(Configuracoes(),
+    chdir(DIR_TESTE)
+    load_dotenv("encadeia.cfg", override=True)
+    cfg = Configuracoes.le_variaveis_ambiente()
+    c = ArmazenadorCaso.recupera_caso(cfg,
                                       CAMINHO_TESTE_NW)
     s = SintetizadorCasoNEWAVE(c, log)
     mocker.patch("encadeador.controladores.sintetizadorcaso" +
@@ -49,3 +67,4 @@ def test_sintetizador_extrai_deleta_cortes_sucesso(mocker: MockerFixture):
         s.extrai_cortes()
     if s.verifica_cortes_extraidos():
         s.deleta_cortes()
+    chdir(DIR_INICIAL)
