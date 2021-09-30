@@ -32,6 +32,7 @@
 
 # Builder
 
+import pathlib
 from os import getenv, curdir
 from os.path import isfile, join
 from abc import abstractmethod
@@ -44,6 +45,7 @@ class Configuracoes:
     encadeado NEWAVE/DECOMP.
     """
     def __init__(self):
+        self._caminho_base_estudo = None
         self._nome_estudo = None
         self._arquivo_lista_casos = None
         self._nome_diretorio_newave = None
@@ -74,7 +76,8 @@ class Configuracoes:
     @classmethod
     def le_variaveis_ambiente(cls) -> "Configuracoes":
         cb = BuilderConfiguracoesENV()
-        c = cb.nome_estudo("NOME_ESTUDO")\
+        c = cb.caminho_base_estudo()\
+            .nome_estudo("NOME_ESTUDO")\
             .arquivo_lista_casos("ARQUIVO_LISTA_CASOS")\
             .nome_diretorio_newave("NOME_DIRETORIO_NEWAVE")\
             .nome_diretorio_decomp("NOME_DIRETORIO_DECOMP")\
@@ -101,6 +104,14 @@ class Configuracoes:
             .script_converte_codificacao("SCRIPT_CONVERTE_CODIFICACAO")\
             .build()
         return c
+
+    @property
+    def caminho_base_estudo(self) -> str:
+        """
+        Caminho absoluto até o diretório base em que o estudo
+        é realizado.
+        """
+        return self._caminho_base_estudo
 
     @property
     def nome_estudo(self) -> str:
@@ -293,6 +304,10 @@ class BuilderConfiguracoes:
     def build(self) -> Configuracoes:
         return self._configuracoes
 
+    def caminho_base_estudo(self):
+        self._caminho_base_estudo = pathlib.Path().resolve()
+        return self
+
     @abstractmethod
     def nome_estudo(self, nome: str):
         pass
@@ -439,7 +454,6 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         except ValueError:
             raise ValueError(f"Variável {variavel} não é booleana")
         return valor
-
 
     def nome_estudo(self, variavel: str):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
