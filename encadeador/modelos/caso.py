@@ -17,6 +17,15 @@ class Caso:
         self._dados: DadosCaso = None  # type: ignore
         self._configuracoes: Configuracoes = None  # type: ignore
 
+    @staticmethod
+    def factory(prog: str) -> 'Caso':
+        if prog == "NEWAVE":
+            return CasoNEWAVE()
+        elif prog == "DECOMP":
+            return CasoDECOMP()
+        else:
+            raise ValueError(f"Programa {prog} não suportado")
+
     @abstractmethod
     def configura_caso(self,
                        caminho: str,
@@ -74,7 +83,6 @@ class Caso:
                                 cfg: Configuracoes):
         self._dados = dados
         self._cfg = cfg
-
 
     @staticmethod
     def _verifica_caso_configurado(valor):
@@ -171,6 +179,7 @@ class Caso:
     @property
     def estado(self) -> EstadoJob:
         return self._dados.estado
+
 
 class CasoNEWAVE(Caso):
 

@@ -18,7 +18,6 @@ class ArvoreCasos:
         self._diretorios_revisoes: List[str] = []
         self._diretorios_casos: List[str] = []
         self._casos: List[Caso] = []
-        self._dados_casos: Dict[str, int] = {}
 
     def __verifica_inicializacao(self, valor):
         if len(valor) == 0:
@@ -82,8 +81,7 @@ class ArvoreCasos:
                 ret = __le_caso(c)
                 if not ret:
                     return False
-        self._dados_casos = {n: 0 for n in
-                             [c.nome for c in self.casos]}
+
         return True
 
     @property

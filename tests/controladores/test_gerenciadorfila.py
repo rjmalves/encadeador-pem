@@ -147,7 +147,6 @@ def test_sge_erro_agenda_caso(mock_executa_terminal: MockerFixture):
 
 
 def test_sge_erro_estado_caso(mock_executa_terminal: MockerFixture):
-    with pytest.raises(KeyError):
         g = GerenciadorFilaSGE()
         str_submit = 'Your job 123 ("pmo") has been submitted'
         mock_executa_terminal.return_value = (0, [str_submit])
@@ -155,4 +154,4 @@ def test_sge_erro_estado_caso(mock_executa_terminal: MockerFixture):
                      "nw_teste",
                      72)
         mock_executa_terminal.return_value = (0, ["", "", ""])
-        g.estado_job
+        assert g.estado_job == EstadoJob.NAO_INICIADO

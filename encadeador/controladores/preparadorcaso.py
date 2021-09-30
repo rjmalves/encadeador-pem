@@ -56,7 +56,6 @@ class PreparadorCasoNEWAVE(PreparadorCaso):
                      **kwargs) -> bool:
         self._log.info(f"Adequando caso do NEWAVE: {self.caso.nome}")
         try:
-
             # TODO
             if True:
                 # Adequa o nome do caso

@@ -57,61 +57,61 @@ def constroi_caso_configurado_teste(caso: Caso) -> Caso:
     return caso
 
 
-# def test_monitor_newave_nao_inicializado():
-#     with pytest.raises(ValueError):
-#         c = CasoNEWAVE()
-#         m = MonitorNEWAVE(c, log)
+def test_monitor_newave_nao_inicializado():
+    with pytest.raises(ValueError):
+        c = CasoNEWAVE()
+        m = MonitorNEWAVE(c, log)
 
 
-# def test_monitor_newave_inicializado():
-#     chdir(DIR_TESTE)
-#     c = constroi_caso_configurado_teste(CasoNEWAVE())
-#     m = MonitorNEWAVE(c, log)
-#     chdir(DIR_INICIAL)
+def test_monitor_newave_inicializado():
+    chdir(DIR_TESTE)
+    c = constroi_caso_configurado_teste(CasoNEWAVE())
+    m = MonitorNEWAVE(c, log)
+    chdir(DIR_INICIAL)
 
 
-# def test_monitor_decomp_nao_inicializado():
-#     with pytest.raises(ValueError):
-#         c = CasoDECOMP()
-#         m = MonitorDECOMP(c, log)
+def test_monitor_decomp_nao_inicializado():
+    with pytest.raises(ValueError):
+        c = CasoDECOMP()
+        m = MonitorDECOMP(c, log)
 
 
-# def test_monitor_decomp_inicializado():
-#     chdir(DIR_TESTE)
-#     c = constroi_caso_configurado_teste(CasoDECOMP())
-#     m = MonitorDECOMP(c, log)
-#     chdir(DIR_INICIAL)
+def test_monitor_decomp_inicializado():
+    chdir(DIR_TESTE)
+    c = constroi_caso_configurado_teste(CasoDECOMP())
+    m = MonitorDECOMP(c, log)
+    chdir(DIR_INICIAL)
 
 
-# def test_monitor_newave_execucao_sucesso(mocker: MockerFixture):
-#     chdir(DIR_TESTE)
-#     log = logging.getLogger()
-#     c = constroi_caso_configurado_teste(CasoNEWAVE())
-#     m = MonitorNEWAVE(c, log)
-#     log = logging.getLogger()
-#     g = GerenteChamadasTerminal()
-#     g.respostas = [
-#                    ['Your job 123 ("pmo") has been submitted'],
-#                    ["", "",
-#                    "123 0.00000 pmo        pem          qw    09/22/2021" +
-#                    " 13:17:19                                   72           "],
-#                    ["", "",
-#                    "123 0.00000 pmo        pem          r     09/22/2021" +
-#                    " 13:17:19                                   72           "]
-#                   ]
-#     mocker.patch("encadeador.controladores.gerenciadorfila.executa_terminal",
-#                  side_effect = g.mock_executa_terminal)
-#     mocker.patch("encadeador.controladores.monitorcaso.ArmazenadorCaso" +
-#                  ".armazena_caso",
-#                  return_value=True)
-#     mocker.patch("encadeador.controladores.monitorcaso" +
-#                  ".SintetizadorCasoNEWAVE.sintetiza_caso",
-#                  return_value=True)
-#     MonitorNEWAVE.INTERVALO_POLL = 1
-#     r = m.executa_caso()
-#     chdir(DIR_INICIAL)
-#     assert m.caso.numero_tentativas == 1
-#     assert r
+def test_monitor_newave_execucao_sucesso(mocker: MockerFixture):
+    chdir(DIR_TESTE)
+    log = logging.getLogger()
+    c = constroi_caso_configurado_teste(CasoNEWAVE())
+    m = MonitorNEWAVE(c, log)
+    log = logging.getLogger()
+    g = GerenteChamadasTerminal()
+    g.respostas = [
+                   ['Your job 123 ("pmo") has been submitted'],
+                   ["", "",
+                   "123 0.00000 pmo        pem          qw    09/22/2021" +
+                   " 13:17:19                                   72           "],
+                   ["", "",
+                   "123 0.00000 pmo        pem          r     09/22/2021" +
+                   " 13:17:19                                   72           "]
+                  ]
+    mocker.patch("encadeador.controladores.gerenciadorfila.executa_terminal",
+                 side_effect = g.mock_executa_terminal)
+    mocker.patch("encadeador.controladores.monitorcaso.ArmazenadorCaso" +
+                 ".armazena_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.monitorcaso" +
+                 ".SintetizadorCasoNEWAVE.sintetiza_caso",
+                 return_value=True)
+    MonitorNEWAVE.INTERVALO_POLL = 1
+    r = m.executa_caso()
+    chdir(DIR_INICIAL)
+    assert m.caso.numero_tentativas == 1
+    assert r
 
 
 def test_monitor_newave_execucao_timeout_comunicacao(mocker: MockerFixture):
@@ -157,35 +157,35 @@ def test_monitor_newave_execucao_timeout_comunicacao(mocker: MockerFixture):
     assert not r
 
 
-# def test_monitor_decomp_execucao_sucesso(mocker: MockerFixture):
-#     chdir(DIR_TESTE)
-#     log = logging.getLogger()
-#     c = constroi_caso_configurado_teste(CasoDECOMP())
-#     m = MonitorDECOMP(c, log)
-#     log = logging.getLogger()
-#     g = GerenteChamadasTerminal()
-#     g.respostas = [
-#                    ['Your job 123 ("pmo") has been submitted'],
-#                    ["", "",
-#                    "123 0.00000 pmo        pem          qw    09/22/2021" +
-#                    " 13:17:19                                   72           "],
-#                    ["", "",
-#                    "123 0.00000 pmo        pem          r     09/22/2021" +
-#                    " 13:17:19                                   72           "]
-#                   ]
-#     mocker.patch("encadeador.controladores.gerenciadorfila.executa_terminal",
-#                  side_effect=g.mock_executa_terminal)
-#     mocker.patch("encadeador.controladores.monitorcaso.ArmazenadorCaso" +
-#                  ".armazena_caso",
-#                  return_value=True)
-#     mocker.patch("encadeador.controladores.monitorcaso" +
-#                  ".SintetizadorCasoDECOMP.sintetiza_caso",
-#                  return_value=True)
-#     MonitorDECOMP.INTERVALO_POLL = 1
-#     r = m.executa_caso()
-#     chdir(DIR_INICIAL)
-#     assert m.caso.numero_tentativas == 1
-#     assert r
+def test_monitor_decomp_execucao_sucesso(mocker: MockerFixture):
+    chdir(DIR_TESTE)
+    log = logging.getLogger()
+    c = constroi_caso_configurado_teste(CasoDECOMP())
+    m = MonitorDECOMP(c, log)
+    log = logging.getLogger()
+    g = GerenteChamadasTerminal()
+    g.respostas = [
+                   ['Your job 123 ("pmo") has been submitted'],
+                   ["", "",
+                   "123 0.00000 pmo        pem          qw    09/22/2021" +
+                   " 13:17:19                                   72           "],
+                   ["", "",
+                   "123 0.00000 pmo        pem          r     09/22/2021" +
+                   " 13:17:19                                   72           "]
+                  ]
+    mocker.patch("encadeador.controladores.gerenciadorfila.executa_terminal",
+                 side_effect=g.mock_executa_terminal)
+    mocker.patch("encadeador.controladores.monitorcaso.ArmazenadorCaso" +
+                 ".armazena_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.monitorcaso" +
+                 ".SintetizadorCasoDECOMP.sintetiza_caso",
+                 return_value=True)
+    MonitorDECOMP.INTERVALO_POLL = 1
+    r = m.executa_caso()
+    chdir(DIR_INICIAL)
+    assert m.caso.numero_tentativas == 1
+    assert r
 
 
 def test_monitor_decomp_execucao_timeout_comunicacao(mocker: MockerFixture):

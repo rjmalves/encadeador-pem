@@ -48,6 +48,7 @@ def test_preparador_decomp(mocker: MockerFixture):
     cfg = Configuracoes.le_variaveis_ambiente()
     c_ant = ArmazenadorCaso.recupera_caso(cfg,
                                           CAMINHO_TESTE_NW)
+    print(c_ant.caminho)
     c = ArmazenadorCaso.recupera_caso(cfg,
                                       CAMINHO_TESTE_DCP)
     p = PreparadorCasoDECOMP(c, log)

@@ -32,22 +32,15 @@ class ArmazenadorCaso:
     def recupera_caso(cfg: Configuracoes,
                       caminho: str) -> Caso:
 
-        def escolhe_programa_caso(prog: str) -> Caso:
-            if prog == "NEWAVE":
-                return CasoNEWAVE()
-            elif prog == "DECOMP":
-                return CasoDECOMP()
-            else:
-                raise ValueError(f"Programa {prog} não suportado")
-
         # Se não tem arquivo de resumo, o caso não começou a ser rodado
         arq = join(caminho, NOME_ARQUIVO_ESTADO)
         if not isfile(arq):
             raise FileNotFoundError("Não encontrado arquivo de resumo" +
                                     f" de caso no diretório {caminho}.")
+
         # Se tem, então o caso pelo menos começou
         dados = DadosCaso.le_arquivo(caminho)
-        c = escolhe_programa_caso(dados.programa)
+        c = Caso.factory(dados.programa)
         c.recupera_caso_dos_dados(dados, cfg)
         return c
 

@@ -181,8 +181,6 @@ class GerenciadorFilaSGE(GerenciadorFila):
                     achou = True
                     estado = linha[35:38].strip()
                     break
-            if not achou:
-                raise KeyError(f"Não encontrado job {self.id_job} na fila")
             return estado
 
         # Verificações de erro:
@@ -203,20 +201,19 @@ class GerenciadorFilaSGE(GerenciadorFila):
         elif estado == "dr":
             estadojob = EstadoJob.DELETANDO
         else:
-            raise ValueError(f"Estado de job '{estado}' desconhecido!")
+            estadojob = EstadoJob.NAO_INICIADO
         return estadojob
 
     def deleta_job(self) -> bool:
         ti = time.time()
-        try:
-            while time.time() - ti < GerenciadorFilaSGE.TIMEOUT_DELETE:
-                estado = self.estado_job
-                if estado != EstadoJob.DELETANDO:
-                    cod, _ = executa_terminal(["qdel", f"{self.id_job}"])
-                time.sleep(5)
-            return False
-        except KeyError:
-            return True
+        while time.time() - ti < GerenciadorFilaSGE.TIMEOUT_DELETE:
+            estado = self.estado_job
+            if estado == EstadoJob.NAO_INICIADO:
+                return True
+            elif estado != EstadoJob.DELETANDO:
+                cod, _ = executa_terminal(["qdel", f"{self.id_job}"])
+            time.sleep(5)
+        return False
 
     def comando_qsub(self,
                      caminho_job: str,
