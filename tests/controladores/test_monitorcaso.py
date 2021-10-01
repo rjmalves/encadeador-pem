@@ -105,7 +105,7 @@ def test_monitor_newave_execucao_sucesso(mocker: MockerFixture):
                  ".armazena_caso",
                  return_value=True)
     mocker.patch("encadeador.controladores.monitorcaso" +
-                 ".SintetizadorCasoNEWAVE.sintetiza_caso",
+                 ".SintetizadorNEWAVE.sintetiza_caso",
                  return_value=True)
     MonitorNEWAVE.INTERVALO_POLL = 1
     r = m.executa_caso()
@@ -148,7 +148,7 @@ def test_monitor_newave_execucao_timeout_comunicacao(mocker: MockerFixture):
                  ".armazena_caso",
                  return_value=True)
     mocker.patch("encadeador.controladores.monitorcaso" +
-                 ".SintetizadorCasoNEWAVE.sintetiza_caso",
+                 ".SintetizadorNEWAVE.sintetiza_caso",
                  return_value=True)
     MonitorNEWAVE.INTERVALO_POLL = 1
     r = m.executa_caso()
@@ -179,7 +179,7 @@ def test_monitor_decomp_execucao_sucesso(mocker: MockerFixture):
                  ".armazena_caso",
                  return_value=True)
     mocker.patch("encadeador.controladores.monitorcaso" +
-                 ".SintetizadorCasoDECOMP.sintetiza_caso",
+                 ".SintetizadorDECOMP.sintetiza_caso",
                  return_value=True)
     MonitorDECOMP.INTERVALO_POLL = 1
     r = m.executa_caso()
@@ -223,7 +223,7 @@ def test_monitor_decomp_execucao_timeout_comunicacao(mocker: MockerFixture):
                  ".armazena_caso",
                  return_value=True)
     mocker.patch("encadeador.controladores.monitorcaso" +
-                 ".SintetizadorCasoDECOMP.sintetiza_caso",
+                 ".SintetizadorDECOMP.sintetiza_caso",
                  return_value=True)
     MonitorDECOMP.INTERVALO_POLL = 1
     r = m.executa_caso()

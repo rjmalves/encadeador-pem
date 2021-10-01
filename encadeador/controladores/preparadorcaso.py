@@ -4,7 +4,7 @@ from logging import Logger
 from typing import Optional
 
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
-from encadeador.controladores.sintetizadorcaso import SintetizadorCasoNEWAVE
+from encadeador.controladores.sintetizadorcaso import SintetizadorNEWAVE
 from encadeador.utils.terminal import converte_codificacao
 from inewave.newave import DGer, Arquivos  # type: ignore
 from idecomp.decomp.dadger import Dadger  # type: ignore
@@ -22,9 +22,9 @@ class PreparadorCaso:
     def factory(caso: Caso,
                 log: Logger) -> 'PreparadorCaso':
         if isinstance(caso, CasoNEWAVE):
-            return PreparadorCasoNEWAVE(caso, log)
+            return PreparadorNEWAVE(caso, log)
         elif isinstance(caso, CasoDECOMP):
-            return PreparadorCasoDECOMP(caso, log)
+            return PreparadorDECOMP(caso, log)
         else:
             raise ValueError(f"Caso do tipo {type(caso)} não suportado")
 
@@ -45,7 +45,7 @@ class PreparadorCaso:
         return self._caso
 
 
-class PreparadorCasoNEWAVE(PreparadorCaso):
+class PreparadorNEWAVE(PreparadorCaso):
 
     def __init__(self,
                  caso: CasoNEWAVE,
@@ -97,7 +97,7 @@ class PreparadorCasoNEWAVE(PreparadorCaso):
             return False
 
 
-class PreparadorCasoDECOMP(PreparadorCaso):
+class PreparadorDECOMP(PreparadorCaso):
 
     def __init__(self,
                  caso: CasoDECOMP,
@@ -133,7 +133,7 @@ class PreparadorCasoDECOMP(PreparadorCaso):
                     return False
                 caso_cortes: CasoNEWAVE = caso_entrada
                 # Verifica se é necessário e extrai os cortes
-                sintetizador = SintetizadorCasoNEWAVE(caso_cortes, self._log)
+                sintetizador = SintetizadorNEWAVE(caso_cortes, self._log)
                 if not sintetizador.verifica_cortes_extraidos():
                     sintetizador.extrai_cortes()
                 # Altera os registros FC

@@ -82,7 +82,7 @@ class Caso:
                                 dados: DadosCaso,
                                 cfg: Configuracoes):
         self._dados = dados
-        self._cfg = cfg
+        self._configuracoes = cfg
 
     @staticmethod
     def _verifica_caso_configurado(valor):

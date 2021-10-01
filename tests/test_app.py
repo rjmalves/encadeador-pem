@@ -5,111 +5,61 @@ from os.path import join
 from logging import getLogger
 from dotenv import load_dotenv
 import pytest
+from unittest.mock import PropertyMock
 from pytest_mock.plugin import MockerFixture
 
 from encadeador.modelos.configuracoes import Configuracoes
+from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
 from encadeador.app import App
 
 DIR_INICIAL = pathlib.Path().resolve()
-DIR_TESTE = join(DIR_INICIAL, "tests/_arquivos/casos")
+DIR_TESTE = join(DIR_INICIAL, "tests", "_arquivos", "casos")
+CAMINHO_TESTE_NW = join(DIR_TESTE, "2021_01_rv0", "newave")
+CAMINHO_TESTE_DCP = join(DIR_TESTE, "2021_01_rv0", "decomp")
 ARQ_CFG = join(DIR_TESTE, "encadeia_app.cfg")
 
 
-class GerenteChamadasTerminal:
-
-    def __init__(self) -> None:
-        self.NUM_CHAMADAS = 0
-        self.respostas = []
-
-    def reseta_contagem_chamadas(self):
-        self.NUM_CHAMADAS = 0
-
-    def mock_executa_terminal(self,
-                              cmds: List[str],
-                              timeout: float = 1):
-        ret = []
-        self.NUM_CHAMADAS += 1
-        if self.NUM_CHAMADAS == len(self.respostas) + 1:
-            ret = ["", "", ""]
-            self.reseta_contagem_chamadas()
-        else:
-            ret = self.respostas[self.NUM_CHAMADAS - 1]
-        return 0, ret
-
-
-def test_app_executa_caso_sumiu_fila(mocker: MockerFixture):
+def test_app_erro_construcao_arvore(mocker: MockerFixture):
     log = getLogger()
     chdir(DIR_TESTE)
     load_dotenv(ARQ_CFG, override=True)
     cfg = Configuracoes.le_variaveis_ambiente()
-    g = GerenteChamadasTerminal()
-    g.respostas = [
-                   ['Your job 123 ("DC202111") has been submitted'],
-                   ["", "",
-                   "123 0.00000 DC202111   pem          qw    09/22/2021" +
-                   " 13:17:19                                   72           "],
-                   ["", "",
-                   "123 0.00000 DC202111   pem          qw    09/22/2021" +
-                   " 13:17:19                                   72           "]
-                  ]
-    mocker.patch("encadeador.controladores.gerenciadorfila.executa_terminal",
-                 side_effect = g.mock_executa_terminal)
-    mocker.patch("encadeador.controladores.monitorcaso.ArmazenadorCaso" +
-                 ".armazena_caso",
-                 return_value=True)
-    mocker.patch("encadeador.controladores.monitorcaso" +
-                 ".SintetizadorCasoDECOMP.sintetiza_caso",
-                 return_value=True)
+    mocker.patch("encadeador.app.ArvoreCasos.le_arquivo_casos",
+                 return_value=None)
+    mocker.patch("encadeador.app.ArvoreCasos.constroi_casos",
+                 return_value=False)
     with pytest.raises(RuntimeError):
         a = App(cfg, log)
         a.executa()
     chdir(DIR_INICIAL)
 
 
-
-def test_app_executa_caso_deletado(mocker: MockerFixture):
+def test_app_executa_caso_erro(mocker: MockerFixture):
     log = getLogger()
     chdir(DIR_TESTE)
     load_dotenv(ARQ_CFG, override=True)
     cfg = Configuracoes.le_variaveis_ambiente()
-    g = GerenteChamadasTerminal()
-    g.respostas = [
-                   ['Your job 123 ("DC202111") has been submitted'],
-                   ["", "",
-                   "    123 0.00000 DC202111   pem          qw    09/22/2021" +
-                   " 13:17:19                                   72           "],
-                   ["", "",
-                   "    123 0.00000 DC202111   pem          r     09/22/2021" +
-                   " 13:17:19                                   72           "],
-                   ["", "",
-                   "    123 0.00000 DC202111   pem          dr    09/22/2021" +
-                   " 13:17:19                                   72           "]
-                  ]
-    mocker.patch("encadeador.controladores.gerenciadorfila.executa_terminal",
-                 side_effect = g.mock_executa_terminal)
-    with pytest.raises(RuntimeError):
-        a = App(cfg, log)
-        a.executa()
-    chdir(DIR_INICIAL)
-
-
-def test_app_executa_max_flex_decomp(mocker: MockerFixture):
-    log = getLogger()
-    chdir(DIR_TESTE)
-    load_dotenv(ARQ_CFG, override=True)
-    cfg = Configuracoes.le_variaveis_ambiente()
-    g = GerenteChamadasTerminal()
-    g.respostas = [
-                   ['Your job 123 ("DC202111") has been submitted'],
-                   ["", "",
-                   "    123 0.00000 DC202111   pem          qw    09/22/2021" +
-                   " 13:17:19                                   72           "],
-                   ["", "",
-                   "    123 0.00000 DC202111   pem          r     09/22/2021" +
-                   " 13:17:19                                   72           "]
-                  ]
-    mocker.patch("encadeador.controladores.gerenciadorfila.executa_terminal",
-                 side_effect=g.mock_executa_terminal)
+    c = ArmazenadorCaso.recupera_caso(cfg,
+                                      CAMINHO_TESTE_NW)
+    mocker.patch("encadeador.app.ArvoreCasos.le_arquivo_casos",
+                 return_value=None)
+    mocker.patch("encadeador.app.ArvoreCasos.proximo_caso",
+                 new_callable=PropertyMock,
+                 return_value=c)
+    mocker.patch("encadeador.app.ArvoreCasos.ultimo_newave",
+                 new_callable=PropertyMock,
+                 return_value=None)
+    mocker.patch("encadeador.app.ArvoreCasos.ultimo_decomp",
+                 new_callable=PropertyMock,
+                 return_value=None)
+    mocker.patch("encadeador.app.ArvoreCasos.terminou",
+                 new_callable=PropertyMock,
+                 return_value=False)
+    mocker.patch("encadeador.app.ArvoreCasos.constroi_casos",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.executorcaso" +
+                 ".ExecutorNEWAVE.executa_e_monitora_caso",
+                 return_value=False)
     with pytest.raises(RuntimeError):
         a = App(cfg, log)
         a.executa()

@@ -9,8 +9,8 @@ from pytest_mock.plugin import MockerFixture
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.caso import CasoNEWAVE
 from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
-from encadeador.controladores.sintetizadorcaso import SintetizadorCasoNEWAVE
-from encadeador.controladores.sintetizadorcaso import SintetizadorCasoDECOMP
+from encadeador.controladores.sintetizadorcaso import SintetizadorNEWAVE
+from encadeador.controladores.sintetizadorcaso import SintetizadorDECOMP
 
 DIR_INICIAL = pathlib.Path().resolve()
 DIR_TESTE = join(DIR_INICIAL, "tests", "_arquivos", "casos")
@@ -26,7 +26,7 @@ log = logging.getLogger()
 def test_sintetizador_caso_nao_inicializado():
     with pytest.raises(ValueError):
         c = CasoNEWAVE()
-        s = SintetizadorCasoNEWAVE(c, log)
+        s = SintetizadorNEWAVE(c, log)
 
 
 def test_sintetizador_newave():
@@ -35,7 +35,7 @@ def test_sintetizador_newave():
     cfg = Configuracoes.le_variaveis_ambiente()
     c = ArmazenadorCaso.recupera_caso(cfg,
                                       CAMINHO_TESTE_NW)
-    s = SintetizadorCasoNEWAVE(c, log)
+    s = SintetizadorNEWAVE(c, log)
     r = s.sintetiza_caso()
     chdir(DIR_INICIAL)
     assert r
@@ -47,7 +47,7 @@ def test_sintetizador_decomp():
     cfg = Configuracoes.le_variaveis_ambiente()
     c = ArmazenadorCaso.recupera_caso(cfg,
                                       CAMINHO_TESTE_DCP)
-    s = SintetizadorCasoDECOMP(c, log)
+    s = SintetizadorDECOMP(c, log)
     r = s.sintetiza_caso()
     chdir(DIR_INICIAL)
     assert r
@@ -59,9 +59,9 @@ def test_sintetizador_extrai_deleta_cortes_sucesso(mocker: MockerFixture):
     cfg = Configuracoes.le_variaveis_ambiente()
     c = ArmazenadorCaso.recupera_caso(cfg,
                                       CAMINHO_TESTE_NW)
-    s = SintetizadorCasoNEWAVE(c, log)
+    s = SintetizadorNEWAVE(c, log)
     mocker.patch("encadeador.controladores.sintetizadorcaso" +
-                 ".SintetizadorCasoNEWAVE._nomes_arquivos_cortes",
+                 ".SintetizadorNEWAVE._nomes_arquivos_cortes",
                  return_value=["cortes.dat", "cortesh.dat"])
     if not s.verifica_cortes_extraidos():
         s.extrai_cortes()

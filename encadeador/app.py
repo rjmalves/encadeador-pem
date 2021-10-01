@@ -2,6 +2,7 @@ from os import chdir
 from logging import Logger
 
 from encadeador.modelos.arvorecasos import ArvoreCasos
+from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.controladores.executorcaso import ExecutorCaso
 
@@ -13,6 +14,7 @@ class App:
                  log: Logger) -> None:
         self._cfg = cfg
         self._log = log
+        self._arvore = None
 
     def __constroi_arvore_casos(self) -> ArvoreCasos:
         self._arvore = ArvoreCasos(self._cfg, self._log)
@@ -28,6 +30,8 @@ class App:
             chdir(self._cfg.caminho_base_estudo)
             prox = self._arvore.proximo_caso
             executor = ExecutorCaso.factory(prox, self._log)
-            if not executor.executa_e_monitora_caso():
+            ult_nw = self._arvore.ultimo_newave
+            ult_dc = self._arvore.ultimo_decomp
+            if not executor.executa_e_monitora_caso(ult_nw, ult_dc):
                 raise RuntimeError(f"Erro no caso {prox.nome}")
         self._log.info("Finalizando Encadeador")

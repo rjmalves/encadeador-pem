@@ -5,11 +5,11 @@ from logging import Logger
 from encadeador.modelos.arvorecasos import ArvoreCasos
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
-from encadeador.controladores.preparadorcaso import PreparadorCasoNEWAVE
-from encadeador.controladores.preparadorcaso import PreparadorCasoDECOMP
+from encadeador.controladores.preparadorcaso import PreparadorNEWAVE
+from encadeador.controladores.preparadorcaso import PreparadorDECOMP
 from encadeador.controladores.monitorcaso import MonitorNEWAVE
 from encadeador.controladores.monitorcaso import MonitorDECOMP
-from encadeador.controladores.sintetizadorcaso import SintetizadorCasoNEWAVE
+from encadeador.controladores.sintetizadorcaso import SintetizadorNEWAVE
 
 
 class AvaliadorCaso:
@@ -18,7 +18,6 @@ class AvaliadorCaso:
                  caso: Caso,
                  log: Logger) -> None:
         self._caso = caso
-        self._cfg = cfg
         self._log = log
 
     @staticmethod
@@ -32,7 +31,7 @@ class AvaliadorCaso:
             raise ValueError(f"Caso do tipo {type(caso)} não suportado")
 
     @abstractmethod
-    def executa_e_monitora_caso(self) -> bool:
+    def avalia_resultado_caso(self) -> bool:
         pass
 
 
@@ -42,10 +41,9 @@ class AvaliadorCasoNEWAVE(AvaliadorCaso):
                  caso: CasoNEWAVE,
                  log: Logger) -> None:
         super().__init__(caso,
-                         cfg,
                          log)
 
-    def executa_e_monitora_caso(self) -> bool:
+    def avalia_resultado_caso(self) -> bool:
         pass
 
 
@@ -55,8 +53,7 @@ class AvaliadorCasoDECOMP(AvaliadorCaso):
                  caso: CasoDECOMP,
                  log: Logger) -> None:
         super().__init__(caso,
-                         cfg,
                          log)
 
-    def executa_e_monitora_caso(self) -> bool:
+    def avalia_resultado_caso(self) -> bool:
         pass

@@ -9,8 +9,7 @@ from pytest_mock.plugin import MockerFixture
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.caso import CasoNEWAVE
 from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
-from encadeador.controladores.preparadorcaso import PreparadorCasoNEWAVE
-from encadeador.controladores.preparadorcaso import PreparadorCasoDECOMP
+from encadeador.controladores.preparadorcaso import PreparadorCaso
 
 
 DIR_INICIAL = pathlib.Path().resolve()
@@ -25,7 +24,7 @@ def test_preparador_caso_nao_inicializado():
     chdir(DIR_TESTE)
     with pytest.raises(ValueError):
         c = CasoNEWAVE()
-        p = PreparadorCasoNEWAVE(c, log)
+        p = PreparadorCaso.factory(c, log)
         p.prepara_caso()
     chdir(DIR_INICIAL)
 
@@ -36,7 +35,7 @@ def test_preparador_newave():
     cfg = Configuracoes.le_variaveis_ambiente()
     c = ArmazenadorCaso.recupera_caso(cfg,
                                       CAMINHO_TESTE_NW)
-    p = PreparadorCasoNEWAVE(c, log)
+    p = PreparadorCaso.factory(c, log)
     r = p.prepara_caso()
     assert r
     chdir(DIR_INICIAL)
@@ -48,12 +47,11 @@ def test_preparador_decomp(mocker: MockerFixture):
     cfg = Configuracoes.le_variaveis_ambiente()
     c_ant = ArmazenadorCaso.recupera_caso(cfg,
                                           CAMINHO_TESTE_NW)
-    print(c_ant.caminho)
     c = ArmazenadorCaso.recupera_caso(cfg,
                                       CAMINHO_TESTE_DCP)
-    p = PreparadorCasoDECOMP(c, log)
+    p = PreparadorCaso.factory(c, log)
     m = mocker.patch("encadeador.controladores.preparadorcaso" +
-                     ".SintetizadorCasoNEWAVE.verifica_cortes_extraidos")
+                     ".SintetizadorNEWAVE.verifica_cortes_extraidos")
     m.return_value = True
     r = p.prepara_caso(caso_cortes=c_ant)
     assert r

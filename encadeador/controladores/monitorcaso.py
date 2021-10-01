@@ -9,8 +9,8 @@ from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 from encadeador.modelos.estadojob import EstadoJob
 from encadeador.controladores.gerenciadorfila import GerenciadorFila
 from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
-from encadeador.controladores.sintetizadorcaso import SintetizadorCaso, SintetizadorCasoNEWAVE
-from encadeador.controladores.sintetizadorcaso import SintetizadorCasoDECOMP
+from encadeador.controladores.sintetizadorcaso import SintetizadorCaso, SintetizadorNEWAVE
+from encadeador.controladores.sintetizadorcaso import SintetizadorDECOMP
 
 
 class MonitorCaso:
@@ -128,7 +128,7 @@ class MonitorCaso:
                 elif estado == EstadoJob.ERRO:
                     retry = self._trata_caso_erro()
                 ultimo_estado = estado
-                if not self._armazenador.armazena_caso(estado):
+                if not self._armazenador.armazena_caso():
                     raise ValueError()
                 time.sleep(self.__class__.INTERVALO_POLL)
         except TimeoutError as e:

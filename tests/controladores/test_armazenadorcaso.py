@@ -24,7 +24,7 @@ def test_armazenador_caso_nao_inicializado():
     with pytest.raises(ValueError):
         c = CasoNEWAVE()
         a = ArmazenadorCaso(c, log)
-        a.armazena_caso(EstadoJob.EXECUTANDO)
+        a.armazena_caso()
 
 
 def test_armazenador_newave_inicializado():
@@ -35,7 +35,7 @@ def test_armazenador_newave_inicializado():
                      REVISAO_TESTE,
                      Configuracoes())
     a = ArmazenadorCaso(c, log)
-    a.armazena_caso(EstadoJob.EXECUTANDO)
+    a.armazena_caso()
 
 
 def test_armazenador_newave_valido():

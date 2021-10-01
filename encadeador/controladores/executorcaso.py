@@ -2,13 +2,13 @@ from abc import abstractmethod
 from os import chdir
 from logging import Logger
 from typing import Optional
-from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
 
 from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
+from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
 from encadeador.controladores.preparadorcaso import PreparadorCaso
 from encadeador.controladores.monitorcaso import MonitorCaso
 from encadeador.controladores.sintetizadorcaso import SintetizadorCaso
-from encadeador.controladores.sintetizadorcaso import SintetizadorCasoNEWAVE
+from encadeador.controladores.sintetizadorcaso import SintetizadorNEWAVE
 
 
 class ExecutorCaso:
@@ -34,7 +34,9 @@ class ExecutorCaso:
             raise ValueError(f"Caso do tipo {type(caso)} não suportado")
 
     @abstractmethod
-    def executa_e_monitora_caso(self, **kwargs) -> bool:
+    def executa_e_monitora_caso(self,
+                                ultimo_newave: Optional[CasoNEWAVE],
+                                ultimo_decomp: Optional[CasoDECOMP]) -> bool:
         pass
 
 
@@ -46,16 +48,16 @@ class ExecutorNEWAVE(ExecutorCaso):
         super().__init__(caso,
                          log)
 
-    def executa_e_monitora_caso(self, **kwargs) -> bool:
+    def executa_e_monitora_caso(self,
+                                ultimo_newave: Optional[CasoNEWAVE],
+                                ultimo_decomp: Optional[CasoDECOMP]) -> bool:
 
         chdir(self._caso.caminho)
 
-        ultimo_newave: Optional[CasoNEWAVE] = kwargs.get("ultimo_newave")
-        ultimo_decomp: Optional[CasoNEWAVE] = kwargs.get("ultimo_decomp")
         # Se não é o primeiro NEWAVE, apaga os cortes do último
         if ultimo_newave is not None:
-            sint_ultimo = SintetizadorCasoNEWAVE(ultimo_newave,
-                                                  self._log)
+            sint_ultimo = SintetizadorNEWAVE(ultimo_newave,
+                                             self._log)
             if sint_ultimo.verifica_cortes_extraidos():
                 sint_ultimo.deleta_cortes()
 
@@ -70,7 +72,7 @@ class ExecutorNEWAVE(ExecutorCaso):
         if not self._sintetizador.sintetiza_caso():
             self._log.error(f"Erro ao sintetizar caso: {self._caso.nome}")
             ret = False
-        if not self._armazenador.armazena_caso(self._caso.estado):
+        if not self._armazenador.armazena_caso():
             self._log.error(f"Erro ao armazenar caso: {self._caso.nome}")
             ret = False
         return ret
@@ -84,12 +86,11 @@ class ExecutorDECOMP(ExecutorCaso):
         super().__init__(caso,
                          log)
 
-    def executa_e_monitora_caso(self, **kwargs) -> bool:
+    def executa_e_monitora_caso(self,
+                                ultimo_newave: Optional[CasoNEWAVE],
+                                ultimo_decomp: Optional[CasoDECOMP]) -> bool:
 
         chdir(self._caso.caminho)
-
-        ultimo_newave: Optional[CasoNEWAVE] = kwargs.get("ultimo_newave")
-        ultimo_decomp: Optional[CasoNEWAVE] = kwargs.get("ultimo_decomp")
 
         if not self._preparador.prepara_caso(caso_cortes=ultimo_newave):
             raise RuntimeError(f"Erro na preparação do DC {self._caso.nome}")
@@ -102,7 +103,7 @@ class ExecutorDECOMP(ExecutorCaso):
         if not self._sintetizador.sintetiza_caso():
             self._log.error(f"Erro ao sintetizar caso: {self._caso.nome}")
             ret = False
-        if not self._armazenador.armazena_caso(self._caso.estado):
+        if not self._armazenador.armazena_caso():
             self._log.error(f"Erro ao armazenar caso: {self._caso.nome}")
             ret = False
         return ret

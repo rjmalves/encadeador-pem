@@ -29,9 +29,9 @@ class SintetizadorCaso:
     def factory(caso: Caso,
                 log: Logger) -> 'SintetizadorCaso':
         if isinstance(caso, CasoNEWAVE):
-            return SintetizadorCasoNEWAVE(caso, log)
+            return SintetizadorNEWAVE(caso, log)
         elif isinstance(caso, CasoDECOMP):
-            return SintetizadorCasoDECOMP(caso, log)
+            return SintetizadorDECOMP(caso, log)
         else:
             raise ValueError(f"Caso do tipo {type(caso)} não suportado")
 
@@ -50,7 +50,7 @@ class SintetizadorCaso:
         return self._caso
 
 
-class SintetizadorCasoNEWAVE(SintetizadorCaso):
+class SintetizadorNEWAVE(SintetizadorCaso):
 
     def __init__(self,
                  caso: CasoNEWAVE,
@@ -129,7 +129,7 @@ class SintetizadorCasoNEWAVE(SintetizadorCaso):
         return all(cortes_extraidos)
 
 
-class SintetizadorCasoDECOMP(SintetizadorCaso):
+class SintetizadorDECOMP(SintetizadorCaso):
 
     def __init__(self,
                  caso: CasoDECOMP,

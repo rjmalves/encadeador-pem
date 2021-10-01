@@ -6,7 +6,7 @@ from os.path import join
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.dadoscaso import DadosCaso
 from encadeador.modelos.estadojob import EstadoJob
-from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
+from encadeador.modelos.caso import Caso
 
 NOME_ARQUIVO_ESTADO = "caso_encadeado.csv"
 
@@ -19,7 +19,7 @@ class ArmazenadorCaso:
         self._caso = caso
         self._log = log
 
-    def armazena_caso(self, estado: EstadoJob) -> bool:
+    def armazena_caso(self) -> bool:
         try:
             self._caso._dados.escreve_arquivo()
             return True
