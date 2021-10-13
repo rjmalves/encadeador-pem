@@ -17,7 +17,6 @@ from encadeador.controladores.monitorcaso import MonitorDECOMP
 DIR_INICIAL = pathlib.Path().resolve()
 DIR_TESTE = join(DIR_INICIAL, "tests", "_arquivos", "casos")
 ARQ_CFG = "encadeia.cfg"
-CAMINHO_TESTE = "/home/user"
 ANO_TESTE = 2021
 MES_TESTE = 1
 REVISAO_TESTE = 0
@@ -49,7 +48,7 @@ class GerenteChamadasTerminal:
 def constroi_caso_configurado_teste(caso: Caso) -> Caso:
     load_dotenv(ARQ_CFG, override=True)
     cfg = Configuracoes.le_variaveis_ambiente()
-    caso.configura_caso(CAMINHO_TESTE,
+    caso.configura_caso(DIR_TESTE,
                         ANO_TESTE,
                         MES_TESTE,
                         REVISAO_TESTE,
