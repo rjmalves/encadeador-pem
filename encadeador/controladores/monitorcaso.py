@@ -113,7 +113,7 @@ class MonitorCaso:
                 estado = self._gerenciador.estado_job
                 self._log.info(f"Estado: {estado}")
                 if estado == EstadoJob.NAO_INICIADO:
-                    if ultimo_estado == EstadoJob.EXECUTANDO:
+                    if iniciou:
                         sucesso = self._avaliador.avalia()
                         self.caso.finaliza_caso(sucesso)
                         self._log.info("Finalizada execução do caso + "
