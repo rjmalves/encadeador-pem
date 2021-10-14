@@ -2,7 +2,6 @@ from os import chdir
 from logging import Logger
 
 from encadeador.modelos.arvorecasos import ArvoreCasos
-from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.controladores.executorcaso import ExecutorCaso
 

@@ -9,8 +9,7 @@ from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 from encadeador.modelos.estadojob import EstadoJob
 from encadeador.controladores.gerenciadorfila import GerenciadorFila
 from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
-from encadeador.controladores.sintetizadorcaso import SintetizadorCaso, SintetizadorNEWAVE
-from encadeador.controladores.sintetizadorcaso import SintetizadorDECOMP
+from encadeador.controladores.sintetizadorcaso import SintetizadorCaso
 
 
 class MonitorCaso:

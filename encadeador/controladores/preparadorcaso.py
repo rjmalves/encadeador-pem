@@ -4,6 +4,7 @@ from logging import Logger
 from typing import Optional
 
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
+from encadeador.controladores.encadeadorcaso import Encadeador
 from encadeador.controladores.sintetizadorcaso import SintetizadorNEWAVE
 from encadeador.utils.terminal import converte_codificacao
 from inewave.newave import DGer, Arquivos  # type: ignore
@@ -89,8 +90,10 @@ class PreparadorNEWAVE(PreparadorCaso):
         elif isinstance(caso_anterior, CasoDECOMP):
             self._log.info("Encadeando variáveis dos casos ",
                            f"{caso_anterior.nome} -> {self.caso.nome}")
-            # TODO - Encadeia as variáveis selecionadas
-            return True
+            encadeador = Encadeador.factory(caso_anterior,
+                                            self.caso,
+                                            self._log)
+            return encadeador.encadeia()
         else:
             self._log.error("Encadeamento NW com NW não suportado. Casos: " +
                             f"{caso_anterior.nome} -> {self.caso.nome}")
@@ -159,8 +162,10 @@ class PreparadorDECOMP(PreparadorCaso):
         elif isinstance(caso_anterior, CasoDECOMP):
             self._log.info("Encadeando variáveis dos casos ",
                            f"{caso_anterior.nome} -> {self.caso.nome}")
-            # TODO - Encadeia as variáveis selecionadas
-            return True
+            encadeador = Encadeador.factory(caso_anterior,
+                                            self.caso,
+                                            self._log)
+            return encadeador.encadeia()
         else:
             self._log.error("Encadeamento NW com DC não suportado. Casos: " +
                             f"{caso_anterior.nome} -> {self.caso.nome}")
