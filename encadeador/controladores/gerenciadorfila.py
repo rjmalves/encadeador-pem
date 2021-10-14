@@ -98,7 +98,6 @@ class GerenciadorFila:
         self._comandos = self.comando_qsub(caminho_job,
                                            nome_job,
                                            num_processadores)
-        print(self._comandos)
         try:
             cod, self._respostas = executa_terminal(self._comandos)
         except TimeoutError:

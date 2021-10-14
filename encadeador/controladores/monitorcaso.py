@@ -84,6 +84,7 @@ class MonitorCaso:
 
     def _trata_caso_erro(self) -> bool:
         self._log.error(f"Erro na execução do caso: {self.caso.nome}")
+        self._log.info(f"Deletando job da fila...")
         s = self._gerenciador.deleta_job()
         if not s:
             raise ValueError("Erro ao deletar o job " +
@@ -110,6 +111,7 @@ class MonitorCaso:
                     iniciou = False
                 # Máquina de estados para controlar a execução
                 estado = self._gerenciador.estado_job
+                self._log.info(f"Estado: {estado}")
                 if estado == EstadoJob.NAO_INICIADO:
                     if ultimo_estado == EstadoJob.EXECUTANDO:
                         sucesso = self._avaliador.avalia()
@@ -129,6 +131,8 @@ class MonitorCaso:
                     pass
                 elif estado == EstadoJob.ERRO:
                     retry = self._trata_caso_erro()
+                
+                # Atualiza o último estado
                 ultimo_estado = estado
                 if not self._armazenador.armazena_caso():
                     raise ValueError(f"Erro ao armazenar {self.caso.nome}")
