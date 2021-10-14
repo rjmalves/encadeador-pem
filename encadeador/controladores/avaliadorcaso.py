@@ -51,7 +51,9 @@ class AvaliadorNEWAVE(AvaliadorCaso):
             self._log.error("Arquivo pmo.dat não encontrado" +
                             f" no diretório do NW {self._caso.nome}")
             return False
-        except Exception:
+        except Exception as e:
+            self._log.error("Erro na avaliação das saídas" +
+                            f" do NW {self._caso.nome}: {e}")
             return False
 
 
