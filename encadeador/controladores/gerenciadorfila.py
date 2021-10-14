@@ -171,14 +171,12 @@ class GerenciadorFilaSGE(GerenciadorFila):
     def estado_job(self) -> EstadoJob:
 
         def __procura_codigo_estado(saidas: List[str]):
-            achou = False
             estado = ""
             for linha in saidas[2:]:
                 lin = linha.strip()
                 if lin.split(" ")[0] == "":
                     break
                 if int(lin.split(" ")[0]) == self.id_job:
-                    achou = True
                     estado = linha[35:38].strip()
                     break
             return estado
@@ -201,8 +199,10 @@ class GerenciadorFilaSGE(GerenciadorFila):
             estadojob = EstadoJob.EXECUTANDO
         elif estado == "dr":
             estadojob = EstadoJob.DELETANDO
-        else:
+        elif estado == "":
             estadojob = EstadoJob.NAO_INICIADO
+        else:
+            raise ValueError(f"Estado não reconhecido: {estado}")
         return estadojob
 
     def deleta_job(self) -> bool:
