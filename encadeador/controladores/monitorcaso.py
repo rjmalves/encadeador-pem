@@ -163,7 +163,7 @@ class MonitorNEWAVE(MonitorCaso):
 
     # Override
     @property
-    def aminho_job(self) -> str:
+    def caminho_job(self) -> str:
         cfg = self.caso.configuracoes
         dir_base = cfg.diretorio_instalacao_newaves
         versao = cfg.versao_newave
