@@ -162,7 +162,8 @@ class MonitorNEWAVE(MonitorCaso):
         return self._caso
 
     # Override
-    def _obtem_caminho_job(self) -> str:
+    @property
+    def aminho_job(self) -> str:
         cfg = self.caso.configuracoes
         dir_base = cfg.diretorio_instalacao_newaves
         versao = cfg.versao_newave
@@ -172,7 +173,8 @@ class MonitorNEWAVE(MonitorCaso):
         return join(dir_versao, arq_job[0])
 
     # Override
-    def _obtem_nome_job(self) -> str:
+    @property
+    def nome_job(self) -> str:
         return f"NW{self.caso.ano}{self.caso.mes}"
 
 
@@ -191,7 +193,8 @@ class MonitorDECOMP(MonitorCaso):
         return self._caso
 
     # Override
-    def _obtem_caminho_job(self) -> str:
+    @property
+    def caminho_job(self) -> str:
         cfg = self.caso.configuracoes
         dir_base = cfg.diretorio_instalacao_decomps
         versao = cfg.versao_decomp
@@ -201,5 +204,6 @@ class MonitorDECOMP(MonitorCaso):
         return join(dir_versao, arq_job[0])
 
     # Override
-    def _obtem_nome_job(self) -> str:
+    @property
+    def nome_job(self) -> str:
         return f"DC{self.caso.ano}{self.caso.mes}{self.caso.revisao}"
