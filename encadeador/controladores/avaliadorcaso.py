@@ -1,15 +1,8 @@
 from abc import abstractmethod
-from os import chdir
 from logging import Logger
+from inewave.newave import PMO
 
-from encadeador.modelos.arvorecasos import ArvoreCasos
-from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
-from encadeador.controladores.preparadorcaso import PreparadorNEWAVE
-from encadeador.controladores.preparadorcaso import PreparadorDECOMP
-from encadeador.controladores.monitorcaso import MonitorNEWAVE
-from encadeador.controladores.monitorcaso import MonitorDECOMP
-from encadeador.controladores.sintetizadorcaso import SintetizadorNEWAVE
 
 
 class AvaliadorCaso:
@@ -24,18 +17,18 @@ class AvaliadorCaso:
     def factory(caso: Caso,
                 log: Logger) -> 'AvaliadorCaso':
         if isinstance(caso, CasoNEWAVE):
-            return AvaliadorCasoNEWAVE(caso, log)
+            return AvaliadorNEWAVE(caso, log)
         elif isinstance(caso, CasoDECOMP):
-            return AvaliadorCasoDECOMP(caso, log)
+            return AvaliadorDECOMP(caso, log)
         else:
             raise ValueError(f"Caso do tipo {type(caso)} não suportado")
 
     @abstractmethod
-    def avalia_resultado_caso(self) -> bool:
+    def avalia(self) -> bool:
         pass
 
 
-class AvaliadorCasoNEWAVE(AvaliadorCaso):
+class AvaliadorNEWAVE(AvaliadorCaso):
 
     def __init__(self,
                  caso: CasoNEWAVE,
@@ -43,11 +36,26 @@ class AvaliadorCasoNEWAVE(AvaliadorCaso):
         super().__init__(caso,
                          log)
 
-    def avalia_resultado_caso(self) -> bool:
-        pass
+    def avalia(self) -> bool:
+        try:
+            self._log.info(f"Verificando saídas do NW {self._caso.nome}")
+            pmo = PMO.le_arquivo(self._caso.caminho)
+            custos = pmo.custo_operacao_series_simuladas
+            if custos.empty:
+                self._log.error("Erro no processamento do NW " +
+                                f"{self._caso.nome}")
+                return False
+            self._log.info(f"Caso concluído com sucesso: {self._caso.nome}")
+            return True
+        except FileNotFoundError:
+            self._log.error("Arquivo pmo.dat não encontrado" +
+                            f" no diretório do NW {self._caso.nome}")
+            return False
+        except Exception:
+            return False
 
 
-class AvaliadorCasoDECOMP(AvaliadorCaso):
+class AvaliadorDECOMP(AvaliadorCaso):
 
     def __init__(self,
                  caso: CasoDECOMP,
@@ -55,5 +63,6 @@ class AvaliadorCasoDECOMP(AvaliadorCaso):
         super().__init__(caso,
                          log)
 
-    def avalia_resultado_caso(self) -> bool:
-        pass
+    def avalia(self) -> bool:
+        # TODO - Conferir se existe algum dado no sumario.rvX
+        return True

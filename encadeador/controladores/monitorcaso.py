@@ -4,6 +4,7 @@ from logging import Logger
 from os.path import join
 from os import listdir
 import time
+from encadeador.controladores.avaliadorcaso import AvaliadorCaso
 
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 from encadeador.modelos.estadojob import EstadoJob
@@ -29,7 +30,7 @@ class MonitorCaso:
         g = caso.configuracoes.gerenciador_fila
         self._gerenciador = GerenciadorFila.factory(g)
         self._armazenador = ArmazenadorCaso(caso, log)
-        self._sintetizador = SintetizadorCaso.factory(caso, log)
+        self._avaliador = AvaliadorCaso.factory(caso, log)
 
     @staticmethod
     def factory(caso: Caso,
@@ -111,11 +112,13 @@ class MonitorCaso:
                 estado = self._gerenciador.estado_job
                 if estado == EstadoJob.NAO_INICIADO:
                     if ultimo_estado == EstadoJob.EXECUTANDO:
-                        self.caso.finaliza_caso(True)
-                        self._log.info("Caso concluído com sucesso")
+                        sucesso = self._avaliador.avalia()
+                        self.caso.finaliza_caso(sucesso)
+                        self._log.info("Finalizada execução do caso + "
+                                       f"{self.caso.nome}")
                         return True
                     else:
-                        self._log.error("Erro na execução do job" +
+                        self._log.error("Erro na execução do caso" +
                                         f" {self.caso.nome}")
                         return False
                 elif estado == EstadoJob.ESPERANDO:
@@ -128,13 +131,13 @@ class MonitorCaso:
                     retry = self._trata_caso_erro()
                 ultimo_estado = estado
                 if not self._armazenador.armazena_caso():
-                    raise ValueError()
+                    raise ValueError(f"Erro ao armazenar {self.caso.nome}")
                 time.sleep(self.__class__.INTERVALO_POLL)
         except TimeoutError as e:
-            self._log.error(f"Timeout na execução do job {self.caso.nome}: {e}")
+            self._log.error(f"Timeout na execução do caso {self.caso.nome}: {e}")
             return False
         except ValueError as e:
-            self._log.error(f"Erro na execução do job {self.caso.nome}: {e}")
+            self._log.error(f"Erro na execução do caso {self.caso.nome}: {e}")
             return False
 
     @property
