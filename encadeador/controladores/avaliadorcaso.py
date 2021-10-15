@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from logging import Logger
 from inewave.newave import PMO  # type: ignore
+from idecomp.decomp.sumario import Sumario
 
 from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
 
@@ -66,5 +67,22 @@ class AvaliadorDECOMP(AvaliadorCaso):
                          log)
 
     def avalia(self) -> bool:
-        # TODO - Conferir se existe algum dado no sumario.rvX
-        return True
+        try:
+            arq = f"sumario.rv{self._caso.revisao}"
+            self._log.info(f"Verificando saídas do DC {self._caso.nome}")
+            sumario = Sumario.le_arquivo(self._caso.caminho, arq)
+            cmo = sumario.cmo_medio_subsistema
+            if cmo.empty:
+                self._log.error("Erro no processamento do DC " +
+                                f"{self._caso.nome}")
+                return False
+            self._log.info(f"Caso concluído com sucesso: {self._caso.nome}")
+            return True
+        except FileNotFoundError:
+            self._log.error(f"Arquivo {arq} não encontrado" +
+                            f" no diretório do DC {self._caso.nome}")
+            return False
+        except Exception as e:
+            self._log.error("Erro na avaliação das saídas" +
+                            f" do DC {self._caso.nome}: {e}")
+            return False
