@@ -48,7 +48,7 @@ def executa_terminal(cmds: List[str],
 def converte_codificacao(caminho: str,
                          script_converte: str):
     arqs = [a for a in listdir(caminho)
-            if ".dat" in a and isfile(a)]
+            if (".dat" in a or ".rv" in a) and isfile(a)]
     for a in arqs:
         _, out = executa_terminal([f"file -i {a}"])
         cod = out[0].split("charset=")[1].strip()
