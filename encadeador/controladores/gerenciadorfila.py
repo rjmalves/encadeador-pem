@@ -177,7 +177,7 @@ class GerenciadorFilaSGE(GerenciadorFila):
                 if lin.split(" ")[0] == "":
                     break
                 if int(lin.split(" ")[0]) == self.id_job:
-                    estado = linha[35:38].strip()
+                    estado = linha[34:38].strip()
                     break
             return estado
 

@@ -59,7 +59,10 @@ def test_sintetizador_extrai_deleta_cortes_sucesso(mocker: MockerFixture):
     cfg = Configuracoes.le_variaveis_ambiente()
     c = ArmazenadorCaso.recupera_caso(cfg,
                                       CAMINHO_TESTE_NW)
-    s = SintetizadorNEWAVE(c, log)
+    if isinstance(c, CasoNEWAVE):
+        s = SintetizadorNEWAVE(c, log)
+    else:
+        raise TypeError("Somente caso de NEWAVE tem cortes")
     mocker.patch("encadeador.controladores.sintetizadorcaso" +
                  ".SintetizadorNEWAVE._nomes_arquivos_cortes",
                  return_value=["cortes.dat", "cortesh.dat"])

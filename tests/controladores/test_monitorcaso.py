@@ -27,7 +27,7 @@ class GerenteChamadasTerminal:
 
     def __init__(self) -> None:
         self.num_chamadas = 0
-        self.respostas = []
+        self.respostas: List[str] = []
 
     def reseta_contagem_chamadas(self):
         self.num_chamadas = 0
