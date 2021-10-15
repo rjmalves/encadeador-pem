@@ -10,7 +10,6 @@ from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 from encadeador.modelos.estadojob import EstadoJob
 from encadeador.controladores.gerenciadorfila import GerenciadorFila
 from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
-from encadeador.controladores.sintetizadorcaso import SintetizadorCaso
 
 
 class MonitorCaso:
@@ -84,7 +83,7 @@ class MonitorCaso:
 
     def _trata_caso_erro(self) -> bool:
         self._log.error(f"Erro na execução do caso: {self.caso.nome}")
-        self._log.info(f"Deletando job da fila...")
+        self._log.info("Deletando job da fila...")
         s = self._gerenciador.deleta_job()
         if not s:
             raise ValueError("Erro ao deletar o job " +
@@ -131,14 +130,14 @@ class MonitorCaso:
                     pass
                 elif estado == EstadoJob.ERRO:
                     retry = self._trata_caso_erro()
-                
+
                 # Atualiza o último estado
                 ultimo_estado = estado
                 if not self._armazenador.armazena_caso():
                     raise ValueError(f"Erro ao armazenar {self.caso.nome}")
                 time.sleep(self.__class__.INTERVALO_POLL)
-        except TimeoutError as e:
-            self._log.error(f"Timeout na execução do caso {self.caso.nome}: {e}")
+        except TimeoutError:
+            self._log.error(f"Timeout na execução do caso {self.caso.nome}")
             return False
         except ValueError as e:
             self._log.error(f"Erro na execução do caso {self.caso.nome}: {e}")

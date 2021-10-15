@@ -20,7 +20,7 @@ class Flexibilizador:
                                         log)
         else:
             raise TypeError(f"Caso do tipo {type(caso)} " +
-                             "não suportado para encadeamento")
+                            "não suportado para encadeamento")
 
     @abstractmethod
     def flexibiliza(self) -> bool:
@@ -35,7 +35,7 @@ class FlexibilizadorDECOMP(Flexibilizador):
         super().__init__(caso, log)
 
     def flexibiliza(self) -> bool:
-        self._caso.numero_flexibilizacoes += 1
+        self._caso.adiciona_flexibilizacao()
         # TODO - Lê o inviab_unic.rvX
         # TODO - Lê o dadger.rvX
         # TODO - Faz as flexibilizações

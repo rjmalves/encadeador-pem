@@ -1,4 +1,3 @@
-from logging import Logger
 from os.path import join, isdir, isfile
 from os import makedirs, listdir, remove
 from abc import abstractmethod

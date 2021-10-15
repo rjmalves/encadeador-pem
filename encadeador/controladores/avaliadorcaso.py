@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from logging import Logger
-from inewave.newave import PMO
+from inewave.newave import PMO  # type: ignore
 
 from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
 

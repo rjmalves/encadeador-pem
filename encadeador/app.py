@@ -13,7 +13,7 @@ class App:
                  log: Logger) -> None:
         self._cfg = cfg
         self._log = log
-        self._arvore = None
+        self._arvore: ArvoreCasos = None  # type: ignore
 
     def __constroi_arvore_casos(self) -> ArvoreCasos:
         self._arvore = ArvoreCasos(self._cfg, self._log)

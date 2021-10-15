@@ -28,7 +28,7 @@ class Encadeador:
                                           log)
         else:
             raise TypeError(f"Caso do tipo {type(caso_atual)} " +
-                             "não suportado para encadeamento")
+                            "não suportado para encadeamento")
 
     @abstractmethod
     def encadeia(self) -> bool:

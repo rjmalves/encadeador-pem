@@ -31,14 +31,12 @@ class PreparadorCaso:
 
     @abstractmethod
     def prepara_caso(self,
-                     log: Logger,
                      **kwargs) -> bool:
         pass
 
     @abstractmethod
     def encadeia_variaveis(self,
-                           caso_anterior: Optional[Caso],
-                           log: Logger) -> bool:
+                           caso_anterior: Optional[Caso]) -> bool:
         pass
 
     @property
@@ -85,7 +83,7 @@ class PreparadorNEWAVE(PreparadorCaso):
     def encadeia_variaveis(self,
                            caso_anterior: Optional[Caso]) -> bool:
         if caso_anterior is None:
-            self._log.info(f"Primeiro NW: {self.caso.nome} - sem encadeamentos")
+            self._log.info(f"Primeiro: {self.caso.nome} - sem encadeamentos")
             return True
         elif isinstance(caso_anterior, CasoDECOMP):
             self._log.info("Encadeando variáveis dos casos ",
@@ -111,8 +109,9 @@ class PreparadorDECOMP(PreparadorCaso):
                      **kwargs) -> bool:
         self._log.info(f"Adequando caso do DECOMP: {self.caso.nome}")
         try:
+            script = self.caso._configuracoes.script_converte_codificacao
             converte_codificacao(self.caso.caminho,
-                                 self.caso._configuracoes)
+                                 script)
             dadger = Dadger.le_arquivo(self.caso.caminho,
                                        f"dadger.rv{self.caso.revisao}")
             self._log.info("Dadger lido com sucesso")
@@ -157,7 +156,7 @@ class PreparadorDECOMP(PreparadorCaso):
     def encadeia_variaveis(self,
                            caso_anterior: Optional[Caso]) -> bool:
         if caso_anterior is None:
-            self._log.info(f"Primeiro DC: {self.caso.nome} - sem encadeamentos")
+            self._log.info(f"Primeiro: {self.caso.nome} - sem encadeamentos")
             return True
         elif isinstance(caso_anterior, CasoDECOMP):
             self._log.info("Encadeando variáveis dos casos ",

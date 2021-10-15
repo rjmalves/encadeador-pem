@@ -1,6 +1,6 @@
 from logging import Logger
 from os import listdir, sep
-from typing import List, Dict, Optional
+from typing import List, Optional
 from os.path import isdir, join, normpath
 
 from encadeador.modelos.configuracoes import Configuracoes

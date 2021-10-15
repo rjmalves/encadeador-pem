@@ -1,4 +1,4 @@
-import pandas as pd
+import pandas as pd  # type: ignore
 from typing import List
 from os.path import isfile
 from os.path import join
@@ -17,15 +17,15 @@ class DadosCaso:
                  programa: str,
                  caminho: str,
                  nome: str,
-                 ano: str,
-                 mes: str,
-                 revisao: str,
+                 ano: int,
+                 mes: int,
+                 revisao: int,
                  estados: List[EstadoJob],
                  instantes_entrada_fila: List[float],
                  instantes_inicio_execucao: List[float],
                  instantes_fim_execucao: List[float],
                  numeros_tentativas: List[int],
-                 numeros_processadores: List[str],
+                 numeros_processadores: List[int],
                  sucessos: List[bool],
                  numero_flexibilizacoes: int) -> None:
         self._programa = programa
@@ -113,7 +113,7 @@ class DadosCaso:
 
     def adiciona_flexibilizacao(self):
         if self.df_dados.shape[0] == 0:
-            raise ValueError(f"Caso não inicializado. " +
+            raise ValueError("Caso não inicializado. " +
                              "Não é possível flexibilizar")
         # Incrementa o número de flex e inicia com valores default
         # as listas

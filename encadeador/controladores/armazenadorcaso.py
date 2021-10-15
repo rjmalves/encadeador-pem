@@ -1,11 +1,9 @@
-import pandas as pd  # type: ignore
 from logging import Logger
 from os.path import isfile
 from os.path import join
 
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.dadoscaso import DadosCaso
-from encadeador.modelos.estadojob import EstadoJob
 from encadeador.modelos.caso import Caso
 
 NOME_ARQUIVO_ESTADO = "caso_encadeado.csv"
