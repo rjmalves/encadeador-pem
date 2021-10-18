@@ -61,6 +61,8 @@ class SintetizadorNEWAVE(SintetizadorCaso):
 
     def sintetiza_caso(self) -> bool:
         try:
+            self._log.info("Sintetizando informações do" +
+                           f" caso {self._caso.nome}")
             pmo = PMO.le_arquivo(self.caso.caminho)
             caminho_saida = join(self.caso.caminho,
                                  DIRETORIO_RESUMO_CASO)
@@ -202,6 +204,8 @@ class SintetizadorDECOMP(SintetizadorCaso):
 
     def sintetiza_caso(self) -> bool:
         try:
+            self._log.info("Sintetizando informações do" +
+                           f" caso {self._caso.nome}")
             arq_relato = f"relato.rv{self._caso.revisao}"
             caminho_saida = join(self.caso.caminho,
                                  DIRETORIO_RESUMO_CASO)
