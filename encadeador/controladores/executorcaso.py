@@ -109,7 +109,7 @@ class ExecutorDECOMP(ExecutorCaso):
         # Execuções adicionais: se necessárias
         while not self._caso.sucesso:
             max_flex = self._caso.configuracoes.maximo_flexibilizacoes_revisao
-            if self._caso.numero_flexibilizacoes > max_flex:
+            if self._caso.numero_flexibilizacoes >= max_flex:
                 raise RuntimeError("Máximo de flexibilizações atingido" +
                                    f" no DC {self._caso.nome}")
             # Se ainda pode flexibilizar
