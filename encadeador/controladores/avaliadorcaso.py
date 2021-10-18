@@ -1,0 +1,88 @@
+from abc import abstractmethod
+from logging import Logger
+from inewave.newave import PMO  # type: ignore
+from idecomp.decomp.sumario import Sumario  # type: ignore
+
+from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
+
+
+class AvaliadorCaso:
+
+    def __init__(self,
+                 caso: Caso,
+                 log: Logger) -> None:
+        self._caso = caso
+        self._log = log
+
+    @staticmethod
+    def factory(caso: Caso,
+                log: Logger) -> 'AvaliadorCaso':
+        if isinstance(caso, CasoNEWAVE):
+            return AvaliadorNEWAVE(caso, log)
+        elif isinstance(caso, CasoDECOMP):
+            return AvaliadorDECOMP(caso, log)
+        else:
+            raise ValueError(f"Caso do tipo {type(caso)} não suportado")
+
+    @abstractmethod
+    def avalia(self) -> bool:
+        pass
+
+
+class AvaliadorNEWAVE(AvaliadorCaso):
+
+    def __init__(self,
+                 caso: CasoNEWAVE,
+                 log: Logger) -> None:
+        super().__init__(caso,
+                         log)
+
+    def avalia(self) -> bool:
+        try:
+            self._log.info(f"Verificando saídas do NW {self._caso.nome}")
+            pmo = PMO.le_arquivo(self._caso.caminho)
+            custos = pmo.custo_operacao_series_simuladas
+            if custos.empty:
+                self._log.error("Erro no processamento do NW " +
+                                f"{self._caso.nome}")
+                return False
+            self._log.info(f"Caso concluído com sucesso: {self._caso.nome}")
+            return True
+        except FileNotFoundError:
+            self._log.error("Arquivo pmo.dat não encontrado" +
+                            f" no diretório do NW {self._caso.nome}")
+            return False
+        except Exception as e:
+            self._log.error("Erro na avaliação das saídas" +
+                            f" do NW {self._caso.nome}: {e}")
+            return False
+
+
+class AvaliadorDECOMP(AvaliadorCaso):
+
+    def __init__(self,
+                 caso: CasoDECOMP,
+                 log: Logger) -> None:
+        super().__init__(caso,
+                         log)
+
+    def avalia(self) -> bool:
+        try:
+            arq = f"sumario.rv{self._caso.revisao}"
+            self._log.info(f"Verificando saídas do DC {self._caso.nome}")
+            sumario = Sumario.le_arquivo(self._caso.caminho, arq)
+            cmo = sumario.cmo_medio_subsistema
+            if cmo.empty:
+                self._log.error("Erro no processamento do DC " +
+                                f"{self._caso.nome}")
+                return False
+            self._log.info(f"Caso concluído com sucesso: {self._caso.nome}")
+            return True
+        except FileNotFoundError:
+            self._log.error(f"Arquivo {arq} não encontrado" +
+                            f" no diretório do DC {self._caso.nome}")
+            return False
+        except Exception as e:
+            self._log.error("Erro na avaliação das saídas" +
+                            f" do DC {self._caso.nome}: {e}")
+            return False

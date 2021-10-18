@@ -1,0 +1,83 @@
+AGRUPAMENTOS DE INTERCÂMBIO
+ #AG A   B   COEF
+ XXX XXX XXX XX.XXXX
+   1   1   3  1.0000
+   1  11   3  1.0000
+   2   3   1  1.0000
+   2   3  11  1.0000
+   4  11   1  1.0000
+   4  11   3  1.0000
+   6   1   4  1.0000
+   6   1  11  1.0000
+  13  11   1  1.0000
+  13   3   1  1.0000
+  14  11   1  1.0000
+  14   3   1  1.0000
+  14   4   1  1.0000
+ 999
+LIMITES POR GRUPO
+  #AG MI ANOI MF ANOF LIM_P1  LIM_P2  LIM_P3
+ XXX  XX XXXX XX XXXX XXXXXX. XXXXXX. XXXXXX.
+   1   1 2021  2 2021   6500.   6500.   6500.     RECEBIMENTO NE                                                 
+   1   3 2021  6 2021   7000.   7000.   7000.     RECEBIMENTO NE                                                 
+   1   7 2021 12 2021   7600.   7600.   8000.     RECEBIMENTO NE                                                 
+   1   1 2022  1 2022   8300.   8300.   8300.     RECEBIMENTO NE                                                 
+   1   2 2022  2 2022   9400.   9400.   8300.     RECEBIMENTO NE                                                 
+   1   3 2022  6 2022  11300.  11300.   8300.     RECEBIMENTO NE                                                 
+   1   7 2022 12 2022   8700.   8700.   8500.     RECEBIMENTO NE                                                 
+   1   1 2023  6 2023  11300.  11300.   8300.     RECEBIMENTO NE                                                 
+   1   7 2023  9 2023   8700.   8700.   8500.     RECEBIMENTO NE                                                 
+   1  10 2023 12 2023   9600.   9600.   9000.     RECEBIMENTO NE                                                 
+   1   1 2024  6 2024  11300.  11300.   8300.     RECEBIMENTO NE                                                 
+   1   7 2024 12 2024   9600.   9600.   9000.     RECEBIMENTO NE                                                 
+   1   1 2025  3 2025  11300.  11300.   8300.     RECEBIMENTO NE                                                 
+   1   4 2025  6 2025  15000.  15000.   9300.     RECEBIMENTO NE                                                 
+   1   7 2025          11000.  11000.   9300.     RECEBIMENTO NE                                                 
+   2   1 2021  2 2021   6000.   6000.   6000.     EXPORTACAO  NE                                                 
+   2   3 2021  6 2021   6500.   6500.   7000.     EXPORTACAO  NE                                                 
+   2   7 2021  1 2022   7500.   7500.   7500.     EXPORTACAO  NE                                                 
+   2   2 2022  2 2022   7700.   7700.   7700.     EXPORTACAO  NE                                                 
+   2   3 2022  3 2023  12000.  12000.  13200.     EXPORTACAO  NE                                                 
+   2   4 2023  9 2023  12300.  12300.  13200.     EXPORTACAO  NE                                                 
+   2  10 2023  3 2025  14500.  14500.  14000.     EXPORTACAO  NE                                                 
+   2   4 2025          14700.  14700.  14100.     EXPORTACAO  NE                                                 
+   4   1 2021  1 2022   6000.   6000.   5700.     EXPORTACAO IMP-SENE                                            
+   4   2 2022           8600.   8600.   7500.     EXPORTACAO IMP-SENE                                            
+   6   1 2021  1 2022   5400.   5400.   5000.     FMCCO+SE/CO->XINGU
+   6   2 2022           6400.   6400.   5700.     FMCCO+SE/CO->XINGU
+  13   1 2021  1 2021   4942.   5242.   5242.     FNS + FNESE
+  13   2 2021  2 2021   4242.   4242.   3992.     FNS + FNESE
+  14   3 2021  4 2021  12342.  12342.  12742.     FNS + FNESE + XINGU->SE/CO
+  14   5 2021  6 2021  12675.  12675.  13075.     FNS + FNESE + XINGU->SE/CO
+  14   7 2021  7 2021   9075.   9075.   9075.     FNS + FNESE + XINGU->SE/CO
+  14   8 2021 10 2021   7575.   7575.   7575.     FNS + FNESE + XINGU->SE/CO
+  14  11 2021 11 2021   8242.   8242.   8242.     FNS + FNESE + XINGU->SE/CO
+  14  12 2021 12 2021   9242.   9242.   9242.     FNS + FNESE + XINGU->SE/CO
+  14   1 2022  1 2022  13042.  13042.  12742.     FNS + FNESE + XINGU->SE/CO
+  14   2 2022  2 2022  13342.  13342.  12942.     FNS + FNESE + XINGU->SE/CO
+  14   3 2022  4 2022  14442.  14442.  14742.     FNS + FNESE + XINGU->SE/CO
+  14   5 2022  6 2022  14775.  14775.  15075.     FNS + FNESE + XINGU->SE/CO
+  14   7 2022  7 2022  14275.  14275.  15275.     FNS + FNESE + XINGU->SE/CO
+  14   8 2022 10 2022  12775.  12775.  13775.     FNS + FNESE + XINGU->SE/CO
+  14  11 2022 11 2022  13342.  13342.  14342.     FNS + FNESE + XINGU->SE/CO
+  14  12 2022 12 2022  14542.  14542.  15442.     FNS + FNESE + XINGU->SE/CO
+  14   1 2023  4 2023  14442.  14442.  14742.     FNS + FNESE + XINGU->SE/CO
+  14   5 2023  6 2023  14775.  14775.  15075.     FNS + FNESE + XINGU->SE/CO
+  14   7 2023  7 2023  14575.  14575.  15275.     FNS + FNESE + XINGU->SE/CO
+  14   8 2023  9 2023  13075.  13075.  13775.     FNS + FNESE + XINGU->SE/CO
+  14  10 2023 10 2023  14275.  14275.  14275.     FNS + FNESE + XINGU->SE/CO
+  14  11 2023 11 2023  14942.  14942.  14742.     FNS + FNESE + XINGU->SE/CO
+  14  12 2023 12 2023  16042.  16042.  15942.     FNS + FNESE + XINGU->SE/CO
+  14   1 2024  4 2024  14442.  14442.  14742.     FNS + FNESE + XINGU->SE/CO
+  14   5 2024  6 2024  14775.  14775.  15075.     FNS + FNESE + XINGU->SE/CO
+  14   7 2024  7 2024  15775.  15775.  15775.     FNS + FNESE + XINGU->SE/CO
+  14   8 2024 10 2024  14275.  14275.  14275.     FNS + FNESE + XINGU->SE/CO
+  14  11 2024 11 2024  14942.  14942.  14742.     FNS + FNESE + XINGU->SE/CO
+  14  12 2024 12 2024  16042.  16042.  15942.     FNS + FNESE + XINGU->SE/CO
+  14   1 2025  4 2025  14442.  14442.  14742.     FNS + FNESE + XINGU->SE/CO
+  14   5 2025  6 2025  14775.  14775.  15075.     FNS + FNESE + XINGU->SE/CO
+  14   7 2025  7 2025  15775.  15775.  15775.     FNS + FNESE + XINGU->SE/CO
+  14   8 2025 10 2025  14275.  14275.  14275.     FNS + FNESE + XINGU->SE/CO
+  14  11 2025 11 2025  14942.  14942.  14742.     FNS + FNESE + XINGU->SE/CO
+  14  12 2025          16042.  16042.  15942.     FNS + FNESE + XINGU->SE/CO
+ 999
