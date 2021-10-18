@@ -35,6 +35,9 @@ class FlexibilizadorDECOMP(Flexibilizador):
         super().__init__(caso, log)
 
     def flexibiliza(self) -> bool:
+        max_flex = self._caso.configuracoes.maximo_flexibilizacoes_revisao
+        self._log.info(f"Flexibilizando caso {self._caso.nome}: " +
+                       f"{self._caso.numero_flexibilizacoes} de {max_flex}")
         self._caso.adiciona_flexibilizacao()
         # TODO - Lê o inviab_unic.rvX
         # TODO - Lê o dadger.rvX
