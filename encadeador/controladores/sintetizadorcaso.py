@@ -179,8 +179,8 @@ class SintetizadorDECOMP(SintetizadorCaso):
         df = pd.DataFrame(columns=["Subsistema"] + cols_df)
         for i, s in enumerate(subsistemas):
             valores_sub = [float(gh.loc[(gh["Estágio"] == e) &
-                                         (gh["Subsistema"] == s),
-                                         "Ghid"])
+                                        (gh["Subsistema"] == s),
+                                        "Ghid"])
                            for e in estagios]
             df.loc[i, "Subsistema"] = s
             df.loc[i, cols_df] = valores_sub

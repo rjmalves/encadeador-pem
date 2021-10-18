@@ -3407,8 +3407,8 @@ CI  000  2               1       0    0      0.00    0    0      0.00    0    0 
 &         (REGISTROS FC - FUNCAO CUSTO FUTURO MEDIO PRAZO 
 &----------------------------------------------------------------------------------------------
 &FC
-FC  NEWV21    ./2021_01_rv0/newave/cortesh.dat
-FC  NEWCUT    ./2021_01_rv0/newave/cortes.dat
+FC  NEWV21    ./2021_01_rv0/newave\cortesh.dat
+FC  NEWCUT    ./2021_01_rv0/newave\cortes.dat
 &
 &----------------------------------------------------------------------
 &             TAXA DE IRRIGACAO
