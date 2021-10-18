@@ -19,7 +19,8 @@ class App:
         self._arvore = ArvoreCasos(self._cfg, self._log)
         self._arvore.le_arquivo_casos()
         if not self._arvore.constroi_casos():
-            raise RuntimeError("Erro na construção dos Casos")
+            self._log.error("Erro na construção dos Casos")
+            raise RuntimeError()
         return self._arvore
 
     def executa(self):
@@ -31,6 +32,5 @@ class App:
             executor = ExecutorCaso.factory(prox, self._log)
             ult_nw = self._arvore.ultimo_newave
             ult_dc = self._arvore.ultimo_decomp
-            if not executor.executa_e_monitora_caso(ult_nw, ult_dc):
-                raise RuntimeError(f"Erro no caso {prox.nome}")
+            executor.executa_e_monitora_caso(ult_nw, ult_dc)
         self._log.info("Finalizando Encadeador")

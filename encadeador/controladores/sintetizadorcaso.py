@@ -6,6 +6,9 @@ from zipfile import ZipFile
 from logging import Logger
 
 from inewave.newave import DeckEntrada, PMO  # type: ignore
+from idecomp.decomp.relato import Relato  # type: ignore
+from idecomp.decomp.sumario import Sumario  # type: ignore
+from idecomp.decomp.inviabunic import InviabUnic  # type: ignore
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 
 DIRETORIO_RESUMO_CASO = "resumo"
@@ -137,12 +140,20 @@ class SintetizadorDECOMP(SintetizadorCaso):
 
     def sintetiza_caso(self) -> bool:
         try:
+            arq_relato = f"relato.rv{self._caso.revisao}"
+            caminho_saida = join(self.caso.caminho,
+                                 DIRETORIO_RESUMO_CASO)
+            relato = Relato.le_arquivo(self.caso.caminho, arq_relato)
             # Convergência do relato.rvX
             # TODO
-            # Inviabilidades do inviab_unic.rvX
+            # Inviabilidades e Déficit do inviab_unic.rvX
             # TODO
-            # CMO, EARM, GT, GH, Déficit do relato.rvX
-            # TODO
+            # CMO, EARM, GT, GH do relato.rvX
+            cmo = relato.cmo_medio_subsistema
+            earm_subsis = relato.energia_armazenada_subsistema
+            earm_ree = relato.energia_armazenada_ree
+            gt = relato.geracao_termica_subsistema
+            gh = relato.balanco_energetico
             return True
         except Exception as e:
             self._log.error(f"Erro de síntese do caso {self.caso.nome}: {e}")
