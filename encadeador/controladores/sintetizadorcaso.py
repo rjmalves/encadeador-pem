@@ -4,11 +4,11 @@ from abc import abstractmethod
 from typing import List
 from zipfile import ZipFile
 from logging import Logger
+import numpy as np  # type: ignore
+import pandas as pd  # type: ignore
 
 from inewave.newave import DeckEntrada, PMO  # type: ignore
 from idecomp.decomp.relato import Relato  # type: ignore
-from idecomp.decomp.sumario import Sumario  # type: ignore
-from idecomp.decomp.inviabunic import InviabUnic  # type: ignore
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 
 DIRETORIO_RESUMO_CASO = "resumo"
@@ -138,6 +138,68 @@ class SintetizadorDECOMP(SintetizadorCaso):
                  log: Logger):
         super().__init__(caso, log)
 
+    @staticmethod
+    def __processa_earm_sin(earm_subsis: pd.DataFrame,
+                            earmax: pd.DataFrame) -> pd.DataFrame:
+        valores_earmax = earmax["Earmax"].to_numpy()
+        earmax_sin = np.sum(valores_earmax)
+        earms_absolutos = earm_subsis.copy()
+        cols_estagios = ["Inicial"] + [c for c in list(earms_absolutos.columns)
+                                       if "Estágio" in c]
+        for c in cols_estagios:
+            earms_absolutos[c] *= (valores_earmax / 100)
+        earms_sin = earms_absolutos.loc[:, cols_estagios].sum(axis=0)
+        earms_sin /= earmax_sin
+        earms_sin *= 100
+        df = pd.DataFrame(columns=cols_estagios)
+        df.loc[0, :] = earms_sin
+        return df
+
+    @staticmethod
+    def __processa_dado_sin(dado_subsis: pd.DataFrame) -> pd.DataFrame:
+        cols_estagios = [c for c in list(dado_subsis.columns)
+                         if "Estágio" in c]
+        dado_sin = dado_subsis.loc[:, cols_estagios].sum(axis=0)
+        df = pd.DataFrame(columns=cols_estagios)
+        df.loc[0, :] = dado_sin
+        return df
+
+    @staticmethod
+    def __processa_gh(balanco: pd.DataFrame) -> pd.DataFrame:
+        gh = balanco.loc[:, ["Estágio", "Subsistema", "Ghid",
+                             "Itaipu50", "Itaipu60"]].copy()
+        gh["Ghid"] = gh["Ghid"] + gh["Itaipu50"] + gh["Itaipu60"]
+        gh = gh.drop(columns=["Itaipu50", "Itaipu60"])
+        # Formata da mesma maneira das demais tabelas do relato
+        estagios = list(set(gh["Estágio"].tolist()))
+        subsistemas = list(set(gh["Subsistema"].tolist()))
+        cols_df = [f"Estágio {e}" for e in estagios]
+        df = pd.DataFrame(columns=["Subsistema"] + cols_df)
+        for i, s in enumerate(subsistemas):
+            valores_sub = [float(gh.loc[(gh["Estágio"] == e) &
+                                         (gh["Subsistema"] == s),
+                                         "Ghid"])
+                           for e in estagios]
+            df.loc[i, "Subsistema"] = s
+            df.loc[i, cols_df] = valores_sub
+        return df
+
+    def __processa_mercado(balanco: pd.DataFrame) -> pd.DataFrame:
+        merc = balanco.loc[:, ["Estágio", "Subsistema", "Mercado"]]
+        # Formata da mesma maneira das demais tabelas do relato
+        estagios = list(set(merc["Estágio"].tolist()))
+        subsistemas = list(set(merc["Subsistema"].tolist()))
+        cols_df = [f"Estágio {e}" for e in estagios]
+        df = pd.DataFrame(columns=["Subsistema"] + cols_df)
+        for i, s in enumerate(subsistemas):
+            valores_sub = [float(merc.loc[(merc["Estágio"] == e) &
+                                          (merc["Subsistema"] == s),
+                                          "Mercado"])
+                           for e in estagios]
+            df.loc[i, "Subsistema"] = s
+            df.loc[i, cols_df] = valores_sub
+        return df
+
     def sintetiza_caso(self) -> bool:
         try:
             arq_relato = f"relato.rv{self._caso.revisao}"
@@ -151,9 +213,44 @@ class SintetizadorDECOMP(SintetizadorCaso):
             # CMO, EARM, GT, GH do relato.rvX
             cmo = relato.cmo_medio_subsistema
             earm_subsis = relato.energia_armazenada_subsistema
-            earm_ree = relato.energia_armazenada_ree
-            gt = relato.geracao_termica_subsistema
-            gh = relato.balanco_energetico
+            earmax = relato.energia_armazenada_maxima_subsistema
+            earm_sin = SintetizadorDECOMP.__processa_earm_sin(earm_subsis,
+                                                              earmax)
+            gt_subsis = relato.geracao_termica_subsistema
+            gt_sin = SintetizadorDECOMP.__processa_dado_sin(gt_subsis)
+            balanco = relato.balanco_energetico
+            gh_subsis = SintetizadorDECOMP.__processa_gh(balanco)
+            gh_sin = SintetizadorDECOMP.__processa_dado_sin(gh_subsis)
+            merc_subsis = SintetizadorDECOMP.__processa_mercado(balanco)
+            merc_sin = SintetizadorDECOMP.__processa_dado_sin(merc_subsis)
+            # Exporta os dados
+            cmo.to_csv(join(caminho_saida, "cmo.csv"),
+                       header=True,
+                       encoding="utf-8")
+            earm_subsis.to_csv(join(caminho_saida, "earm_subsis.csv"),
+                               header=True,
+                               encoding="utf-8")
+            earm_sin.to_csv(join(caminho_saida, "earm_sin.csv"),
+                            header=True,
+                            encoding="utf-8")
+            gt_subsis.to_csv(join(caminho_saida, "gt_subsis.csv"),
+                             header=True,
+                             encoding="utf-8")
+            gt_sin.to_csv(join(caminho_saida, "gt_sin.csv"),
+                          header=True,
+                          encoding="utf-8")
+            gh_subsis.to_csv(join(caminho_saida, "gh_subsis.csv"),
+                             header=True,
+                             encoding="utf-8")
+            gh_sin.to_csv(join(caminho_saida, "gh_sin.csv"),
+                          header=True,
+                          encoding="utf-8")
+            merc_subsis.to_csv(join(caminho_saida, "mercado_subsis.csv"),
+                               header=True,
+                               encoding="utf-8")
+            merc_sin.to_csv(join(caminho_saida, "mercado_sin.csv"),
+                            header=True,
+                            encoding="utf-8")
             return True
         except Exception as e:
             self._log.error(f"Erro de síntese do caso {self.caso.nome}: {e}")
