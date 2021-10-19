@@ -2,10 +2,10 @@ from abc import abstractmethod
 from os import chdir
 from logging import Logger
 from typing import Optional
-from encadeador.controladores.avaliadorcaso import AvaliadorCaso
-from encadeador.controladores.flexibilizadorcaso import Flexibilizador
 
 from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
+from encadeador.controladores.avaliadorcaso import AvaliadorCaso
+from encadeador.controladores.flexibilizadorcaso import Flexibilizador
 from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
 from encadeador.controladores.preparadorcaso import PreparadorCaso
 from encadeador.controladores.monitorcaso import MonitorCaso

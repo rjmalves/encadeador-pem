@@ -26,7 +26,7 @@ class Flexibilizador:
 
     @abstractmethod
     def flexibiliza(self) -> bool:
-        pass
+        raise RuntimeError("Não se deve flexibilizar NEWAVE")
 
 
 class FlexibilizadorDECOMP(Flexibilizador):
@@ -38,9 +38,9 @@ class FlexibilizadorDECOMP(Flexibilizador):
 
     def flexibiliza(self) -> bool:
         max_flex = self._caso.configuracoes.maximo_flexibilizacoes_revisao
-        self._log.info(f"Flexibilizando caso {self._caso.nome}: " +
-                       f"{self._caso.numero_flexibilizacoes} de {max_flex}")
         self._caso.adiciona_flexibilizacao()
+        self._log.info(f"Flexibilizando caso {self._caso.nome}: " +
+                       f"{self._caso.numero_flexibilizacoes } de {max_flex}")
         # Lê o inviab_unic.rvX
         arq_inviab = f"inviab_unic.rv{self._caso.revisao}"
         inviab = InviabUnic.le_arquivo(self._caso.caminho, arq_inviab)
