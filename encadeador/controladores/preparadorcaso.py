@@ -88,7 +88,7 @@ class PreparadorNEWAVE(PreparadorCaso):
             self._log.info(f"Primeiro: {self.caso.nome} - sem encadeamentos")
             return True
         elif isinstance(caso_anterior, CasoDECOMP):
-            self._log.info("Encadeando variáveis dos casos ",
+            self._log.info("Encadeando variáveis dos casos " +
                            f"{caso_anterior.nome} -> {self.caso.nome}")
             encadeador = Encadeador.factory(caso_anterior,
                                             self.caso,
@@ -160,7 +160,7 @@ class PreparadorDECOMP(PreparadorCaso):
             self._log.info(f"Primeiro: {self.caso.nome} - sem encadeamentos")
             return True
         elif isinstance(caso_anterior, CasoDECOMP):
-            self._log.info("Encadeando variáveis dos casos ",
+            self._log.info("Encadeando variáveis dos casos " +
                            f"{caso_anterior.nome} -> {self.caso.nome}")
             encadeador = Encadeador.factory(caso_anterior,
                                             self.caso,

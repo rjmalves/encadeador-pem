@@ -89,6 +89,9 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         for _, linha in usinas.iterrows():
             num = linha["Número"]
             num_dc = __numero_uhe_decomp(num)
+            # Confere se tem o reservatório
+            if num_dc not in set(volumes["Número"]):
+                continue
             vol = float(volumes.loc[volumes["Número"] == num_dc,
                                     "Estágio 1"])
             if num_dc == 251:
