@@ -89,8 +89,8 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         for _, linha in usinas.iterrows():
             num = linha["Número"]
             num_dc = __numero_uhe_decomp(num)
-            vol = volumes.loc[volumes["Número"] == num_dc,
-                              "Estágio 1"]
+            vol = float(volumes.loc[volumes["Número"] == num_dc,
+                                    "Estágio 1"])
             if num_dc == 251:
                 vol = __correcao_serra_mesa_ficticia(vol)
             usinas.loc[usinas["Número"] == num,
@@ -133,8 +133,8 @@ class EncadeadorDECOMPDECOMP(Encadeador):
         # Encadeia cada armazenamento
         for _, linha in volumes.iterrows():
             num = linha["Número"]
-            vol = volumes.loc[volumes["Número"] == num,
-                              "Estágio 1"]
+            vol = float(volumes.loc[volumes["Número"] == num,
+                                    "Estágio 1"])
             dadger.uh(num).volume_inicial = vol
         # Escreve o dadger de saída
         dadger.escreve_arquivo(self._caso_atual.caminho,
@@ -179,6 +179,6 @@ class EncadeadorDECOMPDECOMP(Encadeador):
         v = self._caso_atual.configuracoes.variaveis_encadeadas
         if "EARM" in v:
             self.__encadeia_earm()
-        elif "TVIAGEM" in v:
+        if "TVIAGEM" in v:
             self.__encadeia_tviagem()
         return True
