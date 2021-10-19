@@ -1,0 +1,262 @@
+from abc import abstractmethod
+import pandas as pd  # type: ignore
+from idecomp.decomp.hidr import Hidr  # type: ignore
+
+
+class Inviabilidade:
+
+    def __init__(self,
+                 iteracao: int,
+                 estagio: int,
+                 cenario: int,
+                 mensagem_restricao: str,
+                 violacao: float,
+                 unidade: str
+                 ):
+        self._iteracao = iteracao
+        self._estagio = estagio
+        self._cenario = cenario
+        self._mensagem_restricao = mensagem_restricao
+        self._violacao = violacao
+        self._unidade = unidade
+
+    @staticmethod
+    def factory(linha_inviab_unic: pd.Series,
+                hidr: Hidr) -> 'Inviabilidade':
+        if "Iteração" in list(linha_inviab_unic.index):
+            iteracao = int(linha_inviab_unic["Iteração"])
+        else:
+            iteracao = -1
+        estagio = int(linha_inviab_unic["Estágio"])
+        cenario = int(linha_inviab_unic["Cenário"])
+        mensagem_restricao = str(linha_inviab_unic["Restrição"])
+        violacao = float(linha_inviab_unic["Violação"])
+        unidade = str(linha_inviab_unic["Unidade"])
+        if "RESTRICAO ELETRICA" in mensagem_restricao:
+            return InviabilidadeRE(iteracao,
+                                   estagio,
+                                   cenario,
+                                   mensagem_restricao,
+                                   violacao,
+                                   unidade)
+        elif "RHQ" in mensagem_restricao:
+            return InviabilidadeHQ(iteracao,
+                                   estagio,
+                                   cenario,
+                                   mensagem_restricao,
+                                   violacao,
+                                   unidade)
+        elif "IRRIGACAO" in mensagem_restricao:
+            return InviabilidadeTI(iteracao,
+                                   estagio,
+                                   cenario,
+                                   mensagem_restricao,
+                                   violacao,
+                                   unidade,
+                                   hidr)
+        elif "RHV" in mensagem_restricao:
+            return InviabilidadeHV(iteracao,
+                                   estagio,
+                                   cenario,
+                                   mensagem_restricao,
+                                   violacao,
+                                   unidade)
+        elif "RHE" in mensagem_restricao:
+            return InviabilidadeHE(iteracao,
+                                   estagio,
+                                   cenario,
+                                   mensagem_restricao,
+                                   violacao,
+                                   unidade)
+        elif "EVAPORACAO" in mensagem_restricao:
+            return InviabilidadeEV(iteracao,
+                                   estagio,
+                                   cenario,
+                                   mensagem_restricao,
+                                   violacao,
+                                   unidade,
+                                   hidr)
+        elif "DEFICIT" in mensagem_restricao:
+            return InviabilidadeDeficit(iteracao,
+                                        estagio,
+                                        cenario,
+                                        mensagem_restricao,
+                                        violacao,
+                                        unidade)
+        else:
+            raise TypeError(f"Restrição {mensagem_restricao} não suportada")
+
+    @abstractmethod
+    def processa_mensagem(self, *args) -> list:
+        pass
+
+
+class InviabilidadeTI(Inviabilidade):
+
+    def __init__(self,
+                 iteracao: int,
+                 estagio: int,
+                 cenario: int,
+                 mensagem_restricao: str,
+                 violacao: float,
+                 unidade: str,
+                 hidr: Hidr):
+
+        super().__init__(iteracao,
+                         estagio,
+                         cenario,
+                         mensagem_restricao,
+                         violacao,
+                         unidade)
+        dados = self.processa_mensagem(hidr)
+        self._codigo = dados[0]
+        self._nome_usina = dados[1]
+
+    def processa_mensagem(self, *args) -> list:
+        hidr: Hidr = args[0]
+        nome = self._mensagem_restricao.split("IRRIGACAO, USINA")[1].strip()
+        codigo = int(list(hidr.tabela.loc[hidr.tabela["Nome"] == nome, :].index)[0])
+        return [codigo, nome]
+
+
+class InviabilidadeHQ(Inviabilidade):
+
+    def __init__(self,
+                 iteracao: int,
+                 estagio: int,
+                 cenario: int,
+                 mensagem_restricao: str,
+                 violacao: float,
+                 unidade: str):
+
+        super().__init__(iteracao,
+                         estagio,
+                         cenario,
+                         mensagem_restricao,
+                         violacao,
+                         unidade)
+        dados = self.processa_mensagem()
+        self._codigo = dados[0]
+        self._patamar = dados[1]
+        self._limite = dados[2]
+
+    def processa_mensagem(self) -> list:
+        codigo = int(self._mensagem_restricao.split("RHQ")[1].split(":")[0])
+        pat = int(self._mensagem_restricao.split("PATAMAR")[1].split("(")[0])
+        limite = self._mensagem_restricao.split("(")[1].split(")")[0]
+        return [codigo, pat, limite]
+
+
+class InviabilidadeHV(Inviabilidade):
+
+    def __init__(self,
+                 iteracao: int,
+                 estagio: int,
+                 cenario: int,
+                 mensagem_restricao: str,
+                 violacao: float,
+                 unidade: str):
+
+        super().__init__(iteracao,
+                         estagio,
+                         cenario,
+                         mensagem_restricao,
+                         violacao,
+                         unidade)
+        dados = self.processa_mensagem()
+        self._codigo = dados[0]
+        self._limite = dados[1]
+
+    def processa_mensagem(self) -> list:
+        codigo = int(self._mensagem_restricao.split("RHV")[1].split(":")[0])
+        limite = self._mensagem_restricao.split("(")[1].split(")")[0]
+        return [codigo, limite]
+
+
+class InviabilidadeHE(Inviabilidade):
+
+    def __init__(self,
+                 iteracao: int,
+                 estagio: int,
+                 cenario: int,
+                 mensagem_restricao: str,
+                 violacao: float,
+                 unidade: str):
+        super().__init__(iteracao,
+                         estagio,
+                         cenario,
+                         mensagem_restricao,
+                         violacao,
+                         unidade)
+
+
+class InviabilidadeRE(Inviabilidade):
+
+    def __init__(self,
+                 iteracao: int,
+                 estagio: int,
+                 cenario: int,
+                 mensagem_restricao: str,
+                 violacao: float,
+                 unidade: str):
+        super().__init__(iteracao,
+                         estagio,
+                         cenario,
+                         mensagem_restricao,
+                         violacao,
+                         unidade)
+        dados = self.processa_mensagem()
+        self._codigo = dados[0]
+        self._patamar = dados[1]
+        self._limite = dados[2]
+
+    def processa_mensagem(self) -> list:
+        r = "RESTRICAO ELETRICA"
+        codigo = int(self._mensagem_restricao.split(r)[1].split(":")[0])
+        pat = int(self._mensagem_restricao.split("PATAMAR")[1].split("(")[0])
+        limite = self._mensagem_restricao.split("(")[1].split(")")[0]
+        return [codigo, pat, limite]
+
+
+class InviabilidadeEV(Inviabilidade):
+
+    def __init__(self,
+                 iteracao: int,
+                 estagio: int,
+                 cenario: int,
+                 mensagem_restricao: str,
+                 violacao: float,
+                 unidade: str,
+                 hidr: Hidr):
+
+        super().__init__(iteracao,
+                         estagio,
+                         cenario,
+                         mensagem_restricao,
+                         violacao,
+                         unidade)
+        dados = self.processa_mensagem(hidr)
+        self._codigo = dados[0]
+        self._nome_usina = dados[1]
+
+    def processa_mensagem(self, hidr: Hidr) -> list:
+        nome = self._mensagem_restricao.split("EVAPORACAO, USINA")[1].strip()
+        codigo = int(list(hidr.tabela.loc[hidr.tabela["Nome"] == nome, :].index)[0])
+        return [codigo, nome]
+
+
+class InviabilidadeDeficit(Inviabilidade):
+
+    def __init__(self,
+                 iteracao: int,
+                 estagio: int,
+                 cenario: int,
+                 mensagem_restricao: str,
+                 violacao: float,
+                 unidade: str):
+        super().__init__(iteracao,
+                         estagio,
+                         cenario,
+                         mensagem_restricao,
+                         violacao,
+                         unidade)
