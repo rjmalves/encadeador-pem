@@ -53,6 +53,8 @@ class PreparadorNEWAVE(PreparadorCaso):
 
     def prepara_caso(self,
                      **kwargs) -> bool:
+        script = self.caso._configuracoes.script_converte_codificacao
+        converte_codificacao(self.caso.caminho, script)
         self._log.info(f"Adequando caso do NEWAVE: {self.caso.nome}")
         try:
             # TODO
@@ -110,8 +112,7 @@ class PreparadorDECOMP(PreparadorCaso):
         self._log.info(f"Adequando caso do DECOMP: {self.caso.nome}")
         try:
             script = self.caso._configuracoes.script_converte_codificacao
-            converte_codificacao(self.caso.caminho,
-                                 script)
+            converte_codificacao(self.caso.caminho, script)
             dadger = Dadger.le_arquivo(self.caso.caminho,
                                        f"dadger.rv{self.caso.revisao}")
             self._log.info("Dadger lido com sucesso")

@@ -7,7 +7,7 @@ from logging import Logger
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
 
-from inewave.newave import DeckEntrada, PMO  # type: ignore
+from inewave.newave import Arquivos, PMO  # type: ignore
 from idecomp.decomp.relato import Relato  # type: ignore
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 
@@ -99,10 +99,8 @@ class SintetizadorNEWAVE(SintetizadorCaso):
 
     @property
     def _nomes_arquivos_cortes(self) -> List[str]:
-        deck = DeckEntrada.le_deck(self.caso.caminho)
-        arq_cortes = deck.arquivos.cortes
-        arq_cortesh = deck.arquivos.cortesh
-        return [arq_cortes, arq_cortesh]
+        arquivos = Arquivos.le_arquivo(self.caso.caminho)
+        return [arquivos.cortes, arquivos.cortesh]
 
     def extrai_cortes(self):
         arq_zip = self.__procura_zip_saida()
