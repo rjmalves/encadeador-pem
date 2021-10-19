@@ -99,8 +99,8 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         confhd.escreve_arquivo(self._caso_atual.caminho)
 
     def encadeia(self) -> bool:
-        self._log.info(f"Encadeando casos: {self._caso_anterior} -> " +
-                       f"{self._caso_atual}")
+        self._log.info(f"Encadeando casos: {self._caso_anterior.nome} -> " +
+                       f"{self._caso_atual.nome}")
         v = self._caso_atual.configuracoes.variaveis_encadeadas
         if "EARM" in v:
             self.__encadeia_earm()
@@ -174,8 +174,8 @@ class EncadeadorDECOMPDECOMP(Encadeador):
                                arq_dadger)
 
     def encadeia(self) -> bool:
-        self._log.info(f"Encadeando casos: {self._caso_anterior} -> " +
-                       f"{self._caso_atual}")
+        self._log.info(f"Encadeando casos: {self._caso_anterior.nome} -> " +
+                       f"{self._caso_atual.nome}")
         v = self._caso_atual.configuracoes.variaveis_encadeadas
         if "EARM" in v:
             self.__encadeia_earm()
