@@ -60,7 +60,9 @@ class FlexibilizadorDECOMP(Flexibilizador):
             # Cria as inviabilidades
             inviabilidades: List[Inviabilidade] = []
             for _, linha in inviab.inviabilidades_simulacao_final.iterrows():
-                inviabilidades.append(Inviabilidade.factory(linha, hidr))
+                inv = Inviabilidade.factory(linha, hidr)
+                self._log.info(inv)
+                inviabilidades.append(inv)
             self._log.info("Inviabilidades processadas com sucesso")
             # Cria a regra de flexibilização
             metodo_flex = self._caso.configuracoes.metodo_flexibilizacao

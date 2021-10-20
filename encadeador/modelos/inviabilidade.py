@@ -20,6 +20,11 @@ class Inviabilidade:
         self._violacao = violacao
         self._unidade = unidade
 
+    def __str__(self) -> str:
+        return (f"Inviabilidade - Estágio {self._estagio}" +
+                f" - It {self._iteracao} - Cenário {self._cenario}" +
+                f" - Viol. {self._violacao} {self._unidade}")
+
     @staticmethod
     def factory(linha_inviab_unic: pd.Series,
                 hidr: Hidr) -> 'Inviabilidade':
@@ -112,6 +117,12 @@ class InviabilidadeTI(Inviabilidade):
         self._codigo = dados[0]
         self._nome_usina = dados[1]
 
+    def __str__(self) -> str:
+        return (f"TI {self._codigo} ({self._nome_usina}) " +
+                f"- Estágio {self._estagio}" +
+                f" - It {self._iteracao} - Cenário {self._cenario}" +
+                f" - Viol. {self._violacao} {self._unidade}")
+
     def processa_mensagem(self, *args) -> list:
         hidr: Hidr = args[0]
         nome = self._mensagem_restricao.split("IRRIGACAO, USINA")[1].strip()
@@ -141,6 +152,12 @@ class InviabilidadeHQ(Inviabilidade):
         self._patamar = dados[1]
         self._limite = dados[2]
 
+    def __str__(self) -> str:
+        return (f"HQ {self._codigo} Pat {self._patamar} ({self._limite}) " +
+                f"- Estágio {self._estagio}" +
+                f" - It {self._iteracao} - Cenário {self._cenario}" +
+                f" - Viol. {self._violacao} {self._unidade}")
+
     def processa_mensagem(self, *args) -> list:
         codigo = int(self._mensagem_restricao.split("RHQ")[1].split(":")[0])
         pat = int(self._mensagem_restricao.split("PATAMAR")[1].split("(")[0])
@@ -168,6 +185,12 @@ class InviabilidadeHV(Inviabilidade):
         self._codigo = dados[0]
         self._limite = dados[1]
 
+    def __str__(self) -> str:
+        return (f"HV {self._codigo} ({self._limite}) " +
+                f"- Estágio {self._estagio}" +
+                f" - It {self._iteracao} - Cenário {self._cenario}" +
+                f" - Viol. {self._violacao} {self._unidade}")
+
     def processa_mensagem(self, *args) -> list:
         codigo = int(self._mensagem_restricao.split("RHV")[1].split(":")[0])
         limite = self._mensagem_restricao.split("(")[1].split(")")[0]
@@ -193,6 +216,12 @@ class InviabilidadeHE(Inviabilidade):
         self._codigo = dados[0]
         self._estagio = dados[1]
         self._limite = dados[2]
+
+    def __str__(self) -> str:
+        return (f"HE {self._codigo} ({self._limite}) " +
+                f"- Estágio {self._estagio}" +
+                f" - It {self._iteracao} - Cenário {self._cenario}" +
+                f" - Viol. {self._violacao} {self._unidade}")
 
     def processa_mensagem(self, *args) -> list:
         s_rhe = "RESTRICAO RHE - NUMERO"
@@ -223,6 +252,12 @@ class InviabilidadeRE(Inviabilidade):
         self._patamar = dados[1]
         self._limite = dados[2]
 
+    def __str__(self) -> str:
+        return (f"RE {self._codigo} Pat {self._patamar} ({self._limite}) " +
+                f"- Estágio {self._estagio}" +
+                f" - It {self._iteracao} - Cenário {self._cenario}" +
+                f" - Viol. {self._violacao} {self._unidade}")
+
     def processa_mensagem(self, *args) -> list:
         r = "RESTRICAO ELETRICA"
         codigo = int(self._mensagem_restricao.split(r)[1].split(":")[0])
@@ -252,6 +287,12 @@ class InviabilidadeEV(Inviabilidade):
         self._codigo = dados[0]
         self._nome_usina = dados[1]
 
+    def __str__(self) -> str:
+        return (f"EV {self._codigo} ({self._nome_usina}) " +
+                f"- Estágio {self._estagio}" +
+                f" - It {self._iteracao} - Cenário {self._cenario}" +
+                f" - Viol. {self._violacao} {self._unidade}")
+
     def processa_mensagem(self, *args) -> list:
         hidr: Hidr = args[0]
         nome = self._mensagem_restricao.split("EVAPORACAO, USINA")[1].strip()
@@ -276,6 +317,12 @@ class InviabilidadeDeficit(Inviabilidade):
                          mensagem_restricao,
                          violacao,
                          unidade)
+
+    def __str__(self) -> str:
+        return (f"DEF " +
+                f"- Estágio {self._estagio}" +
+                f" - It {self._iteracao} - Cenário {self._cenario}" +
+                f" - Viol. {self._violacao} {self._unidade}")
 
     def processa_mensagem(self, *args) -> list:
         pass
