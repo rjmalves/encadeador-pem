@@ -129,7 +129,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             max_viol = inv_ini
             ident_ini = __identifica_inv(inv_ini)
             invs_mesma_id = [i for i in invs if
-                             __identifica_inv(inv_ini) == ident_ini]
+                             __identifica_inv(i) == ident_ini]
             for i in invs_mesma_id:
                 if i._violacao > max_viol._violacao:
                     max_viol = i
@@ -161,7 +161,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             max_viol = inv_ini
             ident_ini = __identifica_inv(inv_ini)
             invs_mesma_id = [i for i in invs if
-                             __identifica_inv(inv_ini) == ident_ini]
+                             __identifica_inv(i) == ident_ini]
             for i in invs_mesma_id:
                 if i._violacao > max_viol._violacao:
                     max_viol = i
@@ -203,7 +203,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             max_viol = inv_ini
             ident_ini = __identifica_inv(inv_ini)
             invs_mesma_id = [i for i in invs if
-                             __identifica_inv(inv_ini) == ident_ini]
+                             __identifica_inv(i) == ident_ini]
             for i in invs_mesma_id:
                 if i._violacao > max_viol._violacao:
                     max_viol = i
@@ -255,7 +255,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             max_viol = inv_ini
             ident_ini = __identifica_inv(inv_ini)
             invs_mesma_id = [i for i in invs if
-                             __identifica_inv(inv_ini) == ident_ini]
+                             __identifica_inv(i) == ident_ini]
             for i in invs_mesma_id:
                 if i._violacao > max_viol._violacao:
                     max_viol = i
@@ -309,7 +309,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             max_viol = inv_ini
             ident_ini = __identifica_inv(inv_ini)
             invs_mesma_id = [i for i in invs if
-                             __identifica_inv(inv_ini) == ident_ini]
+                             __identifica_inv(i) == ident_ini]
             for i in invs_mesma_id:
                 if i._violacao > max_viol._violacao:
                     max_viol = i
@@ -360,7 +360,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             max_viol = inv_ini
             ident_ini = __identifica_inv(inv_ini)
             invs_mesma_id = [i for i in invs if
-                             __identifica_inv(inv_ini) == ident_ini]
+                             __identifica_inv(i) == ident_ini]
             for i in invs_mesma_id:
                 if i._violacao > max_viol._violacao:
                     max_viol = i
