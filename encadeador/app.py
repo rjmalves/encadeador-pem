@@ -19,18 +19,22 @@ class App:
         self._arvore = ArvoreCasos(self._cfg, self._log)
         self._arvore.le_arquivo_casos()
         if not self._arvore.constroi_casos():
-            self._log.error("Erro na construção dos Casos")
+            self._log.error("Erro na construção dos casos")
             raise RuntimeError()
         return self._arvore
 
     def executa(self):
         self._log.info(f"Iniciando Encadeador - {self._cfg.nome_estudo}")
-        self.__constroi_arvore_casos()
-        while not self._arvore.terminou:
-            chdir(self._cfg.caminho_base_estudo)
-            prox = self._arvore.proximo_caso
-            executor = ExecutorCaso.factory(prox, self._log)
-            ult_nw = self._arvore.ultimo_newave
-            ult_dc = self._arvore.ultimo_decomp
-            executor.executa_e_monitora_caso(ult_nw, ult_dc)
-        self._log.info("Finalizando Encadeador")
+        try:
+            self.__constroi_arvore_casos()
+            while not self._arvore.terminou:
+                chdir(self._cfg.caminho_base_estudo)
+                prox = self._arvore.proximo_caso
+                executor = ExecutorCaso.factory(prox, self._log)
+                ult_nw = self._arvore.ultimo_newave
+                ult_dc = self._arvore.ultimo_decomp
+                executor.executa_e_monitora_caso(ult_nw, ult_dc)
+        except Exception:
+            self._log.error("Execução do Encadeador interrompida")
+        finally:
+            self._log.info("Finalizando Encadeador")

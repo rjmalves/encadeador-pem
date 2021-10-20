@@ -110,7 +110,6 @@ class MonitorCaso:
                     iniciou = False
                 # Máquina de estados para controlar a execução
                 estado = self._gerenciador.estado_job
-                self._log.info(f"Estado: {estado}")
                 if estado == EstadoJob.NAO_INICIADO:
                     if ultimo_estado == EstadoJob.EXECUTANDO:
                         sucesso = self._avaliador.avalia()

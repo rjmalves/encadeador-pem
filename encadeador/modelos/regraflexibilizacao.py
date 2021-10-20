@@ -185,8 +185,8 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             deltas = RegraFlexibilizacao.deltas_inviabilidades
             novo_valor = max([0, valor_atual - deltas[InviabilidadeTI]])
             reg.taxas[idx] = novo_valor
-            self._log.info(f"Flexibilizando TI {max_viol._codigo} no" +
-                           f"estágio {max_viol._estagio}: " +
+            self._log.info(f"Flexibilizando TI {max_viol._codigo} -" +
+                           f" Estágio {max_viol._estagio}: " +
                            f"{valor_atual} -> {novo_valor}")
 
     # Override
@@ -234,7 +234,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 valor_flex = max_viol._violacao + deltas[InviabilidadeHV]
                 novo_valor = min([99999, valor_atual + valor_flex])
                 reg.limite_inferior = novo_valor
-            self._log.info(f"Flexibilizando HV {max_viol._codigo} estágio" +
+            self._log.info(f"Flexibilizando HV {max_viol._codigo} - Estágio" +
                            f" {max_viol._estagio} - {max_viol._limite}: " +
                            f"{valor_atual} -> {novo_valor}")
 
@@ -287,7 +287,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 valor_flex = max_viol._violacao + deltas[InviabilidadeHQ]
                 novo_valor = min([99999, valor_atual + valor_flex])
                 reg.limites_superiores[idx] = novo_valor
-            self._log.info(f"Flexibilizando HQ {max_viol._codigo} estágio" +
+            self._log.info(f"Flexibilizando HQ {max_viol._codigo} - Estágio" +
                            f" {max_viol._estagio} pat {max_viol._patamar}" +
                            f" - {max_viol._limite}: " +
                            f"{valor_atual} -> {novo_valor}")
@@ -341,7 +341,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 valor_flex = max_viol._violacao + deltas[InviabilidadeRE]
                 novo_valor = min([99999, valor_atual + valor_flex])
                 reg.limites_superiores[idx] = novo_valor
-            self._log.info(f"Flexibilizando RE {max_viol._codigo} estágio" +
+            self._log.info(f"Flexibilizando RE {max_viol._codigo} - Estágio" +
                            f" {max_viol._estagio} pat {max_viol._patamar}" +
                            f" - {max_viol._limite}: " +
                            f"{valor_atual} -> {novo_valor}")
@@ -391,7 +391,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             valor_flex = max_viol._violacao + delta
             novo_valor = max([0, valor_atual - valor_flex])
             reg.limite = novo_valor
-            self._log.info(f"Flexibilizando HE {max_viol._codigo} estágio" +
+            self._log.info(f"Flexibilizando HE {max_viol._codigo} - Estágio" +
                            f" {max_viol._estagio} - {max_viol._limite}: " +
                            f"{valor_atual} -> {novo_valor}")
 
