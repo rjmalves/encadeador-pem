@@ -123,8 +123,8 @@ class ExecutorDECOMP(ExecutorCaso):
             # Se ainda pode flexibilizar
             flexibilizador = Flexibilizador.factory(self._caso, self._log)
             if not flexibilizador.flexibiliza():
-                self._log.error("Erro na flexibilização do " +
-                                f"DC {self._caso.nome}")
+                self._log.error("Erro na flexibilização do caso " +
+                                f"{self._caso.nome}")
                 raise RuntimeError()
             if not self._monitor.executa_caso():
                 self._log.error(f"Erro na execução do DC {self._caso.nome}")

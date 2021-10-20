@@ -61,13 +61,16 @@ class FlexibilizadorDECOMP(Flexibilizador):
             inviabilidades: List[Inviabilidade] = []
             for _, linha in inviab.inviabilidades_simulacao_final.iterrows():
                 inviabilidades.append(Inviabilidade.factory(linha, hidr))
+            self._log.info("Inviabilidades processadas com sucesso")
             # Cria a regra de flexibilização
             metodo_flex = self._caso.configuracoes.metodo_flexibilizacao
             regra = RegraFlexibilizacao.factory(metodo_flex, self._log)
             # Flexibiliza
             regra.flexibiliza(dadger, inviabilidades)
+            self._log.info("Inviabilidades flexibilizadas")
             # Escreve o dadger.rvX de saída
             dadger.escreve_arquivo(self._caso.caminho, arq_dadger)
             return True
-        except Exception:
+        except Exception as e:
+            self._log.error(e)
             return False
