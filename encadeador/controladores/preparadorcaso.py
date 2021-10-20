@@ -57,15 +57,14 @@ class PreparadorNEWAVE(PreparadorCaso):
         converte_codificacao(self.caso.caminho, script)
         self._log.info(f"Adequando caso do NEWAVE: {self.caso.nome}")
         try:
-            # TODO
-            if True:
-                # Adequa o nome do caso
-                nome_estudo = self.caso.configuracoes.nome_estudo
-                ano = self.caso.ano
-                mes = self.caso.mes
-                dger = DGer.le_arquivo(self.caso.caminho)
-                self._log.info("DGer lido com sucesso")
-                dger.nome_caso = f"{nome_estudo} - NW {mes}/{ano}"
+            # Adequa o nome do caso
+            nome_estudo = self.caso.configuracoes.nome_estudo
+            ano = self.caso.ano
+            mes = self.caso.mes
+            dger = DGer.le_arquivo(self.caso.caminho)
+            self._log.info("DGer lido com sucesso")
+            dger.nome_caso = f"{nome_estudo} - NW {mes}/{ano}"
+            if True:  # TODO
                 # Adequa parâmetros de CVAR
                 # TODO
                 # Adequa opção do PAR(p)-A
@@ -74,9 +73,9 @@ class PreparadorNEWAVE(PreparadorCaso):
                 parpa[0] = 3
                 dger.afluencia_anual_parp = parpa
                 self._log.info(f"Opção do PAR(p)-A alterada para {parpa}")
-                # Salva o deck de entrada
-                dger.escreve_arquivo(self.caso.caminho)
-                self._log.info("Adequação do caso concluída com sucesso")
+            # Salva o deck de entrada
+            dger.escreve_arquivo(self.caso.caminho)
+            self._log.info("Adequação do caso concluída com sucesso")
             return True
         except FileNotFoundError as e:
             self._log.error(f"Erro na leitura do deck de entrada: {e}")

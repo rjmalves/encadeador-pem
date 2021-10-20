@@ -260,7 +260,7 @@ class InviabilidadeRE(Inviabilidade):
 
     def processa_mensagem(self, *args) -> list:
         r = "RESTRICAO ELETRICA"
-        codigo = int(self._mensagem_restricao.split(r)[1].split(":")[0])
+        codigo = int(self._mensagem_restricao.split(r)[1].split("PATAMAR")[0])
         pat = int(self._mensagem_restricao.split("PATAMAR")[1].split("(")[0])
         limite = self._mensagem_restricao.split("(")[1].split(")")[0]
         return [codigo, pat, limite]
