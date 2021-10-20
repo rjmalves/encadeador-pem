@@ -1,9 +1,13 @@
 from abc import abstractmethod
 from logging import Logger
+from typing import List
 from idecomp.decomp.inviabunic import InviabUnic  # type: ignore
 from idecomp.decomp.dadger import Dadger  # type: ignore
+from idecomp.decomp.hidr import Hidr  # type: ignore
 
 from encadeador.modelos.caso import Caso, CasoDECOMP
+from encadeador.modelos.inviabilidade import Inviabilidade
+from encadeador.modelos.regraflexibilizacao import RegraFlexibilizacao
 
 
 class Flexibilizador:
@@ -41,13 +45,29 @@ class FlexibilizadorDECOMP(Flexibilizador):
         self._caso.adiciona_flexibilizacao()
         self._log.info(f"Flexibilizando caso {self._caso.nome}: " +
                        f"{self._caso.numero_flexibilizacoes } de {max_flex}")
-        # Lê o inviab_unic.rvX
-        arq_inviab = f"inviab_unic.rv{self._caso.revisao}"
-        inviab = InviabUnic.le_arquivo(self._caso.caminho, arq_inviab)
-        # Lê o dadger.rvX
-        arq_dadger = f"dadger.rv{self._caso.revisao}"
-        dadger = Dadger.le_arquivo(self._caso.caminho, arq_dadger)
-        # TODO - Faz as flexibilizações
-        # Escreve o dadger.rvX de saída
-        dadger.escreve_arquivo(self._caso.caminho, arq_dadger)
-        return True
+        try:
+            # Lê o inviab_unic.rvX
+            arq_inviab = f"inviab_unic.rv{self._caso.revisao}"
+            inviab = InviabUnic.le_arquivo(self._caso.caminho, arq_inviab)
+            self._log.info(f"Arquivo {arq_inviab} lido com sucesso")
+            # Lê o dadger.rvX
+            arq_dadger = f"dadger.rv{self._caso.revisao}"
+            dadger = Dadger.le_arquivo(self._caso.caminho, arq_dadger)
+            self._log.info(f"Arquivo {arq_dadger} lido com sucesso")
+            # Lê o hidr.dat
+            hidr = Hidr.le_arquivo(self._caso.caminho)
+            self._log.info("Arquivo hidr.dat lido com sucesso")
+            # Cria as inviabilidades
+            inviabilidades: List[Inviabilidade] = []
+            for _, linha in inviab.inviabilidades_simulacao_final.iterrows():
+                inviabilidades.append(Inviabilidade.factory(linha, hidr))
+            # Cria a regra de flexibilização
+            metodo_flex = self._caso.configuracoes.metodo_flexibilizacao
+            regra = RegraFlexibilizacao.factory(metodo_flex, self._log)
+            # Flexibiliza
+            regra.flexibiliza(dadger, inviabilidades)
+            # Escreve o dadger.rvX de saída
+            dadger.escreve_arquivo(self._caso.caminho, arq_dadger)
+            return True
+        except Exception:
+            return False

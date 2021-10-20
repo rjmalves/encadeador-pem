@@ -115,7 +115,8 @@ class InviabilidadeTI(Inviabilidade):
     def processa_mensagem(self, *args) -> list:
         hidr: Hidr = args[0]
         nome = self._mensagem_restricao.split("IRRIGACAO, USINA")[1].strip()
-        codigo = int(list(hidr.tabela.loc[hidr.tabela["Nome"] == nome, :].index)[0])
+        codigo = int(list(hidr.tabela.loc[hidr.tabela["Nome"] == nome,
+                                          :].index)[0])
         return [codigo, nome]
 
 
@@ -140,7 +141,7 @@ class InviabilidadeHQ(Inviabilidade):
         self._patamar = dados[1]
         self._limite = dados[2]
 
-    def processa_mensagem(self) -> list:
+    def processa_mensagem(self, *args) -> list:
         codigo = int(self._mensagem_restricao.split("RHQ")[1].split(":")[0])
         pat = int(self._mensagem_restricao.split("PATAMAR")[1].split("(")[0])
         limite = self._mensagem_restricao.split("(")[1].split(")")[0]
@@ -167,7 +168,7 @@ class InviabilidadeHV(Inviabilidade):
         self._codigo = dados[0]
         self._limite = dados[1]
 
-    def processa_mensagem(self) -> list:
+    def processa_mensagem(self, *args) -> list:
         codigo = int(self._mensagem_restricao.split("RHV")[1].split(":")[0])
         limite = self._mensagem_restricao.split("(")[1].split(")")[0]
         return [codigo, limite]
@@ -188,6 +189,18 @@ class InviabilidadeHE(Inviabilidade):
                          mensagem_restricao,
                          violacao,
                          unidade)
+        dados = self.processa_mensagem()
+        self._codigo = dados[0]
+        self._estagio = dados[1]
+        self._limite = dados[2]
+
+    def processa_mensagem(self, *args) -> list:
+        s_rhe = "RESTRICAO RHE - NUMERO"
+        s_per = "PERIODO"
+        codigo = int(self._mensagem_restricao.split(s_rhe)[1].split(",")[0])
+        estagio = int(self._mensagem_restricao.split(s_per)[1].split("(")[0])
+        limite = self._mensagem_restricao.split("(")[1].split(")")[0]
+        return [codigo, estagio, limite]
 
 
 class InviabilidadeRE(Inviabilidade):
@@ -210,7 +223,7 @@ class InviabilidadeRE(Inviabilidade):
         self._patamar = dados[1]
         self._limite = dados[2]
 
-    def processa_mensagem(self) -> list:
+    def processa_mensagem(self, *args) -> list:
         r = "RESTRICAO ELETRICA"
         codigo = int(self._mensagem_restricao.split(r)[1].split(":")[0])
         pat = int(self._mensagem_restricao.split("PATAMAR")[1].split("(")[0])
@@ -239,9 +252,11 @@ class InviabilidadeEV(Inviabilidade):
         self._codigo = dados[0]
         self._nome_usina = dados[1]
 
-    def processa_mensagem(self, hidr: Hidr) -> list:
+    def processa_mensagem(self, *args) -> list:
+        hidr: Hidr = args[0]
         nome = self._mensagem_restricao.split("EVAPORACAO, USINA")[1].strip()
-        codigo = int(list(hidr.tabela.loc[hidr.tabela["Nome"] == nome, :].index)[0])
+        codigo = int(list(hidr.tabela.loc[hidr.tabela["Nome"] == nome,
+                                          :].index)[0])
         return [codigo, nome]
 
 
@@ -254,9 +269,13 @@ class InviabilidadeDeficit(Inviabilidade):
                  mensagem_restricao: str,
                  violacao: float,
                  unidade: str):
+
         super().__init__(iteracao,
                          estagio,
                          cenario,
                          mensagem_restricao,
                          violacao,
                          unidade)
+
+    def processa_mensagem(self, *args) -> list:
+        pass
