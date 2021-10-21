@@ -188,7 +188,9 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             valor_atual = reg.taxas[idx]
             deltas = RegraFlexibilizacao.deltas_inviabilidades
             novo_valor = max([0, valor_atual - deltas[InviabilidadeTI]])
-            reg.taxas[idx] = novo_valor
+            novas_taxas = reg.taxas
+            novas_taxas[idx] = novo_valor
+            dadger.ti(max_viol._codigo).taxas = novas_taxas
             self._log.info(dadger.ti(max_viol._codigo).taxas)
             self._log.info(f"Flexibilizando TI {max_viol._codigo} -" +
                            f" Estágio {max_viol._estagio}: " +
