@@ -108,10 +108,6 @@ class RegraFlexibilizacao:
         self._flexibilizaHE(dadger, invs_por_tipo[InviabilidadeHE])
         self._flexibiliza_deficit(dadger, invs_por_tipo[InviabilidadeDeficit])
 
-        self._log.info(dadger.lu(261, 1).limites_inferiores)
-        self._log.info(dadger.lq(224, 1).limites_inferiores)
-        self._log.info(dadger.ti(89).taxas)
-
 
 class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
 
