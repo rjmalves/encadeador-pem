@@ -71,7 +71,7 @@ class AvaliadorDECOMP(AvaliadorCaso):
             arq = f"sumario.rv{self._caso.revisao}"
             self._log.info(f"Verificando saídas do {self._caso.nome}")
             sumario = Sumario.le_arquivo(self._caso.caminho, arq)
-            cmo = sumario.cmo_medio_subsistema
+            sumario.cmo_medio_subsistema
             self._log.info(f"Caso concluído com sucesso: {self._caso.nome}")
             return True
         except FileNotFoundError:

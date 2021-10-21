@@ -71,9 +71,6 @@ class FlexibilizadorDECOMP(Flexibilizador):
             regra.flexibiliza(dadger, inviabilidades)
             self._log.info("Inviabilidades flexibilizadas")
             # Escreve o dadger.rvX de saída
-            self._log.info(dadger.lu(261, 1).limites_inferiores)
-            self._log.info(dadger.lq(224, 1).limites_inferiores)
-            self._log.info(dadger.ti(89).taxas)
             dadger.escreve_arquivo(self._caso.caminho, arq_dadger)
             self._log.info(f"Arquivo {arq_dadger} escrito com sucesso")
             return True

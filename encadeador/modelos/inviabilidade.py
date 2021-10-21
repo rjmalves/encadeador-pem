@@ -319,7 +319,7 @@ class InviabilidadeDeficit(Inviabilidade):
                          unidade)
 
     def __str__(self) -> str:
-        return (f"DEF " +
+        return ("DEF " +
                 f"- Estágio {self._estagio}" +
                 f" - It {self._iteracao} - Cenário {self._cenario}" +
                 f" - Viol. {self._violacao} {self._unidade}")

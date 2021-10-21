@@ -191,7 +191,6 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             novas_taxas = reg.taxas
             novas_taxas[idx] = novo_valor
             dadger.ti(max_viol._codigo).taxas = novas_taxas
-            self._log.info(dadger.ti(max_viol._codigo).taxas)
             self._log.info(f"Flexibilizando TI {max_viol._codigo} -" +
                            f" Estágio {max_viol._estagio}: " +
                            f"{valor_atual} -> {novo_valor}")
@@ -302,7 +301,6 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 novos[idx] = novo_valor
                 dadger.lq(max_viol._codigo,
                           max_viol._estagio).limites_superiores = novos
-            self._log.info(dadger.lq(max_viol._codigo, max_viol._estagio).limites_inferiores)
             self._log.info(f"Flexibilizando HQ {max_viol._codigo} - Estágio" +
                            f" {max_viol._estagio} pat {max_viol._patamar}" +
                            f" - {max_viol._limite}: " +
@@ -363,7 +361,6 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 novos[idx] = novo_valor
                 dadger.lu(max_viol._codigo,
                           max_viol._estagio).limites_superiores = novos
-            self._log.info(dadger.lu(max_viol._codigo, max_viol._estagio).limites_inferiores)
             self._log.info(f"Flexibilizando RE {max_viol._codigo} - Estágio" +
                            f" {max_viol._estagio} pat {max_viol._patamar}" +
                            f" - {max_viol._limite}: " +
