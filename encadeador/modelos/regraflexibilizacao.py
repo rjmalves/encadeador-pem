@@ -108,6 +108,10 @@ class RegraFlexibilizacao:
         self._flexibilizaHE(dadger, invs_por_tipo[InviabilidadeHE])
         self._flexibiliza_deficit(dadger, invs_por_tipo[InviabilidadeDeficit])
 
+        self._log.info(dadger.lu(261, 1).limites_inferiores)
+        self._log.info(dadger.lq(224, 1).limites_inferiores)
+        self._log.info(dadger.ti(89).taxas)
+
 
 class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
 
@@ -185,6 +189,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             deltas = RegraFlexibilizacao.deltas_inviabilidades
             novo_valor = max([0, valor_atual - deltas[InviabilidadeTI]])
             reg.taxas[idx] = novo_valor
+            self._log.info(dadger.ti(max_viol._codigo).taxas)
             self._log.info(f"Flexibilizando TI {max_viol._codigo} -" +
                            f" Estágio {max_viol._estagio}: " +
                            f"{valor_atual} -> {novo_valor}")
@@ -287,6 +292,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 valor_flex = max_viol._violacao + deltas[InviabilidadeHQ]
                 novo_valor = min([99999, valor_atual + valor_flex])
                 reg.limites_superiores[idx] = novo_valor
+            self._log.info(dadger.lq(max_viol._codigo, max_viol._estagio).limites_inferiores)
             self._log.info(f"Flexibilizando HQ {max_viol._codigo} - Estágio" +
                            f" {max_viol._estagio} pat {max_viol._patamar}" +
                            f" - {max_viol._limite}: " +
@@ -341,6 +347,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 valor_flex = max_viol._violacao + deltas[InviabilidadeRE]
                 novo_valor = min([99999, valor_atual + valor_flex])
                 reg.limites_superiores[idx] = novo_valor
+            self._log.info(dadger.lu(max_viol._codigo, max_viol._estagio).limites_inferiores)
             self._log.info(f"Flexibilizando RE {max_viol._codigo} - Estágio" +
                            f" {max_viol._estagio} pat {max_viol._patamar}" +
                            f" - {max_viol._limite}: " +
