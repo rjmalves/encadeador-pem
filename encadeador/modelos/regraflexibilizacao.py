@@ -235,12 +235,14 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 valor_atual = reg.limite_inferior
                 valor_flex = max_viol._violacao + deltas[InviabilidadeHV]
                 novo_valor = max([0, valor_atual - valor_flex])
-                reg.limite_inferior = novo_valor
+                dadger.lv(max_viol._codigo,
+                          max_viol._estagio).limite_inferior = novo_valor
             elif max_viol._limite == "L. SUP":
                 valor_atual = reg.limites_superior
                 valor_flex = max_viol._violacao + deltas[InviabilidadeHV]
                 novo_valor = min([99999, valor_atual + valor_flex])
-                reg.limite_inferior = novo_valor
+                dadger.lv(max_viol._codigo,
+                          max_viol._estagio).limites_superior = novo_valor
             self._log.info(f"Flexibilizando HV {max_viol._codigo} - Estágio" +
                            f" {max_viol._estagio} - {max_viol._limite}: " +
                            f"{valor_atual} -> {novo_valor}")
@@ -288,12 +290,18 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 valor_atual = reg.limites_inferiores[idx]
                 valor_flex = max_viol._violacao + deltas[InviabilidadeHQ]
                 novo_valor = max([0, valor_atual - valor_flex])
-                reg.limites_inferiores[idx] = novo_valor
+                novos = reg.limites_inferiores
+                novos[idx] = novo_valor
+                dadger.lq(max_viol._codigo,
+                          max_viol._estagio).limites_inferiores = novos
             elif max_viol._limite == "L. SUP":
                 valor_atual = reg.limites_superiores[idx]
                 valor_flex = max_viol._violacao + deltas[InviabilidadeHQ]
                 novo_valor = min([99999, valor_atual + valor_flex])
-                reg.limites_superiores[idx] = novo_valor
+                novos = reg.limites_superiores
+                novos[idx] = novo_valor
+                dadger.lq(max_viol._codigo,
+                          max_viol._estagio).limites_superiores = novos
             self._log.info(dadger.lq(max_viol._codigo, max_viol._estagio).limites_inferiores)
             self._log.info(f"Flexibilizando HQ {max_viol._codigo} - Estágio" +
                            f" {max_viol._estagio} pat {max_viol._patamar}" +
@@ -343,12 +351,18 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 valor_atual = reg.limites_inferiores[idx]
                 valor_flex = max_viol._violacao + deltas[InviabilidadeRE]
                 novo_valor = max([0, valor_atual - valor_flex])
-                reg.limites_inferiores[idx] = novo_valor
+                novos = reg.limites_inferiores
+                novos[idx] = novo_valor
+                dadger.lu(max_viol._codigo,
+                          max_viol._estagio).limites_inferiores = novos
             elif max_viol._limite == "L. SUP":
                 valor_atual = reg.limites_superiores[idx]
                 valor_flex = max_viol._violacao + deltas[InviabilidadeRE]
                 novo_valor = min([99999, valor_atual + valor_flex])
-                reg.limites_superiores[idx] = novo_valor
+                novos = reg.limites_superiores
+                novos[idx] = novo_valor
+                dadger.lu(max_viol._codigo,
+                          max_viol._estagio).limites_superiores = novos
             self._log.info(dadger.lu(max_viol._codigo, max_viol._estagio).limites_inferiores)
             self._log.info(f"Flexibilizando RE {max_viol._codigo} - Estágio" +
                            f" {max_viol._estagio} pat {max_viol._patamar}" +
@@ -399,7 +413,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             valor_atual = reg.limite
             valor_flex = max_viol._violacao + delta
             novo_valor = max([0, valor_atual - valor_flex])
-            reg.limite = novo_valor
+            dadger.he(max_viol._codigo, max_viol._estagio).limite = novo_valor
             self._log.info(f"Flexibilizando HE {max_viol._codigo} - Estágio" +
                            f" {max_viol._estagio} - {max_viol._limite}: " +
                            f"{valor_atual} -> {novo_valor}")
