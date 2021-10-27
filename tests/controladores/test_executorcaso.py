@@ -39,21 +39,29 @@ def test_executor_primeiro_newave_sucesso(mocker: MockerFixture):
                  ".ArmazenadorCaso.armazena_caso",
                  return_value=True)
     mocker.patch("encadeador.controladores.executorcaso" +
-                 ".SintetizadorNEWAVE.sintetiza_caso",
-                 return_value=True)
+                 ".SintetizadorNEWAVE.verifica_cortes_extraidos",
+                 return_value=False)
     mocker.patch("encadeador.controladores.preparadorcaso" +
                  ".PreparadorNEWAVE.prepara_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorNEWAVE.encadeia_variaveis",
                  return_value=True)
     mocker.patch("encadeador.controladores.monitorcaso" +
                  ".MonitorNEWAVE.executa_caso",
                  return_value=True)
+    mocker.patch("encadeador.controladores.sintetizadorcaso" +
+                 ".SintetizadorNEWAVE.sintetiza_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.armazenadorcaso" +
+                 ".ArmazenadorCaso.armazena_caso",
+                 return_value=True)
     e = ExecutorCaso.factory(c, log)
-    r = e.executa_e_monitora_caso(None, None)
-    assert r
+    e.executa_e_monitora_caso(None, None)
     chdir(DIR_INICIAL)
 
 
-def test_executor_newave_encadeia_sucesso(mocker: MockerFixture):
+def test_executor_newave_sucesso_nao_deleta_cortes(mocker: MockerFixture):
     chdir(DIR_TESTE)
     load_dotenv("encadeia.cfg", override=True)
     cfg = Configuracoes.le_variaveis_ambiente()
@@ -65,17 +73,25 @@ def test_executor_newave_encadeia_sucesso(mocker: MockerFixture):
                  ".ArmazenadorCaso.armazena_caso",
                  return_value=True)
     mocker.patch("encadeador.controladores.executorcaso" +
-                 ".SintetizadorNEWAVE.sintetiza_caso",
-                 return_value=True)
+                 ".SintetizadorNEWAVE.verifica_cortes_extraidos",
+                 return_value=False)
     mocker.patch("encadeador.controladores.preparadorcaso" +
                  ".PreparadorNEWAVE.prepara_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorNEWAVE.encadeia_variaveis",
                  return_value=True)
     mocker.patch("encadeador.controladores.monitorcaso" +
                  ".MonitorNEWAVE.executa_caso",
                  return_value=True)
+    mocker.patch("encadeador.controladores.sintetizadorcaso" +
+                 ".SintetizadorNEWAVE.sintetiza_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.armazenadorcaso" +
+                 ".ArmazenadorCaso.armazena_caso",
+                 return_value=True)
     e = ExecutorCaso.factory(c, log)
-    r = e.executa_e_monitora_caso(None, ca)
-    assert r
+    e.executa_e_monitora_caso(None, ca)
     chdir(DIR_INICIAL)
 
 
@@ -83,13 +99,12 @@ def test_executor_newave_sucesso_deleta_cortes(mocker: MockerFixture):
     chdir(DIR_TESTE)
     load_dotenv("encadeia.cfg", override=True)
     cfg = Configuracoes.le_variaveis_ambiente()
+    ca = ArmazenadorCaso.recupera_caso(cfg,
+                                       CAMINHO_TESTE_DCP)
     c = ArmazenadorCaso.recupera_caso(cfg,
                                       CAMINHO_TESTE_NW)
     mocker.patch("encadeador.controladores.executorcaso" +
                  ".ArmazenadorCaso.armazena_caso",
-                 return_value=True)
-    mocker.patch("encadeador.controladores.executorcaso" +
-                 ".SintetizadorNEWAVE.sintetiza_caso",
                  return_value=True)
     mocker.patch("encadeador.controladores.executorcaso" +
                  ".SintetizadorNEWAVE.verifica_cortes_extraidos",
@@ -100,112 +115,197 @@ def test_executor_newave_sucesso_deleta_cortes(mocker: MockerFixture):
     mocker.patch("encadeador.controladores.preparadorcaso" +
                  ".PreparadorNEWAVE.prepara_caso",
                  return_value=True)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorNEWAVE.encadeia_variaveis",
+                 return_value=True)
     mocker.patch("encadeador.controladores.monitorcaso" +
                  ".MonitorNEWAVE.executa_caso",
                  return_value=True)
-    e = ExecutorCaso.factory(c, log)
-    r = e.executa_e_monitora_caso(c, None)
-    assert r
-    chdir(DIR_INICIAL)
-
-
-def test_executor_newave_falha_armazenador(mocker: MockerFixture):
-    chdir(DIR_TESTE)
-    load_dotenv("encadeia.cfg", override=True)
-    cfg = Configuracoes.le_variaveis_ambiente()
-    c = ArmazenadorCaso.recupera_caso(cfg,
-                                    CAMINHO_TESTE_NW)
-    mocker.patch("encadeador.controladores.executorcaso" +
-                ".ArmazenadorCaso.armazena_caso",
-                return_value=False)
-    mocker.patch("encadeador.controladores.executorcaso" +
-                ".ArmazenadorCaso.recupera_caso",
-                return_value=False)
-    mocker.patch("encadeador.controladores.executorcaso" +
-                ".SintetizadorNEWAVE.sintetiza_caso",
-                return_value=True)
-    mocker.patch("encadeador.controladores.preparadorcaso" +
-                ".PreparadorNEWAVE.prepara_caso",
-                return_value=True)
-    mocker.patch("encadeador.controladores.monitorcaso" +
-                ".MonitorNEWAVE.executa_caso",
-                return_value=True)
-    e = ExecutorCaso.factory(c, log)
-    r = e.executa_e_monitora_caso(None, None)
-    assert not r
-    chdir(DIR_INICIAL)
-
-
-def test_executor_newave_falha_sintetizador(mocker: MockerFixture):
-    chdir(DIR_TESTE)
-    load_dotenv("encadeia.cfg", override=True)
-    cfg = Configuracoes.le_variaveis_ambiente()
-    c = ArmazenadorCaso.recupera_caso(cfg,
-                                    CAMINHO_TESTE_NW)
-    mocker.patch("encadeador.controladores.executorcaso" +
-                ".ArmazenadorCaso.armazena_caso",
-                return_value=True)
     mocker.patch("encadeador.controladores.sintetizadorcaso" +
-                ".SintetizadorNEWAVE.sintetiza_caso",
-                return_value=False)
-    mocker.patch("encadeador.controladores.preparadorcaso" +
-                ".PreparadorNEWAVE.prepara_caso",
-                return_value=True)
-    mocker.patch("encadeador.controladores.monitorcaso" +
-                ".MonitorNEWAVE.executa_caso",
-                return_value=True)
+                 ".SintetizadorNEWAVE.sintetiza_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.armazenadorcaso" +
+                 ".ArmazenadorCaso.armazena_caso",
+                 return_value=True)
     e = ExecutorCaso.factory(c, log)
-    r = e.executa_e_monitora_caso(None, None)
-    assert not r
+    e.executa_e_monitora_caso(None, ca)
     chdir(DIR_INICIAL)
 
 
-def test_executor_newave_falha_preparador(mocker: MockerFixture):
+
+def test_executor_newave_erro_prepara_caso(mocker: MockerFixture):
+    chdir(DIR_TESTE)
+    load_dotenv("encadeia.cfg", override=True)
+    cfg = Configuracoes.le_variaveis_ambiente()
+    ca = ArmazenadorCaso.recupera_caso(cfg,
+                                       CAMINHO_TESTE_DCP)
+    c = ArmazenadorCaso.recupera_caso(cfg,
+                                      CAMINHO_TESTE_NW)
+    mocker.patch("encadeador.controladores.executorcaso" +
+                 ".ArmazenadorCaso.armazena_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.executorcaso" +
+                 ".SintetizadorNEWAVE.verifica_cortes_extraidos",
+                 return_value=False)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorNEWAVE.prepara_caso",
+                 return_value=False)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorNEWAVE.encadeia_variaveis",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.monitorcaso" +
+                 ".MonitorNEWAVE.executa_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.sintetizadorcaso" +
+                 ".SintetizadorNEWAVE.sintetiza_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.armazenadorcaso" +
+                 ".ArmazenadorCaso.armazena_caso",
+                 return_value=True)
+    e = ExecutorCaso.factory(c, log)
     with pytest.raises(RuntimeError):
-        chdir(DIR_TESTE)
-        load_dotenv("encadeia.cfg", override=True)
-        cfg = Configuracoes.le_variaveis_ambiente()
-        c = ArmazenadorCaso.recupera_caso(cfg,
-                                        CAMINHO_TESTE_NW)
-        mocker.patch("encadeador.controladores.executorcaso" +
-                    ".ArmazenadorCaso.armazena_caso",
-                    return_value=True)
-        mocker.patch("encadeador.controladores.executorcaso" +
-                    ".SintetizadorNEWAVE.sintetiza_caso",
-                    return_value=True)
-        mocker.patch("encadeador.controladores.preparadorcaso" +
-                    ".PreparadorNEWAVE.prepara_caso",
-                    return_value=False)
-        mocker.patch("encadeador.controladores.monitorcaso" +
-                    ".MonitorNEWAVE.executa_caso",
-                    return_value=True)
-        e = ExecutorCaso.factory(c, log)
-        r = e.executa_e_monitora_caso(None, None)
-        chdir(DIR_INICIAL)
+        e.executa_e_monitora_caso(None, ca)
+    chdir(DIR_INICIAL)
 
 
-def test_executor_newave_falha_monitor(mocker: MockerFixture):
+def test_executor_newave_erro_encadeia_variaveis(mocker: MockerFixture):
+    chdir(DIR_TESTE)
+    load_dotenv("encadeia.cfg", override=True)
+    cfg = Configuracoes.le_variaveis_ambiente()
+    ca = ArmazenadorCaso.recupera_caso(cfg,
+                                       CAMINHO_TESTE_DCP)
+    c = ArmazenadorCaso.recupera_caso(cfg,
+                                      CAMINHO_TESTE_NW)
+    mocker.patch("encadeador.controladores.executorcaso" +
+                 ".ArmazenadorCaso.armazena_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.executorcaso" +
+                 ".SintetizadorNEWAVE.verifica_cortes_extraidos",
+                 return_value=False)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorNEWAVE.prepara_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorNEWAVE.encadeia_variaveis",
+                 return_value=False)
+    mocker.patch("encadeador.controladores.monitorcaso" +
+                 ".MonitorNEWAVE.executa_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.sintetizadorcaso" +
+                 ".SintetizadorNEWAVE.sintetiza_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.armazenadorcaso" +
+                 ".ArmazenadorCaso.armazena_caso",
+                 return_value=True)
+    e = ExecutorCaso.factory(c, log)
     with pytest.raises(RuntimeError):
-        chdir(DIR_TESTE)
-        load_dotenv("encadeia.cfg", override=True)
-        cfg = Configuracoes.le_variaveis_ambiente()
-        c = ArmazenadorCaso.recupera_caso(cfg,
-                                        CAMINHO_TESTE_NW)
-        mocker.patch("encadeador.controladores.executorcaso" +
-                    ".ArmazenadorCaso.armazena_caso",
-                    return_value=True)
-        mocker.patch("encadeador.controladores.executorcaso" +
-                    ".SintetizadorNEWAVE.sintetiza_caso",
-                    return_value=True)
-        mocker.patch("encadeador.controladores.preparadorcaso" +
-                    ".PreparadorNEWAVE.prepara_caso",
-                    return_value=True)
-        mocker.patch("encadeador.controladores.monitorcaso" +
-                    ".MonitorNEWAVE.executa_caso",
-                    return_value=False)
-        e = ExecutorCaso.factory(c, log)
-        r = e.executa_e_monitora_caso(None, None)
-        chdir(DIR_INICIAL)
+        e.executa_e_monitora_caso(None, ca)
+    chdir(DIR_INICIAL)
+
+
+def test_executor_newave_erro_executa_caso(mocker: MockerFixture):
+    chdir(DIR_TESTE)
+    load_dotenv("encadeia.cfg", override=True)
+    cfg = Configuracoes.le_variaveis_ambiente()
+    ca = ArmazenadorCaso.recupera_caso(cfg,
+                                       CAMINHO_TESTE_DCP)
+    c = ArmazenadorCaso.recupera_caso(cfg,
+                                      CAMINHO_TESTE_NW)
+    mocker.patch("encadeador.controladores.executorcaso" +
+                 ".ArmazenadorCaso.armazena_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.executorcaso" +
+                 ".SintetizadorNEWAVE.verifica_cortes_extraidos",
+                 return_value=False)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorNEWAVE.prepara_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorNEWAVE.encadeia_variaveis",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.monitorcaso" +
+                 ".MonitorNEWAVE.executa_caso",
+                 return_value=False)
+    mocker.patch("encadeador.controladores.sintetizadorcaso" +
+                 ".SintetizadorNEWAVE.sintetiza_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.armazenadorcaso" +
+                 ".ArmazenadorCaso.armazena_caso",
+                 return_value=True)
+    e = ExecutorCaso.factory(c, log)
+    with pytest.raises(RuntimeError):
+        e.executa_e_monitora_caso(None, ca)
+    chdir(DIR_INICIAL)
+
+
+def test_executor_newave_erro_sintetiza_caso(mocker: MockerFixture):
+    chdir(DIR_TESTE)
+    load_dotenv("encadeia.cfg", override=True)
+    cfg = Configuracoes.le_variaveis_ambiente()
+    ca = ArmazenadorCaso.recupera_caso(cfg,
+                                       CAMINHO_TESTE_DCP)
+    c = ArmazenadorCaso.recupera_caso(cfg,
+                                      CAMINHO_TESTE_NW)
+    mocker.patch("encadeador.controladores.executorcaso" +
+                 ".ArmazenadorCaso.armazena_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.executorcaso" +
+                 ".SintetizadorNEWAVE.verifica_cortes_extraidos",
+                 return_value=False)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorNEWAVE.prepara_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorNEWAVE.encadeia_variaveis",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.monitorcaso" +
+                 ".MonitorNEWAVE.executa_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.sintetizadorcaso" +
+                 ".SintetizadorNEWAVE.sintetiza_caso",
+                 return_value=False)
+    mocker.patch("encadeador.controladores.armazenadorcaso" +
+                 ".ArmazenadorCaso.armazena_caso",
+                 return_value=True)
+    e = ExecutorCaso.factory(c, log)
+    with pytest.raises(RuntimeError):
+        e.executa_e_monitora_caso(None, ca)
+    chdir(DIR_INICIAL)
+
+
+def test_executor_newave_erro_armazena_caso(mocker: MockerFixture):
+    chdir(DIR_TESTE)
+    load_dotenv("encadeia.cfg", override=True)
+    cfg = Configuracoes.le_variaveis_ambiente()
+    ca = ArmazenadorCaso.recupera_caso(cfg,
+                                       CAMINHO_TESTE_DCP)
+    c = ArmazenadorCaso.recupera_caso(cfg,
+                                      CAMINHO_TESTE_NW)
+    mocker.patch("encadeador.controladores.executorcaso" +
+                 ".ArmazenadorCaso.armazena_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.executorcaso" +
+                 ".SintetizadorNEWAVE.verifica_cortes_extraidos",
+                 return_value=False)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorNEWAVE.prepara_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorNEWAVE.encadeia_variaveis",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.monitorcaso" +
+                 ".MonitorNEWAVE.executa_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.sintetizadorcaso" +
+                 ".SintetizadorNEWAVE.sintetiza_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.armazenadorcaso" +
+                 ".ArmazenadorCaso.armazena_caso",
+                 return_value=False)
+    e = ExecutorCaso.factory(c, log)
+    with pytest.raises(RuntimeError):
+        e.executa_e_monitora_caso(None, ca)
+    chdir(DIR_INICIAL)
 
 
 def test_executor_primeiro_decomp_sucesso(mocker: MockerFixture):
@@ -216,48 +316,55 @@ def test_executor_primeiro_decomp_sucesso(mocker: MockerFixture):
                                        CAMINHO_TESTE_NW)
     c = ArmazenadorCaso.recupera_caso(cfg,
                                       CAMINHO_TESTE_DCP)
-    mocker.patch("encadeador.controladores.executorcaso" +
-                 ".ArmazenadorCaso.armazena_caso",
-                 return_value=True)
     mocker.patch("encadeador.controladores.preparadorcaso" +
                  ".PreparadorDECOMP.prepara_caso",
                  return_value=True)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorDECOMP.encadeia_variaveis",
+                 return_value=True)
     mocker.patch("encadeador.controladores.monitorcaso" +
                  ".MonitorDECOMP.executa_caso",
-                 return_value=True)
-    e = ExecutorCaso.factory(c, log)
-    r = e.executa_e_monitora_caso(cc, None)
-    assert r
-    chdir(DIR_INICIAL)
-
-
-def test_executor_decomp_encadeia_sucesso(mocker: MockerFixture):
-    chdir(DIR_TESTE)
-    load_dotenv("encadeia.cfg", override=True)
-    cfg = Configuracoes.le_variaveis_ambiente()
-    cc = ArmazenadorCaso.recupera_caso(cfg,
-                                       CAMINHO_TESTE_NW)
-    c = ArmazenadorCaso.recupera_caso(cfg,
-                                      CAMINHO_TESTE_DCP)
-    mocker.patch("encadeador.controladores.executorcaso" +
-                 ".ArmazenadorCaso.armazena_caso",
                  return_value=True)
     mocker.patch("encadeador.controladores.sintetizadorcaso" +
                  ".SintetizadorDECOMP.sintetiza_caso",
                  return_value=True)
+    mocker.patch("encadeador.controladores.armazenadorcaso" +
+                 ".ArmazenadorCaso.armazena_caso",
+                 return_value=True)
+    e = ExecutorCaso.factory(c, log)
+    e.executa_e_monitora_caso(cc, None)
+    chdir(DIR_INICIAL)
+
+
+def test_executor_decomp_meio_sucesso(mocker: MockerFixture):
+    chdir(DIR_TESTE)
+    load_dotenv("encadeia.cfg", override=True)
+    cfg = Configuracoes.le_variaveis_ambiente()
+    cc = ArmazenadorCaso.recupera_caso(cfg,
+                                       CAMINHO_TESTE_NW)
+    c = ArmazenadorCaso.recupera_caso(cfg,
+                                      CAMINHO_TESTE_DCP)
     mocker.patch("encadeador.controladores.preparadorcaso" +
                  ".PreparadorDECOMP.prepara_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorDECOMP.encadeia_variaveis",
                  return_value=True)
     mocker.patch("encadeador.controladores.monitorcaso" +
                  ".MonitorDECOMP.executa_caso",
                  return_value=True)
+    mocker.patch("encadeador.controladores.sintetizadorcaso" +
+                 ".SintetizadorDECOMP.sintetiza_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.armazenadorcaso" +
+                 ".ArmazenadorCaso.armazena_caso",
+                 return_value=True)
     e = ExecutorCaso.factory(c, log)
-    r = e.executa_e_monitora_caso(cc, c)
-    assert r
+    e.executa_e_monitora_caso(cc, c)
     chdir(DIR_INICIAL)
 
 
-def test_executor_decomp_falha_armazenador(mocker: MockerFixture):
+def test_executor_decomp_falha_preparador_caso(mocker: MockerFixture):
     chdir(DIR_TESTE)
     load_dotenv("encadeia.cfg", override=True)
     cfg = Configuracoes.le_variaveis_ambiente()
@@ -265,28 +372,28 @@ def test_executor_decomp_falha_armazenador(mocker: MockerFixture):
                                        CAMINHO_TESTE_NW)
     c = ArmazenadorCaso.recupera_caso(cfg,
                                       CAMINHO_TESTE_DCP)
-    mocker.patch("encadeador.controladores.executorcaso" +
-                ".ArmazenadorCaso.armazena_caso",
-                return_value=False)
-    mocker.patch("encadeador.controladores.executorcaso" +
-                ".ArmazenadorCaso.recupera_caso",
-                return_value=False)
-    mocker.patch("encadeador.controladores.sintetizadorcaso" +
-                ".SintetizadorDECOMP.sintetiza_caso",
-                return_value=True)
     mocker.patch("encadeador.controladores.preparadorcaso" +
-                ".PreparadorDECOMP.prepara_caso",
-                return_value=True)
+                 ".PreparadorDECOMP.prepara_caso",
+                 return_value=False)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorDECOMP.encadeia_variaveis",
+                 return_value=True)
     mocker.patch("encadeador.controladores.monitorcaso" +
-                ".MonitorDECOMP.executa_caso",
-                return_value=True)
+                 ".MonitorDECOMP.executa_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.sintetizadorcaso" +
+                 ".SintetizadorDECOMP.sintetiza_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.armazenadorcaso" +
+                 ".ArmazenadorCaso.armazena_caso",
+                 return_value=True)
     e = ExecutorCaso.factory(c, log)
-    r = e.executa_e_monitora_caso(cc, None)
-    assert not r
+    with pytest.raises(RuntimeError):
+        e.executa_e_monitora_caso(cc, c)
     chdir(DIR_INICIAL)
 
 
-def test_executor_decomp_falha_sintetizador(mocker: MockerFixture):
+def test_executor_decomp_falha_encadeia_variaveis(mocker: MockerFixture):
     chdir(DIR_TESTE)
     load_dotenv("encadeia.cfg", override=True)
     cfg = Configuracoes.le_variaveis_ambiente()
@@ -294,71 +401,113 @@ def test_executor_decomp_falha_sintetizador(mocker: MockerFixture):
                                        CAMINHO_TESTE_NW)
     c = ArmazenadorCaso.recupera_caso(cfg,
                                       CAMINHO_TESTE_DCP)
-    mocker.patch("encadeador.controladores.executorcaso" +
-                ".ArmazenadorCaso.armazena_caso",
-                return_value=True)
-    mocker.patch("encadeador.controladores.sintetizadorcaso" +
-                ".SintetizadorDECOMP.sintetiza_caso",
-                return_value=False)
     mocker.patch("encadeador.controladores.preparadorcaso" +
-                ".PreparadorDECOMP.prepara_caso",
-                return_value=True)
+                 ".PreparadorDECOMP.prepara_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorDECOMP.encadeia_variaveis",
+                 return_value=False)
     mocker.patch("encadeador.controladores.monitorcaso" +
-                ".MonitorDECOMP.executa_caso",
-                return_value=True)
+                 ".MonitorDECOMP.executa_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.sintetizadorcaso" +
+                 ".SintetizadorDECOMP.sintetiza_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.armazenadorcaso" +
+                 ".ArmazenadorCaso.armazena_caso",
+                 return_value=True)
     e = ExecutorCaso.factory(c, log)
-    r = e.executa_e_monitora_caso(cc, None)
-    assert not r
+    with pytest.raises(RuntimeError):
+        e.executa_e_monitora_caso(cc, c)
     chdir(DIR_INICIAL)
 
 
-def test_executor_decomp_falha_preparador(mocker: MockerFixture):
+def test_executor_decomp_falha_flexibilizador_caso(mocker: MockerFixture):
+    chdir(DIR_TESTE)
+    load_dotenv("encadeia.cfg", override=True)
+    cfg = Configuracoes.le_variaveis_ambiente()
+    cc = ArmazenadorCaso.recupera_caso(cfg,
+                                       CAMINHO_TESTE_NW)
+    c = ArmazenadorCaso.recupera_caso(cfg,
+                                      CAMINHO_TESTE_DCP)
+    c.finaliza_caso(False)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorDECOMP.prepara_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorDECOMP.encadeia_variaveis",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.monitorcaso" +
+                 ".MonitorDECOMP.executa_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.flexibilizadorcaso" +
+                 ".FlexibilizadorDECOMP.flexibiliza",
+                 return_value=False)
+    mocker.patch("encadeador.controladores.sintetizadorcaso" +
+                 ".SintetizadorDECOMP.sintetiza_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.armazenadorcaso" +
+                 ".ArmazenadorCaso.armazena_caso",
+                 return_value=True)
+    e = ExecutorCaso.factory(c, log)
     with pytest.raises(RuntimeError):
-        chdir(DIR_TESTE)
-        load_dotenv("encadeia.cfg", override=True)
-        cfg = Configuracoes.le_variaveis_ambiente()
-        cc = ArmazenadorCaso.recupera_caso(cfg,
-                                           CAMINHO_TESTE_NW)
-        c = ArmazenadorCaso.recupera_caso(cfg,
-                                          CAMINHO_TESTE_DCP)
-        mocker.patch("encadeador.controladores.executorcaso" +
-                    ".ArmazenadorCaso.armazena_caso",
-                    return_value=True)
-        mocker.patch("encadeador.controladores.sintetizadorcaso" +
-                    ".SintetizadorDECOMP.sintetiza_caso",
-                    return_value=True)
-        mocker.patch("encadeador.controladores.preparadorcaso" +
-                    ".PreparadorDECOMP.prepara_caso",
-                    return_value=False)
-        mocker.patch("encadeador.controladores.monitorcaso" +
-                    ".MonitorDECOMP.executa_caso",
-                    return_value=True)
-        e = ExecutorCaso.factory(c, log)
-        r = e.executa_e_monitora_caso(cc, None)
-        chdir(DIR_INICIAL)
+        e.executa_e_monitora_caso(cc, c)
+    chdir(DIR_INICIAL)
 
 
-def test_executor_decomp_falha_monitor(mocker: MockerFixture):
+def test_executor_decomp_falha_sintetizador_caso(mocker: MockerFixture):
+    chdir(DIR_TESTE)
+    load_dotenv("encadeia.cfg", override=True)
+    cfg = Configuracoes.le_variaveis_ambiente()
+    cc = ArmazenadorCaso.recupera_caso(cfg,
+                                       CAMINHO_TESTE_NW)
+    c = ArmazenadorCaso.recupera_caso(cfg,
+                                      CAMINHO_TESTE_DCP)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorDECOMP.prepara_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorDECOMP.encadeia_variaveis",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.monitorcaso" +
+                 ".MonitorDECOMP.executa_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.sintetizadorcaso" +
+                 ".SintetizadorDECOMP.sintetiza_caso",
+                 return_value=False)
+    mocker.patch("encadeador.controladores.armazenadorcaso" +
+                 ".ArmazenadorCaso.armazena_caso",
+                 return_value=True)
+    e = ExecutorCaso.factory(c, log)
     with pytest.raises(RuntimeError):
-        chdir(DIR_TESTE)
-        load_dotenv("encadeia.cfg", override=True)
-        cfg = Configuracoes.le_variaveis_ambiente()
-        cc = ArmazenadorCaso.recupera_caso(cfg,
-                                           CAMINHO_TESTE_NW)
-        c = ArmazenadorCaso.recupera_caso(cfg,
-                                          CAMINHO_TESTE_DCP)
-        mocker.patch("encadeador.controladores.executorcaso" +
-                    ".ArmazenadorCaso.armazena_caso",
-                    return_value=True)
-        mocker.patch("encadeador.controladores.sintetizadorcaso" +
-                    ".SintetizadorDECOMP.sintetiza_caso",
-                    return_value=True)
-        mocker.patch("encadeador.controladores.preparadorcaso" +
-                    ".PreparadorDECOMP.prepara_caso",
-                    return_value=True)
-        mocker.patch("encadeador.controladores.monitorcaso" +
-                    ".MonitorDECOMP.executa_caso",
-                    return_value=False)
-        e = ExecutorCaso.factory(c, log)
-        r = e.executa_e_monitora_caso(cc, None)
-        chdir(DIR_INICIAL)
+        e.executa_e_monitora_caso(cc, c)
+    chdir(DIR_INICIAL)
+
+
+def test_executor_decomp_falha_armazenador_caso(mocker: MockerFixture):
+    chdir(DIR_TESTE)
+    load_dotenv("encadeia.cfg", override=True)
+    cfg = Configuracoes.le_variaveis_ambiente()
+    cc = ArmazenadorCaso.recupera_caso(cfg,
+                                       CAMINHO_TESTE_NW)
+    c = ArmazenadorCaso.recupera_caso(cfg,
+                                      CAMINHO_TESTE_DCP)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorDECOMP.prepara_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.preparadorcaso" +
+                 ".PreparadorDECOMP.encadeia_variaveis",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.monitorcaso" +
+                 ".MonitorDECOMP.executa_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.sintetizadorcaso" +
+                 ".SintetizadorDECOMP.sintetiza_caso",
+                 return_value=True)
+    mocker.patch("encadeador.controladores.armazenadorcaso" +
+                 ".ArmazenadorCaso.armazena_caso",
+                 return_value=False)
+    e = ExecutorCaso.factory(c, log)
+    with pytest.raises(RuntimeError):
+        e.executa_e_monitora_caso(cc, c)
+    chdir(DIR_INICIAL)

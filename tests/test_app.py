@@ -28,9 +28,9 @@ def test_app_erro_construcao_arvore(mocker: MockerFixture):
                  return_value=None)
     mocker.patch("encadeador.app.ArvoreCasos.constroi_casos",
                  return_value=False)
-    with pytest.raises(RuntimeError):
-        a = App(cfg, log)
-        a.executa()
+    a = App(cfg, log)
+    r = a.executa()
+    assert not r
     chdir(DIR_INICIAL)
 
 
@@ -59,8 +59,37 @@ def test_app_executa_caso_erro(mocker: MockerFixture):
                  return_value=True)
     mocker.patch("encadeador.controladores.executorcaso" +
                  ".ExecutorNEWAVE.executa_e_monitora_caso",
-                 return_value=False)
-    with pytest.raises(RuntimeError):
-        a = App(cfg, log)
-        a.executa()
+                 side_effect=RuntimeError())
+    a = App(cfg, log)
+    r = a.executa()
+    assert not r
+    chdir(DIR_INICIAL)
+
+
+def test_app_executa_caso_sucesso(mocker: MockerFixture):
+    log = getLogger()
+    chdir(DIR_TESTE)
+    load_dotenv(ARQ_CFG, override=True)
+    cfg = Configuracoes.le_variaveis_ambiente()
+    c = ArmazenadorCaso.recupera_caso(cfg,
+                                      CAMINHO_TESTE_NW)
+    mocker.patch("encadeador.app.ArvoreCasos.le_arquivo_casos",
+                 return_value=None)
+    mocker.patch("encadeador.app.ArvoreCasos.proximo_caso",
+                 new_callable=PropertyMock,
+                 return_value=c)
+    mocker.patch("encadeador.app.ArvoreCasos.ultimo_newave",
+                 new_callable=PropertyMock,
+                 return_value=None)
+    mocker.patch("encadeador.app.ArvoreCasos.ultimo_decomp",
+                 new_callable=PropertyMock,
+                 return_value=None)
+    mocker.patch("encadeador.app.ArvoreCasos.terminou",
+                 new_callable=PropertyMock,
+                 return_value=True)
+    mocker.patch("encadeador.app.ArvoreCasos.constroi_casos",
+                 return_value=True)
+    a = App(cfg, log)
+    r = a.executa()
+    assert r
     chdir(DIR_INICIAL)

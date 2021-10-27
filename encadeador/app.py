@@ -23,18 +23,23 @@ class App:
             raise RuntimeError()
         return self._arvore
 
-    def executa(self):
+    def executa(self) -> bool:
         self._log.info(f"Iniciando Encadeador - {self._cfg.nome_estudo}")
+        sucesso = True
         try:
             self.__constroi_arvore_casos()
             while not self._arvore.terminou:
                 chdir(self._cfg.caminho_base_estudo)
                 prox = self._arvore.proximo_caso
+                if prox is None:
+                    raise RuntimeError()
                 executor = ExecutorCaso.factory(prox, self._log)
                 ult_nw = self._arvore.ultimo_newave
                 ult_dc = self._arvore.ultimo_decomp
                 executor.executa_e_monitora_caso(ult_nw, ult_dc)
         except Exception:
             self._log.error("Execução do Encadeador interrompida")
+            sucesso = False
         finally:
             self._log.info("Finalizando Encadeador")
+            return sucesso
