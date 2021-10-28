@@ -156,9 +156,9 @@ class DadosEstudo:
             log.info(f"DF de resumo das variáveis: {resumo_decomps}")
 
         def le_resumo(caso: Caso,
-                      resumo_estados: pd.DataFrame(),
-                      resumo_newaves: pd.DataFrame(),
-                      resumo_decomps: pd.DataFrame(),
+                      resumo_estados: pd.DataFrame,
+                      resumo_newaves: pd.DataFrame,
+                      resumo_decomps: pd.DataFrame,
                       primeiro: bool):
             if isinstance(caso, CasoNEWAVE):
                 log.info("Caso de NEWAVE")
@@ -175,6 +175,7 @@ class DadosEstudo:
             else:
                 raise ValueError(f"Caso do tipo {type(caso)} não suportado" +
                                  "na síntese do estudo")
+            return resumo_estados, resumo_newaves, resumo_decomps
 
         colunas_estado = ["Caminho",
                           "Nome",
@@ -224,11 +225,14 @@ class DadosEstudo:
             if c.sucesso:
                 # Passa i == 1 para significar o primeiro DECOMP (segundo caso)
                 log.info(f"Lendo resumo do caso {c.nome}")
-                le_resumo(c,
-                          resumo_estados,
-                          resumo_newaves,
-                          resumo_decomps,
-                          i == 1)
+                e, n, d = le_resumo(c,
+                                    resumo_estados,
+                                    resumo_newaves,
+                                    resumo_decomps,
+                                    i == 1)
+                resumo_estados = e
+                resumo_newaves = n
+                resumo_decomps = d
         log.info("Resumos finais:")
         log.info(resumo_estados)
         log.info(resumo_newaves)
@@ -245,4 +249,4 @@ class DadosEstudo:
 
     @property
     def resumo_decomps(self) -> pd.DataFrame:
-        return self._resumo_estados
+        return self._resumo_decomps
