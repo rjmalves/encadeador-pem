@@ -105,7 +105,9 @@ class DadosEstudo:
                 nomes.append("Inicial")
                 for s in subsistemas:
                     cmos[s].append(np.nan)
-                    earms_sub[s].append(np.nan)
+                    eas = earm_subsis.loc[earm_subsis["Subsistema"] == s,
+                                          "Inicial"]
+                    earms_sub[s].append(eas)
                     gts_sub[s].append(np.nan)
                     ghs_sub[s].append(np.nan)
                     mercs_sub[s].append(np.nan)
