@@ -54,6 +54,6 @@ class SintetizadorEstudo:
             dados.resumo_decomps.to_csv(resumo_decomps)
             self._log.info("Dados sintetizados com sucesso")
             return True
-        except Exception:
-            self._log.info("Erro na síntese do estudo encadeado")
+        except Exception as e:
+            self._log.info(f"Erro na síntese do estudo encadeado: {e}")
             return False
