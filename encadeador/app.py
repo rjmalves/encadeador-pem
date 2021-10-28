@@ -47,6 +47,8 @@ class App:
             self.__constroi_arvore_casos()
             sintetizador = SintetizadorEstudo(self._arvore,
                                               self._log)
+            if not sintetizador.sintetiza_estudo():
+                raise RuntimeError()
             # Refaz a síntese como estão as coisas
             while not self._arvore.terminou:
                 chdir(self._cfg.caminho_base_estudo)
