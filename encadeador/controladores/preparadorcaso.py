@@ -128,7 +128,7 @@ class PreparadorDECOMP(PreparadorCaso):
             # Adequa os registros FC (cortes e cortesh)
             caso_entrada = kwargs.get("caso_cortes")
             if caso_entrada is None or not isinstance(caso_entrada,
-                                                        CasoNEWAVE):
+                                                      CasoNEWAVE):
                 self._log.error("Erro na especificação dos cortes da FCF")
                 return False
             caso_cortes: CasoNEWAVE = caso_entrada
@@ -139,9 +139,9 @@ class PreparadorDECOMP(PreparadorCaso):
             # Altera os registros FC
             arq = Arquivos.le_arquivo(caso_cortes.caminho)
             dadger.fc("NEWV21").caminho = join(caso_cortes.caminho,
-                                                arq.cortesh)
+                                               arq.cortesh)
             dadger.fc("NEWCUT").caminho = join(caso_cortes.caminho,
-                                                arq.cortes)
+                                               arq.cortes)
             if self.caso._configuracoes.adequa_decks_decomp:
                 self._log.info(f"Adequando caso do DECOMP: {self.caso.nome}")
                 # Adequa registro NI
@@ -167,7 +167,7 @@ class PreparadorDECOMP(PreparadorCaso):
                         dadger.cria_registro(dadger.te, rt)
             # Salva o dadger
             dadger.escreve_arquivo(self.caso.caminho,
-                                    f"dadger.rv{self.caso.revisao}")
+                                   f"dadger.rv{self.caso.revisao}")
             self._log.info("Adequação do caso concluída com sucesso")
             return True
         except FileNotFoundError as e:
