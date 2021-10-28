@@ -42,6 +42,7 @@ class DadosEstudo:
                 resumo_estados = pd.concat([resumo_estados, df_resumo],
                                            ignore_index=True)
             log.info(f"DF de resumo dos estados: {resumo_estados}")
+            return resumo_estados, resumo_newaves
 
         def le_resumo_decomp(resumo_estados: pd.DataFrame,
                              resumo_decomps: pd.DataFrame,
@@ -154,6 +155,7 @@ class DadosEstudo:
                 resumo_decomps = pd.concat([resumo_decomps, df_variaveis],
                                            ignore_index=True)
             log.info(f"DF de resumo das variáveis: {resumo_decomps}")
+            return resumo_estados, resumo_decomps
 
         def le_resumo(caso: Caso,
                       resumo_estados: pd.DataFrame,
@@ -162,16 +164,20 @@ class DadosEstudo:
                       primeiro: bool):
             if isinstance(caso, CasoNEWAVE):
                 log.info("Caso de NEWAVE")
-                le_resumo_newave(resumo_estados,
-                                 resumo_newaves,
-                                 caso,
-                                 primeiro)
+                e, n = le_resumo_newave(resumo_estados,
+                                        resumo_newaves,
+                                        caso,
+                                        primeiro)
+                resumo_estados = e
+                resumo_newaves = n
             elif isinstance(caso, CasoDECOMP):
                 log.info("Caso de DECOMP")
-                le_resumo_decomp(resumo_estados,
-                                 resumo_decomps,
-                                 caso,
-                                 primeiro)
+                e, d = le_resumo_decomp(resumo_estados,
+                                        resumo_decomps,
+                                        caso,
+                                        primeiro)
+                resumo_estados = e
+                resumo_decomps = d
             else:
                 raise ValueError(f"Caso do tipo {type(caso)} não suportado" +
                                  "na síntese do estudo")
