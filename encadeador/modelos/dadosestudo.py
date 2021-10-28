@@ -36,6 +36,7 @@ class DadosEstudo:
             df_resumo = pd.read_csv(arq_resumo, index_col=0)
             log.info(f"DF de resumo: {df_resumo}")
             if resumo_estados.empty:
+                log.info("Vazio")
                 resumo_estados = df_resumo
             else:
                 resumo_estados = pd.concat([resumo_estados, df_resumo],
@@ -52,6 +53,7 @@ class DadosEstudo:
             df_resumo = pd.read_csv(arq_resumo, index_col=0)
             log.info(f"DF de resumo: {df_resumo}")
             if resumo_estados.empty:
+                log.info("Vazio")
                 resumo_estados = df_resumo
             else:
                 resumo_estados = pd.concat([resumo_estados, df_resumo],
@@ -64,39 +66,30 @@ class DadosEstudo:
             cmo = pd.read_csv(join(diretorio_resumo,
                                    "cmo.csv"),
                               index_col=0)
-            log.info(f"CMO: {cmo}")
             earm_subsis = pd.read_csv(join(diretorio_resumo,
                                            "earm_subsis.csv"),
                                       index_col=0)
-            log.info(f"EARM: {earm_subsis}")
             earm_sin = pd.read_csv(join(diretorio_resumo,
                                         "earm_sin.csv"),
                                    index_col=0)
-            log.info(f"EARM: {earm_sin}")
             gt_subsis = pd.read_csv(join(diretorio_resumo,
                                          "gt_subsis.csv"),
                                     index_col=0)
-            log.info(f"GT: {gt_subsis}")
             gt_sin = pd.read_csv(join(diretorio_resumo,
                                       "gt_sin.csv"),
                                  index_col=0)
-            log.info(f"GT: {gt_sin}")
             gh_subsis = pd.read_csv(join(diretorio_resumo,
                                          "gh_subsis.csv"),
                                     index_col=0)
-            log.info(f"GH: {gh_subsis}")
             gh_sin = pd.read_csv(join(diretorio_resumo,
                                       "gh_sin.csv"),
                                  index_col=0)
-            log.info(f"GH: {gh_sin}")
             merc_subsis = pd.read_csv(join(diretorio_resumo,
                                            "mercado_subsis.csv"),
                                       index_col=0)
-            log.info(f"Merc: {merc_subsis}")
             merc_sin = pd.read_csv(join(diretorio_resumo,
                                         "mercado_sin.csv"),
                                    index_col=0)
-            log.info(f"Merc: {merc_sin}")
             nomes: List[str] = []
             cmos: Dict[str, List[float]] = {s: [] for s in subsistemas}
             earms_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
@@ -141,19 +134,20 @@ class DadosEstudo:
             ghs_sin.append(float(gh_sin["Estágio 1"]))
             mercs_sin.append(float(merc_sin["Estágio 1"]))
             # Organiza os dados em um DataFrame
-            df_variaveis: Dict[str, list] = {c: [] for c in colunas_resumo}
-            df_variaveis["Caso"] = nomes
+            dados_variaveis: Dict[str, list] = {c: [] for c in colunas_resumo}
+            dados_variaveis["Caso"] = nomes
             for s in subsistemas:
-                df_variaveis[f"CMO {s}"] = cmos[s]
-                df_variaveis[f"EARM {s}"] = earms_sub[s]
-                df_variaveis[f"GT {s}"] = gts_sub[s]
-                df_variaveis[f"GH {s}"] = ghs_sub[s]
-                df_variaveis[f"Mercado {s}"] = mercs_sub[s]
-            df_variaveis["EARM SIN"] = earms_sin
-            df_variaveis["GT SIN"] = gts_sin
-            df_variaveis["GH SIN"] = ghs_sin
-            df_variaveis["Mercado SIN"] = mercs_sin
-            log.info(f"DF de variáveis: {df_variaveis}")
+                dados_variaveis[f"CMO {s}"] = cmos[s]
+                dados_variaveis[f"EARM {s}"] = earms_sub[s]
+                dados_variaveis[f"GT {s}"] = gts_sub[s]
+                dados_variaveis[f"GH {s}"] = ghs_sub[s]
+                dados_variaveis[f"Mercado {s}"] = mercs_sub[s]
+            dados_variaveis["EARM SIN"] = earms_sin
+            dados_variaveis["GT SIN"] = gts_sin
+            dados_variaveis["GH SIN"] = ghs_sin
+            dados_variaveis["Mercado SIN"] = mercs_sin
+            df_variaveis = pd.DataFrame(data=dados_variaveis)
+            log.info(f"DF de variáveis: {dados_variaveis}")
             if resumo_decomps.empty:
                 resumo_decomps = df_variaveis
             else:
@@ -235,6 +229,10 @@ class DadosEstudo:
                           resumo_newaves,
                           resumo_decomps,
                           i == 1)
+        log.info("Resumos finais:")
+        log.info(resumo_estados)
+        log.info(resumo_newaves)
+        log.info(resumo_decomps)
         return DadosEstudo(resumo_estados, resumo_newaves, resumo_decomps)
 
     @property
