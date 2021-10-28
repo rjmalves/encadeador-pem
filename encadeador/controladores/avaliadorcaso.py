@@ -79,7 +79,8 @@ class AvaliadorDECOMP(AvaliadorCaso):
             if not inviab.inviabilidades_simulacao_final.empty:
                 self._log.warning(f"{self._caso.nome} convergiu com" +
                                   " inviabilidades na simulação final")
-                return False
+                if self._caso.configuracoes.flexibiliza_deficit:
+                    raise Exception()
             self._log.info(f"Caso concluído com sucesso: {self._caso.nome}")
             return True
         except FileNotFoundError:

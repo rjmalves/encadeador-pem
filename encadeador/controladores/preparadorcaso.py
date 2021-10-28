@@ -9,6 +9,7 @@ from encadeador.controladores.sintetizadorcaso import SintetizadorNEWAVE
 from encadeador.utils.terminal import converte_codificacao
 from inewave.newave import DGer, Arquivos, CVAR  # type: ignore
 from idecomp.decomp.dadger import Dadger
+from idecomp.decomp.modelos.dadger import RT
 
 
 class PreparadorCaso:
