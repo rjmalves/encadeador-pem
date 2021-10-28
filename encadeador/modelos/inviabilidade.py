@@ -1,6 +1,6 @@
 from abc import abstractmethod
 import pandas as pd  # type: ignore
-from idecomp.decomp.hidr import Hidr  # type: ignore
+from idecomp.decomp.hidr import Hidr
 
 
 class Inviabilidade:

@@ -8,7 +8,7 @@ import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
 
 from inewave.newave import Arquivos, PMO  # type: ignore
-from idecomp.decomp.relato import Relato  # type: ignore
+from idecomp.decomp.relato import Relato
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 
 DIRETORIO_RESUMO_CASO = "resumo"

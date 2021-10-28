@@ -1,9 +1,9 @@
 from abc import abstractmethod
 from logging import Logger
 from typing import List
-from idecomp.decomp.inviabunic import InviabUnic  # type: ignore
-from idecomp.decomp.dadger import Dadger  # type: ignore
-from idecomp.decomp.hidr import Hidr  # type: ignore
+from idecomp.decomp.inviabunic import InviabUnic
+from idecomp.decomp.dadger import Dadger
+from idecomp.decomp.hidr import Hidr
 
 from encadeador.modelos.caso import Caso, CasoDECOMP
 from encadeador.modelos.inviabilidade import Inviabilidade

@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from logging import Logger
 from typing import List, Tuple
-from idecomp.decomp.dadger import Dadger  # type: ignore
+from idecomp.decomp.dadger import Dadger
 
 from encadeador.modelos.inviabilidade import Inviabilidade
 from encadeador.modelos.inviabilidade import InviabilidadeEV

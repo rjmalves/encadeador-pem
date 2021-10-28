@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from logging import Logger
 from inewave.newave import PMO  # type: ignore
-from idecomp.decomp.sumario import Sumario  # type: ignore
+from idecomp.decomp.sumario import Sumario
 
 from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
 

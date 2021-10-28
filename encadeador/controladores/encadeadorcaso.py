@@ -1,8 +1,8 @@
 from abc import abstractmethod
 from logging import Logger
 from typing import List
-from idecomp.decomp.relato import Relato  # type: ignore
-from idecomp.decomp.dadger import Dadger  # type: ignore
+from idecomp.decomp.relato import Relato
+from idecomp.decomp.dadger import Dadger
 from inewave.newave import Confhd  # type: ignore
 
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
