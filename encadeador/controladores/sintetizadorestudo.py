@@ -38,7 +38,7 @@ class SintetizadorEstudo:
     def sintetiza_estudo(self) -> bool:
         try:
             self._log.info("Sintetizando dados do estudo encadeado")
-            dados = DadosEstudo.resume_arvore(self._arvore)
+            dados = DadosEstudo.resume_arvore(self._arvore, self._log)
             # TODO - Ao invés de pegar o primeiro caso para ter as
             # configurações, substituir pelo padrão Singleton
             cfg = self._arvore.casos[0].configuracoes
