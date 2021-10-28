@@ -107,7 +107,7 @@ class DadosEstudo:
                     cmos[s].append(np.nan)
                     eas = earm_subsis.loc[earm_subsis["Subsistema"] == s,
                                           "Inicial"]
-                    earms_sub[s].append(eas)
+                    earms_sub[s].append(float(eas))
                     gts_sub[s].append(np.nan)
                     ghs_sub[s].append(np.nan)
                     mercs_sub[s].append(np.nan)
