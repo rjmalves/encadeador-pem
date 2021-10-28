@@ -161,7 +161,7 @@ class DadosEstudo:
             df_variaveis["GT SIN"] = gts_sin
             df_variaveis["GH SIN"] = ghs_sin
             df_variaveis["Mercado SIN"] = mercs_sin
-            if resumo_estados.empty:
+            if resumo_decomps.empty:
                 resumo_decomps = df_variaveis
             else:
                 resumo_decomps = pd.concat([resumo_decomps, df_variaveis],
