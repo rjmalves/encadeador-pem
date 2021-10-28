@@ -45,6 +45,9 @@ class App:
         sucesso = True
         try:
             self.__constroi_arvore_casos()
+            sintetizador = SintetizadorEstudo(self._arvore,
+                                              self._log)
+            # Refaz a síntese como estão as coisas
             while not self._arvore.terminou:
                 chdir(self._cfg.caminho_base_estudo)
                 prox = self._arvore.proximo_caso
@@ -62,8 +65,6 @@ class App:
                                                           self._cfg)
                 executor.executa_e_monitora_caso(ult_nw, ult_dc)
                 # Faz a síntese do estudo
-                sintetizador = SintetizadorEstudo(self._arvore,
-                                                  self._log)
                 if not sintetizador.sintetiza_estudo():
                     raise RuntimeError()
         except Exception:
