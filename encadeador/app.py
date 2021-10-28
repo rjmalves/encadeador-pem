@@ -6,6 +6,7 @@ from encadeador.modelos.caso import Caso
 from encadeador.modelos.arvorecasos import ArvoreCasos
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.controladores.executorcaso import ExecutorCaso
+from encadeador.controladores.sintetizadorestudo import SintetizadorEstudo
 
 
 class App:
@@ -55,7 +56,16 @@ class App:
                 # Verificação de segurança: o próximo caso deve ser
                 # posterior aos últimos NW e DC
                 verifica_ordenacao_casos(prox, ult_nw, ult_dc)
+                # Salva o caso a ser executado na raiz do estudo
+                # para visualização
+                SintetizadorEstudo.sintetiza_proximo_caso(prox,
+                                                          self._cfg)
                 executor.executa_e_monitora_caso(ult_nw, ult_dc)
+                # Faz a síntese do estudo
+                sintetizador = SintetizadorEstudo(self._arvore,
+                                                  self._log)
+                if not sintetizador.sintetiza_estudo():
+                    raise RuntimeError()
         except Exception:
             self._log.error("Execução do Encadeador interrompida")
             sucesso = False

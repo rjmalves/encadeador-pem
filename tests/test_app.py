@@ -1,10 +1,8 @@
 import pathlib
-from typing import List
 from os import chdir
 from os.path import join
 from logging import getLogger
 from dotenv import load_dotenv
-import pytest
 from unittest.mock import PropertyMock
 from pytest_mock.plugin import MockerFixture
 
