@@ -26,6 +26,7 @@ class DadosEstudo:
     def resume_arvore(arvore: ArvoreCasos) -> "DadosEstudo":
 
         def le_resumo_newave(resumo_estados: pd.DataFrame,
+                             resumo_newaves: pd.DataFrame,
                              caso: CasoNEWAVE,
                              primeiro: bool):
             arq_resumo = join(caso.caminho, NOME_ARQUIVO_ESTADO)
@@ -167,9 +168,14 @@ class DadosEstudo:
                 resumo_decomps = pd.concat([resumo_decomps, df_variaveis],
                                            ignore_index=True)
 
-        def le_resumo(caso: Caso, primeiro: bool):
+        def le_resumo(caso: Caso,
+                      resumo_estados: pd.DataFrame(),
+                      resumo_newaves: pd.DataFrame(),
+                      resumo_decomps: pd.DataFrame(),
+                      primeiro: bool):
             if isinstance(caso, CasoNEWAVE):
                 le_resumo_newave(resumo_estados,
+                                 resumo_newaves,
                                  caso,
                                  primeiro)
             elif isinstance(caso, CasoDECOMP):
@@ -187,7 +193,11 @@ class DadosEstudo:
         for i, c in enumerate(arvore.casos):
             if c.sucesso:
                 # Passa i == 1 para significar o primeiro DECOMP (segundo caso)
-                le_resumo(c, i == 1)
+                le_resumo(c,
+                          resumo_estados,
+                          resumo_newaves,
+                          resumo_decomps,
+                          i == 1)
         return DadosEstudo(resumo_estados, resumo_newaves, resumo_decomps)
 
     @property
