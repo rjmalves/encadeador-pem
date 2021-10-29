@@ -1,4 +1,3 @@
-from logging import Logger
 import pandas as pd  # type: ignore
 import numpy as np  # type: ignore
 from typing import Dict, List
@@ -18,30 +17,25 @@ class DadosEstudo:
     def __init__(self,
                  resumo_estados: pd.DataFrame,
                  resumo_newaves: pd.DataFrame,
-                 resumo_decomps: pd.DataFrame) -> None:
+                 resumo_decomps: pd.DataFrame):
         self._resumo_estados = resumo_estados
         self._resumo_newaves = resumo_newaves
         self._resumo_decomps = resumo_decomps
 
     @staticmethod
-    def resume_arvore(arvore: ArvoreCasos,
-                      log: Logger) -> "DadosEstudo":
+    def resume_arvore(arvore: ArvoreCasos) -> "DadosEstudo":
 
         def le_resumo_newave(resumo_estados: pd.DataFrame,
                              resumo_newaves: pd.DataFrame,
                              caso: CasoNEWAVE,
                              primeiro: bool):
             arq_resumo = join(caso.caminho, NOME_ARQUIVO_ESTADO)
-            log.info(f"Arquivo de resumo: {arq_resumo}")
             df_resumo = pd.read_csv(arq_resumo, index_col=0)
-            log.info(f"DF de resumo: {df_resumo}")
             if resumo_estados.empty:
-                log.info("Vazio")
                 resumo_estados = df_resumo
             else:
                 resumo_estados = pd.concat([resumo_estados, df_resumo],
                                            ignore_index=True)
-            log.info(f"DF de resumo dos estados: {resumo_estados}")
             return resumo_estados, resumo_newaves
 
         def le_resumo_decomp(resumo_estados: pd.DataFrame,
@@ -50,18 +44,14 @@ class DadosEstudo:
                              primeiro: bool):
             # Faz o resumo do estado dos casos
             arq_resumo = join(caso.caminho, NOME_ARQUIVO_ESTADO)
-            log.info(f"Arquivo de resumo: {arq_resumo}")
             df_resumo = pd.read_csv(arq_resumo, index_col=0)
-            log.info(f"DF de resumo: {df_resumo}")
             if resumo_estados.empty:
-                log.info("Vazio")
                 resumo_estados = df_resumo
             else:
                 resumo_estados = pd.concat([resumo_estados, df_resumo],
                                            ignore_index=True)
             # Faz o resumo das variáveis
             diretorio_resumo = join(caso.caminho, DIRETORIO_RESUMO_CASO)
-            log.info(f"Diretorio de resumo: {diretorio_resumo}")
             subsistemas = ["SE", "S", "NE", "N"]
             nome = f"{caso.ano}_{str(caso.mes).zfill(2)}_rv{caso.revisao}"
             cmo = pd.read_csv(join(diretorio_resumo,
@@ -150,13 +140,11 @@ class DadosEstudo:
             dados_variaveis["GH SIN"] = ghs_sin
             dados_variaveis["Mercado SIN"] = mercs_sin
             df_variaveis = pd.DataFrame(data=dados_variaveis)
-            log.info(f"DF de variáveis: {dados_variaveis}")
             if resumo_decomps.empty:
                 resumo_decomps = df_variaveis
             else:
                 resumo_decomps = pd.concat([resumo_decomps, df_variaveis],
                                            ignore_index=True)
-            log.info(f"DF de resumo das variáveis: {resumo_decomps}")
             return resumo_estados, resumo_decomps
 
         def le_resumo(caso: Caso,
@@ -165,7 +153,6 @@ class DadosEstudo:
                       resumo_decomps: pd.DataFrame,
                       primeiro: bool):
             if isinstance(caso, CasoNEWAVE):
-                log.info("Caso de NEWAVE")
                 e, n = le_resumo_newave(resumo_estados,
                                         resumo_newaves,
                                         caso,
@@ -173,7 +160,6 @@ class DadosEstudo:
                 resumo_estados = e
                 resumo_newaves = n
             elif isinstance(caso, CasoDECOMP):
-                log.info("Caso de DECOMP")
                 e, d = le_resumo_decomp(resumo_estados,
                                         resumo_decomps,
                                         caso,
@@ -232,7 +218,6 @@ class DadosEstudo:
         for i, c in enumerate(arvore.casos):
             if c.sucesso:
                 # Passa i == 1 para significar o primeiro DECOMP (segundo caso)
-                log.info(f"Lendo resumo do caso {c.nome}")
                 e, n, d = le_resumo(c,
                                     resumo_estados,
                                     resumo_newaves,
@@ -241,10 +226,6 @@ class DadosEstudo:
                 resumo_estados = e
                 resumo_newaves = n
                 resumo_decomps = d
-        log.info("Resumos finais:")
-        log.info(resumo_estados)
-        log.info(resumo_newaves)
-        log.info(resumo_decomps)
         return DadosEstudo(resumo_estados, resumo_newaves, resumo_decomps)
 
     @property
