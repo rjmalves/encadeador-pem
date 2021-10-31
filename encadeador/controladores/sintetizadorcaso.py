@@ -226,11 +226,35 @@ class SintetizadorDECOMP(SintetizadorCaso):
                 relato = Relato.le_arquivo(self.caso.caminho, arq_relato)
                 # Convergência do relato.rvX
                 conv = relato.convergencia
+                conv["Flexibilizacao"] = self.caso.numero_flexibilizacoes
+                if isfile(join(caminho_saida, "convergencia.csv")):
+                    conv_anterior = pd.read_csv(join(caminho_saida,
+                                                     "convergencia.csv"),
+                                                index_col=0)
+                    conv = pd.concat([conv_anterior, conv],
+                                     ignore_index=True)
                 # Inviabilidades e Déficit do inviab_unic.rvX
                 arq_inviab = f"inviab_unic.rv{self._caso.revisao}"
                 inviab_unic = InviabUnic.le_arquivo(self.caso.caminho,
                                                     arq_inviab)
                 inviab = inviab_unic.inviabilidades_simulacao_final
+                inviab["Flexibilizacao"] = self.caso.numero_flexibilizacoes
+                if isfile(join(caminho_saida, "inviabilidades.csv")):
+                    inviab_anterior = pd.read_csv(join(caminho_saida,
+                                                       "inviabilidades.csv"),
+                                                  index_col=0)
+                    inviab = pd.concat([inviab_anterior, inviab],
+                                       ignore_index=True)
+                # Escreve em disco
+                conv.to_csv(join(caminho_saida, "convergencia.csv"),
+                            header=True,
+                            encoding="utf-8")
+                inviab.to_csv(join(caminho_saida, "inviabilidades.csv"),
+                              header=True,
+                              encoding="utf-8")
+                # Se não teve sucesso no caso, só exporta esses dados
+                if not self.caso.sucesso:
+                    return True
                 # CMO, EARM, GT, GH do relato.rvX
                 cmo = relato.cmo_medio_subsistema
                 earm_subsis = relato.energia_armazenada_subsistema
@@ -245,12 +269,6 @@ class SintetizadorDECOMP(SintetizadorCaso):
                 merc_subsis = SintetizadorDECOMP.__processa_mercado(balanco)
                 merc_sin = SintetizadorDECOMP.__processa_dado_sin(merc_subsis)
                 # Exporta os dados
-                conv.to_csv(join(caminho_saida, "convergencia.csv"),
-                            header=True,
-                            encoding="utf-8")
-                inviab.to_csv(join(caminho_saida, "inviabilidades.csv"),
-                              header=True,
-                              encoding="utf-8")
                 cmo.to_csv(join(caminho_saida, "cmo.csv"),
                            header=True,
                            encoding="utf-8")
