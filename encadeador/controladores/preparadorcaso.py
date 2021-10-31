@@ -65,6 +65,7 @@ class PreparadorNEWAVE(PreparadorCaso):
             dger = DGer.le_arquivo(self.caso.caminho)
             self._log.info("DGer lido com sucesso")
             dger.nome_caso = f"{nome_estudo} - NW {mes}/{ano}"
+            dger.tipo_simulacao_final = 1  # TODO - tornar uma configuração
             if self.caso._configuracoes.adequa_decks_newave:
                 self._log.info(f"Adequando caso do NEWAVE: {self.caso.nome}")
                 # Adequa parâmetros de CVAR
