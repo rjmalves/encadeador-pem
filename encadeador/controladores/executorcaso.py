@@ -135,3 +135,10 @@ class ExecutorDECOMP(ExecutorCaso):
             if not self._armazenador.armazena_caso():
                 self._log.error(f"Erro ao armazenar caso: {self._caso.nome}")
                 raise RuntimeError()
+
+        if not self._sintetizador.sintetiza_caso():
+            self._log.error(f"Erro ao sintetizar caso: {self._caso.nome}")
+            raise RuntimeError()
+        if not self._armazenador.armazena_caso():
+            self._log.error(f"Erro ao armazenar caso: {self._caso.nome}")
+            raise RuntimeError()
