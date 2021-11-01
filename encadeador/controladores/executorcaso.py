@@ -108,6 +108,17 @@ class ExecutorDECOMP(ExecutorCaso):
             self._log.error(f"Erro no encadeamento do DC {self._caso.nome}")
             raise RuntimeError()
 
+        # Primeira execução: obrigatória
+        if not self._monitor.executa_caso():
+            self._log.error(f"Erro na execução do DC {self._caso.nome}")
+            raise RuntimeError()
+        if not self._sintetizador.sintetiza_caso():
+            self._log.error(f"Erro ao sintetizar caso: {self._caso.nome}")
+            raise RuntimeError()
+        if not self._armazenador.armazena_caso():
+            self._log.error(f"Erro ao armazenar caso: {self._caso.nome}")
+            raise RuntimeError()
+
         while not self._caso.sucesso:
             max_flex = self._caso.configuracoes.maximo_flexibilizacoes_revisao
             if self._caso.numero_flexibilizacoes >= max_flex:
