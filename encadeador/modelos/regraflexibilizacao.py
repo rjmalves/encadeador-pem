@@ -10,6 +10,7 @@ from encadeador.modelos.inviabilidade import InviabilidadeHV
 from encadeador.modelos.inviabilidade import InviabilidadeHQ
 from encadeador.modelos.inviabilidade import InviabilidadeRE
 from encadeador.modelos.inviabilidade import InviabilidadeHE
+from encadeador.modelos.inviabilidade import InviabilidadeDEFMIN
 from encadeador.modelos.inviabilidade import InviabilidadeDeficit
 
 
@@ -22,6 +23,7 @@ class RegraFlexibilizacao:
                             InviabilidadeHQ,
                             InviabilidadeRE,
                             InviabilidadeHE,
+                            InviabilidadeDEFMIN,
                             InviabilidadeDeficit
                            ]
 
@@ -32,6 +34,7 @@ class RegraFlexibilizacao:
                              InviabilidadeHQ: 5,
                              InviabilidadeRE: 1,
                              InviabilidadeHE: 0.1,
+                             InviabilidadeDEFMIN: 0.2,
                              InviabilidadeDeficit: 0
                             }
 
@@ -84,6 +87,12 @@ class RegraFlexibilizacao:
         pass
 
     @abstractmethod
+    def _flexibilizaDEFMIN(self,
+                       dadger: Dadger,
+                       inviabilidades: List[InviabilidadeDEFMIN]):
+        pass
+
+    @abstractmethod
     def _flexibiliza_deficit(self,
                              dadger: Dadger,
                              inviabilidades: List[InviabilidadeDeficit]):
@@ -106,6 +115,7 @@ class RegraFlexibilizacao:
         self._flexibilizaHQ(dadger, invs_por_tipo[InviabilidadeHQ])
         self._flexibilizaRE(dadger, invs_por_tipo[InviabilidadeRE])
         self._flexibilizaHE(dadger, invs_por_tipo[InviabilidadeHE])
+        self._flexibilizaDEFMIN(dadger, invs_por_tipo[InviabilidadeDEFMIN])
         self._flexibiliza_deficit(dadger, invs_por_tipo[InviabilidadeDeficit])
 
 
@@ -364,6 +374,51 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                            f"{valor_atual} -> {novo_valor}")
 
     # Override
+    def _flexibilizaDEFMIN(self,
+                           dadger: Dadger,
+                           inviabilidades: List[InviabilidadeDEFMIN]):
+
+        def __identifica_inv(inv: InviabilidadeDEFMIN) -> Tuple[int, int, int]:
+            return (inv._codigo, inv._estagio, inv._patamar)
+
+        def __inv_maxima_violacao_identificada(invs: List[InviabilidadeDEFMIN],
+                                               inv_ini: InviabilidadeDEFMIN
+                                               ) -> InviabilidadeDEFMIN:
+            max_viol = inv_ini
+            ident_ini = __identifica_inv(inv_ini)
+            invs_mesma_id = [i for i in invs if
+                             __identifica_inv(i) == ident_ini]
+            for i in invs_mesma_id:
+                if i._violacao > max_viol._violacao:
+                    max_viol = i
+            return max_viol
+
+        # Estrutura para conter os pares (código, estágio, patamar)
+        # já flexibilizados
+        flexibilizados: List[Tuple[int, int, int]] = []
+        for inv in inviabilidades:
+            identificacao = __identifica_inv(inv)
+            # Se já flexibilizou essa restrição nesse estágio, ignora
+            if identificacao in flexibilizados:
+                continue
+            # Senão, procura dentre todas as outras pela maior violação
+            flexibilizados.append(identificacao)
+            max_viol = __inv_maxima_violacao_identificada(inviabilidades,
+                                                          inv)
+            # Procura por um registro AC de VAZMIN
+            try:
+                reg = dadger.ac(max_viol._codigo, "VAZMIN")
+            except ValueError:
+                self._log.warning("Flexibilizando DEFMIN - " +
+                                  "Não foi encontrado registro AC VAZMIN" +
+                                  f" para a usina {max_viol._codigo} " +
+                                  f" ({max_viol._usina})")
+                return
+            # Flexibiliza - TODO
+            self._log.info(f"Flexibilizando DEFMIN {max_viol._codigo} -" +
+                           f" Estágio {max_viol._estagio}: Não implementada")
+
+    # Override
     def _flexibilizaHE(self,
                        dadger: Dadger,
                        inviabilidades: List[InviabilidadeHE]):
@@ -417,4 +472,4 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                              dadger: Dadger,
                              inviabilidades: List[InviabilidadeDeficit]):
         if len(inviabilidades) > 0:
-            raise RuntimeError("Flex. de déficit não implementada")
+            self._log.warning("Flexibilização de déficit não implementada")

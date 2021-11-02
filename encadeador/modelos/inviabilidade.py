@@ -81,6 +81,14 @@ class Inviabilidade:
                                    violacao,
                                    unidade,
                                    hidr)
+        elif "DEF. MINIMA" in mensagem_restricao:
+            return InviabilidadeDEFMIN(iteracao,
+                                       estagio,
+                                       cenario,
+                                       mensagem_restricao,
+                                       violacao,
+                                       unidade,
+                                       hidr)
         elif "DEFICIT" in mensagem_restricao:
             return InviabilidadeDeficit(iteracao,
                                         estagio,
@@ -299,6 +307,44 @@ class InviabilidadeEV(Inviabilidade):
         codigo = int(list(hidr.tabela.loc[hidr.tabela["Nome"] == nome,
                                           :].index)[0])
         return [codigo, nome]
+
+
+class InviabilidadeDEFMIN(Inviabilidade):
+
+    def __init__(self,
+                 iteracao: int,
+                 estagio: int,
+                 cenario: int,
+                 mensagem_restricao: str,
+                 violacao: float,
+                 unidade: str,
+                 hidr: Hidr):
+        super().__init__(iteracao,
+                         estagio,
+                         cenario,
+                         mensagem_restricao,
+                         violacao,
+                         unidade)
+        dados = self.processa_mensagem(hidr)
+        self._codigo = dados[0]
+        self._usina = dados[1]
+        self._patamar = dados[2]
+
+    def __str__(self) -> str:
+        return (f"DEFMIN {self._codigo} Pat {self._patamar} ({self._usina}) " +
+                f"- Estágio {self._estagio}" +
+                f" - It {self._iteracao} - Cenário {self._cenario}" +
+                f" - Viol. {self._violacao} {self._unidade}")
+
+    def processa_mensagem(self, *args) -> list:
+        hidr: Hidr = args[0]
+        p = "PATAMAR"
+        u = "USINA"
+        pat = int(self._mensagem_restricao.split(p)[1].split(u)[0].strip())
+        nome = self._mensagem_restricao.split(u)[1].strip()
+        codigo = int(list(hidr.tabela.loc[hidr.tabela["Nome"] == nome,
+                                          :].index)[0])
+        return [codigo, nome, pat]
 
 
 class InviabilidadeDeficit(Inviabilidade):
