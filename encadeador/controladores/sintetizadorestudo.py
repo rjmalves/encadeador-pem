@@ -16,6 +16,9 @@ ARQUIVO_PROXIMO_CASO = "proximo_caso.csv"
 ARQUIVO_RESUMO_ESTADOS = "estudo_encadeado.csv"
 ARQUIVO_RESUMO_NEWAVES = "newaves_encadeados.csv"
 ARQUIVO_RESUMO_DECOMPS = "decomps_encadeados.csv"
+ARQUIVO_CONVERGENCIA_NEWAVES = "convergencia_newaves.csv"
+ARQUIVO_CONVERGENCIA_DECOMPS = "convergencia_decomps.csv"
+ARQUIVO_INVIABILIDADES_DECOMPS = "inviabilidades_decomps.csv"
 
 
 class SintetizadorEstudo:
@@ -68,9 +71,18 @@ class SintetizadorEstudo:
                                     ARQUIVO_RESUMO_NEWAVES)
                 resumo_decomps = join(diretorio_estudo,
                                     ARQUIVO_RESUMO_DECOMPS)
+                convergencias_newaves = join(diretorio_estudo,
+                                             ARQUIVO_CONVERGENCIA_NEWAVES)
+                convergencias_decomps = join(diretorio_estudo,
+                                             ARQUIVO_CONVERGENCIA_DECOMPS)
+                inviabilidades_decomps = join(diretorio_estudo,
+                                              ARQUIVO_INVIABILIDADES_DECOMPS)
                 dados.resumo_estados.to_csv(resumo_estados)
                 dados.resumo_newaves.to_csv(resumo_newaves)
                 dados.resumo_decomps.to_csv(resumo_decomps)
+                dados.convergencias_newaves.to_csv(convergencias_newaves)
+                dados.convergencias_decomps.to_csv(convergencias_decomps)
+                dados.inviabilidades_decomps.to_csv(inviabilidades_decomps)
                 return True
             except OSError:
                 num_retry += 1

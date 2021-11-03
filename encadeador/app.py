@@ -71,6 +71,7 @@ class App:
                     raise RuntimeError()
         except Exception:
             self._log.error("Execução do Encadeador interrompida")
+            prox.finaliza_caso(False, erro=True)
             sucesso = False
         finally:
             self._log.info("Finalizando Encadeador")

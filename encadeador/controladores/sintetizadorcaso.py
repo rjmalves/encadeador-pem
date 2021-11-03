@@ -226,7 +226,9 @@ class SintetizadorDECOMP(SintetizadorCaso):
                 relato = Relato.le_arquivo(self.caso.caminho, arq_relato)
                 # Convergência do relato.rvX
                 conv = relato.convergencia
+                cols_conv = list(conv.columns)
                 conv["Flexibilizacao"] = self.caso.numero_flexibilizacoes
+                conv = conv[["Flexibilizacao"] + cols_conv]
                 if isfile(join(caminho_saida, "convergencia.csv")):
                     conv_anterior = pd.read_csv(join(caminho_saida,
                                                      "convergencia.csv"),
@@ -238,7 +240,9 @@ class SintetizadorDECOMP(SintetizadorCaso):
                 inviab_unic = InviabUnic.le_arquivo(self.caso.caminho,
                                                     arq_inviab)
                 inviab = inviab_unic.inviabilidades_simulacao_final
+                cols_inviab = list(inviab.columns)
                 inviab["Flexibilizacao"] = self.caso.numero_flexibilizacoes
+                inviab = inviab[["Flexibilizacao"] + cols_inviab]
                 if isfile(join(caminho_saida, "inviabilidades.csv")):
                     inviab_anterior = pd.read_csv(join(caminho_saida,
                                                        "inviabilidades.csv"),

@@ -70,10 +70,15 @@ class Caso:
         self._dados.numero_tentativas += 1
         self._dados.estado = EstadoJob.EXECUTANDO
 
-    def finaliza_caso(self, sucesso: bool):
+    def finaliza_caso(self,
+                      sucesso: bool,
+                      erro: bool = False):
         self._dados.sucesso = sucesso
         self._dados.instante_fim_execucao = time.time()
-        self._dados.estado = EstadoJob.CONCLUIDO
+        if erro:
+            self._dados.estado = EstadoJob.ERRO
+        else:
+            self._dados.estado = EstadoJob.CONCLUIDO
 
     def adiciona_flexibilizacao(self):
         self._dados.adiciona_flexibilizacao()

@@ -17,10 +17,16 @@ class DadosEstudo:
     def __init__(self,
                  resumo_estados: pd.DataFrame,
                  resumo_newaves: pd.DataFrame,
-                 resumo_decomps: pd.DataFrame):
+                 resumo_decomps: pd.DataFrame,
+                 convergencias_newaves: pd.DataFrame,
+                 convergencias_decomps: pd.DataFrame,
+                 inviabilidades_decomps: pd.DataFrame):
         self._resumo_estados = resumo_estados
         self._resumo_newaves = resumo_newaves
         self._resumo_decomps = resumo_decomps
+        self._convergencias_newaves = convergencias_newaves
+        self._convergencias_decomps = convergencias_decomps
+        self._inviabilidades_decomps = inviabilidades_decomps
 
     @staticmethod
     def resume_arvore(arvore: ArvoreCasos) -> "DadosEstudo":
@@ -35,6 +41,21 @@ class DadosEstudo:
                 resumo_estados = df_resumo
             else:
                 resumo_estados = pd.concat([resumo_estados, df_resumo],
+                                           ignore_index=True)
+            # Faz o resumo dos custos
+            diretorio_resumo = join(caso.caminho, DIRETORIO_RESUMO_CASO)
+            custos = pd.read_csv(join(diretorio_resumo, "custos.csv"),
+                                 index_col=0)
+            dados_variaveis: Dict[str, list] = {c: [] for c in colunas_custos}
+            for c in colunas_custos:
+                custo = float(custos.loc[c.ljust(18),
+                                         "Valor Esperado"].tolist()[0])
+                dados_variaveis[c].append(custo)
+            df_variaveis = pd.DataFrame(data=dados_variaveis)
+            if resumo_newaves.empty:
+                resumo_newaves = df_variaveis
+            else:
+                resumo_newaves = pd.concat([resumo_newaves, df_variaveis],
                                            ignore_index=True)
             return resumo_estados, resumo_newaves
 
@@ -171,6 +192,120 @@ class DadosEstudo:
                                  "na síntese do estudo")
             return resumo_estados, resumo_newaves, resumo_decomps
 
+        def le_convergencia_newaves(convergencia_newaves: pd.DataFrame,
+                                    caso: CasoNEWAVE):
+            diretorio_resumo = join(caso.caminho, DIRETORIO_RESUMO_CASO)
+            conv = pd.read_csv(join(diretorio_resumo, "convergencia.csv"),
+                               index_col=0)
+            dados_conv: Dict[str, list] = {c: [] for c in colunas_convergencia}
+            
+            iteracoes = conv["Iteração"][2::3].to_numpy()
+            zinfs = conv["ZINF"][2::3].to_numpy()
+            zsups = conv["ZSUP Iteração"][2::3].to_numpy()
+            gaps = 100 * (zsups[1:] - zinfs[1:]) / zinfs[:-1]
+            tempos = conv["Tempo (s)"][2::3]
+            nome = f"{caso.ano}_{str(caso.mes).zfill(2)}_rv{caso.revisao}"
+            dados_conv["Caso"] = [nome] * len(iteracoes)
+            dados_conv["Iteração"] = list(iteracoes)
+            dados_conv["Zinf"] = list(zinfs)
+            dados_conv["Zsup"] = list(zsups)
+            dados_conv["Gap (%)"] = list(gaps)
+            dados_conv["Tempo (s)"] = list(tempos)
+            df_conv = pd.DataFrame(data=dados_conv)
+            if convergencia_newaves.empty:
+                convergencia_newaves = df_conv
+            else:
+                convergencia_newaves = pd.concat([convergencia_newaves, df_conv],
+                                                 ignore_index=True)
+            return convergencia_newaves
+
+        def le_convergencia_decomps(convergencia_decomps: pd.DataFrame,
+                                    caso: CasoDECOMP):
+            diretorio_resumo = join(caso.caminho, DIRETORIO_RESUMO_CASO)
+            conv = pd.read_csv(join(diretorio_resumo, "convergencia.csv"),
+                               index_col=0)
+            dados_conv: Dict[str, list] = {c: [] for c in colunas_convergencia}
+
+            iteracoes = conv["Iteração"].tolist()
+            zinfs = conv["Zinf"].tolist()
+            zsups = conv["Zsup"].tolist()
+            gaps = conv["Gap (%)"].tolist()
+            tempos = conv["Tempo (s)"].tolist()
+            nome = f"{caso.ano}_{str(caso.mes).zfill(2)}_rv{caso.revisao}"
+            dados_conv["Caso"] = [nome] * len(iteracoes)
+            dados_conv["Iteração"] = iteracoes
+            dados_conv["Zinf"] = zinfs
+            dados_conv["Zsup"] = zsups
+            dados_conv["Gap (%)"] = gaps
+            dados_conv["Tempo (s)"] = tempos
+            df_conv = pd.DataFrame(data=dados_conv)
+            if convergencia_decomps.empty:
+                convergencia_decomps = df_conv
+            else:
+                convergencia_decomps = pd.concat([convergencia_decomps, df_conv],
+                                                 ignore_index=True)
+            return convergencia_decomps
+
+        def le_convergencia(caso: Caso,
+                            convergencia_newaves: pd.DataFrame,
+                            convergencia_decomps: pd.DataFrame):
+            if isinstance(caso, CasoNEWAVE):
+                n = le_convergencia_newaves(convergencia_newaves,
+                                            caso)
+                convergencia_newaves = n
+            elif isinstance(caso, CasoDECOMP):
+                d = le_convergencia_decomps(convergencia_decomps,
+                                            caso)
+                convergencia_decomps = d
+            else:
+                raise ValueError(f"Caso do tipo {type(caso)} não suportado" +
+                                 "na síntese do estudo")
+            return convergencia_newaves, convergencia_decomps
+
+        def le_inviabilidades_decomps(inviabilidades_decomps: pd.DataFrame,
+                                      caso: CasoDECOMP):
+            diretorio_resumo = join(caso.caminho, DIRETORIO_RESUMO_CASO)
+            inviab = pd.read_csv(join(diretorio_resumo, "inviabilidades.csv"),
+                                 index_col=0)
+            dados_inviab: Dict[str, list] = {c: [] for c in colunas_inviabs}
+
+            flexibilizacoes = inviab["Flexibilizacao"].tolist()
+            estagios = inviab["Estágio"].tolist()
+            cenarios = inviab["Cenário"].tolist()
+            restricoes = inviab["Restrição"].tolist()
+            violacoes = inviab["Violação"].tolist()
+            unidades = inviab["Unidade"].tolist()
+            nome = f"{caso.ano}_{str(caso.mes).zfill(2)}_rv{caso.revisao}"
+            dados_inviab["Caso"] = [nome] * len(flexibilizacoes)
+            dados_inviab["Flexibilizacao"] = flexibilizacoes
+            dados_inviab["Estágio"] = estagios
+            dados_inviab["Cenário"] = cenarios
+            dados_inviab["Restrição"] = restricoes
+            dados_inviab["Violação"] = violacoes
+            dados_inviab["Unidade"] = unidades
+            df_inviab = pd.DataFrame(data=dados_inviab)
+            if inviabilidades_decomps.empty:
+                inviabilidades_decomps = df_inviab
+            else:
+                inviabilidades_decomps = pd.concat([inviabilidades_decomps,
+                                                    df_inviab],
+                                                 ignore_index=True)
+            return inviabilidades_decomps
+
+        def le_inviabilidades(caso: Caso,
+                              inviabilidades_newaves: pd.DataFrame,
+                              inviabilidades_decomps: pd.DataFrame):
+            if isinstance(caso, CasoNEWAVE):
+                pass
+            elif isinstance(caso, CasoDECOMP):
+                d = le_inviabilidades_decomps(inviabilidades_decomps,
+                                              caso)
+                inviabilidades_decomps = d
+            else:
+                raise ValueError(f"Caso do tipo {type(caso)} não suportado" +
+                                 "na síntese do estudo")
+            return inviabilidades_newaves, inviabilidades_decomps
+
         colunas_estado = ["Caminho",
                           "Nome",
                           "Ano",
@@ -212,9 +347,40 @@ class DadosEstudo:
                           "Mercado N",
                           ]
 
+        colunas_custos = ["Caso",
+                          "GERACAO TERMICA",
+                          "DEFICIT",
+                          "VERTIMENTO",
+                          "EXCESSO ENERGIA",
+                          "VIOLACAO CAR",
+                          "VIOLACAO SAR",
+                          "VIOL. OUTROS USOS",
+                          "VIOLACAO VZMIN",
+                          "INTERCAMBIO",
+                          "VERT. FIO N. TURB.",
+                          "VIOLACAO GHMIN"]
+
+        colunas_convergencia = ["Caso",
+                                "Iteração",
+                                "Zinf",
+                                "Zsup",
+                                "Gap (%)",
+                                "Tempo (s)"]
+
+        colunas_inviabs = ["Caso",
+                           "Flexibilizacao",
+                           "Estagio",
+                           "Restricao",
+                           "Violacao",
+                           "Unidade"]
+
         resumo_estados = pd.DataFrame(columns=colunas_estado)
-        resumo_newaves = pd.DataFrame()
+        resumo_newaves = pd.DataFrame(columns=colunas_custos)
         resumo_decomps = pd.DataFrame(columns=colunas_resumo)
+        convergencias_newaves = pd.DataFrame(columns=colunas_convergencia)
+        convergencias_decomps = pd.DataFrame(columns=colunas_convergencia)
+        inviabilidades_newaves = pd.DataFrame(columns=colunas_inviabs)
+        inviabilidades_decomps = pd.DataFrame(columns=colunas_inviabs)
         for i, c in enumerate(arvore.casos):
             if c.sucesso:
                 # Passa i == 1 para significar o primeiro DECOMP (segundo caso)
@@ -226,7 +392,22 @@ class DadosEstudo:
                 resumo_estados = e
                 resumo_newaves = n
                 resumo_decomps = d
-        return DadosEstudo(resumo_estados, resumo_newaves, resumo_decomps)
+                n, d = le_convergencia(c,
+                                       convergencias_newaves,
+                                       convergencias_decomps)
+                inviabilidades_newaves = n
+                inviabilidades_decomps = d
+                n, d = le_inviabilidades(c,
+                                         inviabilidades_newaves,
+                                         inviabilidades_decomps)
+                inviabilidades_newaves = n
+                inviabilidades_decomps = d
+        return DadosEstudo(resumo_estados,
+                           resumo_newaves,
+                           resumo_decomps,
+                           convergencias_newaves,
+                           convergencias_decomps,
+                           inviabilidades_decomps)
 
     @property
     def resumo_estados(self) -> pd.DataFrame:
@@ -239,3 +420,15 @@ class DadosEstudo:
     @property
     def resumo_decomps(self) -> pd.DataFrame:
         return self._resumo_decomps
+
+    @property
+    def convergencias_newaves(self) -> pd.DataFrame:
+        return self._convergencias_newaves
+
+    @property
+    def convergencias_decomps(self) -> pd.DataFrame:
+        return self._convergencias_decomps
+
+    @property
+    def inviabilidades_decomps(self) -> pd.DataFrame:
+        return self._inviabilidades_decomps
