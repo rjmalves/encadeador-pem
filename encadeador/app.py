@@ -75,6 +75,6 @@ class App:
                 prox.finaliza_caso(False, erro=True)
             sucesso = False
             raise e
-        finally:
-            self._log.info("Finalizando Encadeador")
-            return sucesso
+        # finally:
+        #     self._log.info("Finalizando Encadeador")
+        #     return sucesso
