@@ -209,6 +209,7 @@ class DadosEstudo:
             tempos = conv["Tempo (s)"][2::3]
             nome = f"{caso.ano}_{str(caso.mes).zfill(2)}_rv{caso.revisao}"
             dados_conv["Caso"] = [nome] * len(iteracoes)
+            dados_conv["Flexibilizacao"] = [0] * len(iteracoes)
             dados_conv["Iteração"] = list(iteracoes)
             dados_conv["Zinf"] = list(zinfs)
             dados_conv["Zsup"] = list(zsups)
@@ -235,8 +236,10 @@ class DadosEstudo:
             zsups = conv["Zsup"].tolist()
             gaps = conv["Gap (%)"].tolist()
             tempos = conv["Tempo (s)"].tolist()
+            flexibilizacoes = conv["Flexibilizacao"].tolist()
             nome = f"{caso.ano}_{str(caso.mes).zfill(2)}_rv{caso.revisao}"
             dados_conv["Caso"] = [nome] * len(iteracoes)
+            dados_conv["Flexibilizacao"] = flexibilizacoes
             dados_conv["Iteração"] = iteracoes
             dados_conv["Zinf"] = zinfs
             dados_conv["Zsup"] = zsups
@@ -366,6 +369,7 @@ class DadosEstudo:
                           "VIOLACAO GHMIN"]
 
         colunas_convergencia = ["Caso",
+                                "Flexibilizacao",
                                 "Iteração",
                                 "Zinf",
                                 "Zsup",
