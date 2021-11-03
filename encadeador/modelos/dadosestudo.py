@@ -247,7 +247,7 @@ class DadosEstudo:
             dados_conv["Zsup"] = zsups
             dados_conv["Gap (%)"] = gaps
             dados_conv["Tempo (s)"] = tempos
-            log.info(dados_conv)
+            log.info([f"{k}: {len(v)}" for k, v in dados_conv.items()])
             df_conv = pd.DataFrame(data=dados_conv)
             if convergencia_decomps.empty:
                 convergencia_decomps = df_conv
