@@ -423,7 +423,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 dadger.cria_registro(dadger.ac(169, "NPOSNW"),
                                      reg_ac_novo)
                 reg = reg_ac_novo
-                
+
             # Flexibiliza
             self._log.info(f"Flexibilizando DEFMIN {max_viol._codigo} -" +
                            f" Estágio {max_viol._estagio}:" +

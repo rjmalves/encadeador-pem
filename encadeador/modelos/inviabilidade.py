@@ -345,8 +345,8 @@ class InviabilidadeDEFMIN(Inviabilidade):
         nome = self._mensagem_restricao.split(u)[1].strip()
         codigo = int(list(hidr.tabela.loc[hidr.tabela["Nome"] == nome,
                                           :].index)[0])
-        vazmin_hidr = int(hidr.tabela.loc[hidr.tabela["Nome" == nome,
-                                                      "Vazão Mínima"]])
+        vazmin_hidr = int(list(hidr.tabela.loc[hidr.tabela["Nome"] == nome,
+                                                           "Vazão Mínima"])[0])
         return [codigo, nome, pat, vazmin_hidr]
 
 
