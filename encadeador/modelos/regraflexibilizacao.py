@@ -1,7 +1,9 @@
 from abc import abstractmethod
 from logging import Logger
 from typing import List, Tuple
+import numpy as np  # type: ignore
 from idecomp.decomp.dadger import Dadger
+from idecomp.decomp.modelos.dadger import AC, ACVAZMIN
 
 from encadeador.modelos.inviabilidade import Inviabilidade
 from encadeador.modelos.inviabilidade import InviabilidadeEV
@@ -413,10 +415,22 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                                   "Não foi encontrado registro AC VAZMIN" +
                                   f" para a usina {max_viol._codigo} " +
                                   f" ({max_viol._usina})")
-                return
-            # Flexibiliza - TODO
+                reg_ac_novo = AC()
+                reg_ac_novo.uhe = max_viol._codigo
+                reg_ac_novo.modificacao = "VAZMIN"
+                reg_ac_novo._modificacao = ACVAZMIN("")
+                reg_ac_novo._modificacao._dados = [max_viol._vazmin_hidr]
+                dadger.cria_registro(dadger.ac(169, "NPOSNW"),
+                                     reg_ac_novo)
+                reg = reg_ac_novo
+                
+            # Flexibiliza
             self._log.info(f"Flexibilizando DEFMIN {max_viol._codigo} -" +
-                           f" Estágio {max_viol._estagio}: Não implementada")
+                           f" Estágio {max_viol._estagio}:" +
+                           f" {reg._modificacao._dados[0]} -> {novo_valor}")
+            valor_flex = int(np.ceil(max_viol._violacao))
+            novo_valor = np.max([0, reg._modificacao._dados[0] - valor_flex])
+            reg._modificacao._dados = [novo_valor]
 
     # Override
     def _flexibilizaHE(self,

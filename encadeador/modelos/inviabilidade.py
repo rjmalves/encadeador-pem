@@ -329,6 +329,7 @@ class InviabilidadeDEFMIN(Inviabilidade):
         self._codigo = dados[0]
         self._usina = dados[1]
         self._patamar = dados[2]
+        self._vazmin_hidr = dados[3]
 
     def __str__(self) -> str:
         return (f"DEFMIN {self._codigo} Pat {self._patamar} ({self._usina}) " +
@@ -344,7 +345,9 @@ class InviabilidadeDEFMIN(Inviabilidade):
         nome = self._mensagem_restricao.split(u)[1].strip()
         codigo = int(list(hidr.tabela.loc[hidr.tabela["Nome"] == nome,
                                           :].index)[0])
-        return [codigo, nome, pat]
+        vazmin_hidr = int(hidr.tabela.loc[hidr.tabela["Nome" == nome,
+                                                      "Vazão Mínima"]])
+        return [codigo, nome, pat, vazmin_hidr]
 
 
 class InviabilidadeDeficit(Inviabilidade):
