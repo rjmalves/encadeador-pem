@@ -288,10 +288,10 @@ class DadosEstudo:
             nome = f"{caso.ano}_{str(caso.mes).zfill(2)}_rv{caso.revisao}"
             dados_inviab["Caso"] = [nome] * len(flexibilizacoes)
             dados_inviab["Flexibilizacao"] = flexibilizacoes
-            dados_inviab["Estágio"] = estagios
-            dados_inviab["Cenário"] = cenarios
-            dados_inviab["Restrição"] = restricoes
-            dados_inviab["Violação"] = violacoes
+            dados_inviab["Estagio"] = estagios
+            dados_inviab["Cenario"] = cenarios
+            dados_inviab["Restricao"] = restricoes
+            dados_inviab["Violacao"] = violacoes
             dados_inviab["Unidade"] = unidades
             log.info([f"{k}: {len(v)}" for k, v in dados_inviab.items()])
             df_inviab = pd.DataFrame(data=dados_inviab)
