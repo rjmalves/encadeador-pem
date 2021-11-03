@@ -47,7 +47,11 @@ class DadosEstudo:
             custos = pd.read_csv(join(diretorio_resumo, "custos.csv"),
                                  index_col=0)
             dados_variaveis: Dict[str, list] = {c: [] for c in colunas_custos}
+            nome = f"{caso.ano}_{str(caso.mes).zfill(2)}_rv{caso.revisao}"
+            dados_variaveis["Caso"] = [nome]
             for c in colunas_custos:
+                if c == "Caso":
+                    continue
                 custo = float(custos.loc[c.ljust(18),
                                          "Valor Esperado"].tolist()[0])
                 dados_variaveis[c].append(custo)
