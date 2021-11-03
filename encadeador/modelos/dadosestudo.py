@@ -293,7 +293,6 @@ class DadosEstudo:
             dados_inviab["Restricao"] = restricoes
             dados_inviab["Violacao"] = violacoes
             dados_inviab["Unidade"] = unidades
-            log.info([f"{k}: {len(v)}" for k, v in dados_inviab.items()])
             df_inviab = pd.DataFrame(data=dados_inviab)
             if inviabilidades_decomps.empty:
                 inviabilidades_decomps = df_inviab
@@ -407,8 +406,8 @@ class DadosEstudo:
                 n, d = le_convergencia(c,
                                        convergencias_newaves,
                                        convergencias_decomps)
-                inviabilidades_newaves = n
-                inviabilidades_decomps = d
+                convergencias_newaves = n
+                convergencias_decomps = d
                 n, d = le_inviabilidades(c,
                                          inviabilidades_newaves,
                                          inviabilidades_decomps)
