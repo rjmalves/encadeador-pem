@@ -212,7 +212,7 @@ class DadosEstudo:
             dados_conv["Iteração"] = list(iteracoes)
             dados_conv["Zinf"] = list(zinfs)
             dados_conv["Zsup"] = list(zsups)
-            dados_conv["Gap (%)"] = list(gaps)
+            dados_conv["Gap (%)"] = [0] + list(gaps)
             dados_conv["Tempo (s)"] = list(tempos)
             df_conv = pd.DataFrame(data=dados_conv)
             if convergencia_newaves.empty:
