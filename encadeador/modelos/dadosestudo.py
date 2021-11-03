@@ -247,7 +247,6 @@ class DadosEstudo:
             dados_conv["Zsup"] = zsups
             dados_conv["Gap (%)"] = gaps
             dados_conv["Tempo (s)"] = tempos
-            log.info([f"{k}: {len(v)}" for k, v in dados_conv.items()])
             df_conv = pd.DataFrame(data=dados_conv)
             if convergencia_decomps.empty:
                 convergencia_decomps = df_conv
@@ -294,6 +293,7 @@ class DadosEstudo:
             dados_inviab["Restrição"] = restricoes
             dados_inviab["Violação"] = violacoes
             dados_inviab["Unidade"] = unidades
+            log.info([f"{k}: {len(v)}" for k, v in dados_inviab.items()])
             df_inviab = pd.DataFrame(data=dados_inviab)
             if inviabilidades_decomps.empty:
                 inviabilidades_decomps = df_inviab
