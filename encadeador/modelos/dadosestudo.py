@@ -2,6 +2,7 @@ import pandas as pd  # type: ignore
 import numpy as np  # type: ignore
 from typing import Dict, List
 from os.path import join
+from logging import Logger
 
 from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
 from encadeador.modelos.dadoscaso import NOME_ARQUIVO_ESTADO
@@ -29,7 +30,8 @@ class DadosEstudo:
         self._inviabilidades_decomps = inviabilidades_decomps
 
     @staticmethod
-    def resume_arvore(arvore: ArvoreCasos) -> "DadosEstudo":
+    def resume_arvore(arvore: ArvoreCasos,
+                      log: Logger) -> "DadosEstudo":
 
         def le_resumo_newave(resumo_estados: pd.DataFrame,
                              resumo_newaves: pd.DataFrame,
@@ -245,6 +247,7 @@ class DadosEstudo:
             dados_conv["Zsup"] = zsups
             dados_conv["Gap (%)"] = gaps
             dados_conv["Tempo (s)"] = tempos
+            log.info(dados_conv)
             df_conv = pd.DataFrame(data=dados_conv)
             if convergencia_decomps.empty:
                 convergencia_decomps = df_conv
