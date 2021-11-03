@@ -74,14 +74,14 @@ class SintetizadorNEWAVE(SintetizadorCaso):
                                      DIRETORIO_RESUMO_CASO)
                 # Convergência do pmo.dat
                 pmo.convergencia.to_csv(join(caminho_saida,
-                                            "convergencia.csv"),
+                                        "convergencia.csv"),
                                         header=True,
                                         encoding="utf-8")
                 # Custos do pmo.dat
                 pmo.custo_operacao_series_simuladas.to_csv(join(caminho_saida,
                                                                 "custos.csv"),
-                                                        header=True,
-                                                        encoding="utf-8")
+                                                           header=True,
+                                                           encoding="utf-8")
                 # CMO, EARM, GT, GH do NWLISTOP
                 # TODO
                 return True
@@ -93,7 +93,7 @@ class SintetizadorNEWAVE(SintetizadorCaso):
                 num_retry += 1
                 time.sleep(INTERVALO_RETRY_ESCRITA)
                 continue
-            
+
         self._log.error(f"Erro de síntese do caso {self.caso.nome}")
         return False
 
@@ -264,7 +264,7 @@ class SintetizadorDECOMP(SintetizadorCaso):
                 earm_subsis = relato.energia_armazenada_subsistema
                 earmax = relato.energia_armazenada_maxima_subsistema
                 earm_sin = SintetizadorDECOMP.__processa_earm_sin(earm_subsis,
-                                                                earmax)
+                                                                  earmax)
                 gt_subsis = relato.geracao_termica_subsistema
                 gt_sin = SintetizadorDECOMP.__processa_dado_sin(gt_subsis)
                 balanco = relato.balanco_energetico

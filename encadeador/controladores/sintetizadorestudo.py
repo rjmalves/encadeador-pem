@@ -66,11 +66,11 @@ class SintetizadorEstudo:
                 cfg = self._arvore.casos[0].configuracoes
                 diretorio_estudo = cfg.caminho_base_estudo
                 resumo_estados = join(diretorio_estudo,
-                                    ARQUIVO_RESUMO_ESTADOS)
+                                      ARQUIVO_RESUMO_ESTADOS)
                 resumo_newaves = join(diretorio_estudo,
-                                    ARQUIVO_RESUMO_NEWAVES)
+                                      ARQUIVO_RESUMO_NEWAVES)
                 resumo_decomps = join(diretorio_estudo,
-                                    ARQUIVO_RESUMO_DECOMPS)
+                                      ARQUIVO_RESUMO_DECOMPS)
                 convergencias_newaves = join(diretorio_estudo,
                                              ARQUIVO_CONVERGENCIA_NEWAVES)
                 convergencias_decomps = join(diretorio_estudo,
@@ -92,5 +92,5 @@ class SintetizadorEstudo:
                 num_retry += 1
                 time.sleep(INTERVALO_RETRY_ESCRITA)
                 continue
-        self._log.info(f"Erro na síntese do estudo encadeado")
+        self._log.info("Erro na síntese do estudo encadeado")
         return False

@@ -198,7 +198,7 @@ class DadosEstudo:
             conv = pd.read_csv(join(diretorio_resumo, "convergencia.csv"),
                                index_col=0)
             dados_conv: Dict[str, list] = {c: [] for c in colunas_convergencia}
-            
+
             iteracoes = conv["Iteração"][2::3].to_numpy()
             zinfs = conv["ZINF"][2::3].to_numpy()
             zsups = conv["ZSUP Iteração"][2::3].to_numpy()
@@ -215,7 +215,8 @@ class DadosEstudo:
             if convergencia_newaves.empty:
                 convergencia_newaves = df_conv
             else:
-                convergencia_newaves = pd.concat([convergencia_newaves, df_conv],
+                convergencia_newaves = pd.concat([convergencia_newaves,
+                                                  df_conv],
                                                  ignore_index=True)
             return convergencia_newaves
 
@@ -242,7 +243,8 @@ class DadosEstudo:
             if convergencia_decomps.empty:
                 convergencia_decomps = df_conv
             else:
-                convergencia_decomps = pd.concat([convergencia_decomps, df_conv],
+                convergencia_decomps = pd.concat([convergencia_decomps,
+                                                  df_conv],
                                                  ignore_index=True)
             return convergencia_decomps
 
@@ -289,7 +291,7 @@ class DadosEstudo:
             else:
                 inviabilidades_decomps = pd.concat([inviabilidades_decomps,
                                                     df_inviab],
-                                                 ignore_index=True)
+                                                   ignore_index=True)
             return inviabilidades_decomps
 
         def le_inviabilidades(caso: Caso,

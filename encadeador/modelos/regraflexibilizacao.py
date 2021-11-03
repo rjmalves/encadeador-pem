@@ -90,8 +90,8 @@ class RegraFlexibilizacao:
 
     @abstractmethod
     def _flexibilizaDEFMIN(self,
-                       dadger: Dadger,
-                       inviabilidades: List[InviabilidadeDEFMIN]):
+                           dadger: Dadger,
+                           inviabilidades: List[InviabilidadeDEFMIN]):
         pass
 
     @abstractmethod

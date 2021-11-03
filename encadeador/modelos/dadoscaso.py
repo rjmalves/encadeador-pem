@@ -10,6 +10,7 @@ NOME_ARQUIVO_ESTADO = "caso_encadeado.csv"
 INTERVALO_RETRY_ESCRITA = 0.1
 MAX_RETRY_ESCRITA = 3
 
+
 class DadosCaso:
     """
     Dados de execução e gerenciamento de um caso, com o histórico
@@ -118,11 +119,11 @@ class DadosCaso:
                                      encoding="utf-8",
                                      )
                 return
-            except OSError as e:
+            except OSError:
                 num_retry += 1
                 time.sleep(INTERVALO_RETRY_ESCRITA)
                 continue
-            except BlockingIOError as e:
+            except BlockingIOError:
                 num_retry += 1
                 time.sleep(INTERVALO_RETRY_ESCRITA)
                 continue

@@ -69,9 +69,10 @@ class App:
                 # Faz a síntese do estudo
                 if not sintetizador.sintetiza_estudo():
                     raise RuntimeError()
-        except Exception:
-            self._log.error("Execução do Encadeador interrompida")
-            prox.finaliza_caso(False, erro=True)
+        except Exception as e:
+            self._log.error(f"Execução do Encadeador interrompida: {e}")
+            if prox is not None:
+                prox.finaliza_caso(False, erro=True)
             sucesso = False
         finally:
             self._log.info("Finalizando Encadeador")
