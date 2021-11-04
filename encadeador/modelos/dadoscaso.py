@@ -1,4 +1,5 @@
 import pandas as pd  # type: ignore
+import time
 from typing import List
 from os.path import isfile
 from os.path import join
@@ -6,6 +7,8 @@ from os.path import join
 from encadeador.modelos.estadojob import EstadoJob
 
 NOME_ARQUIVO_ESTADO = "caso_encadeado.csv"
+INTERVALO_RETRY_ESCRITA = 0.1
+MAX_RETRY_ESCRITA = 3
 
 
 class DadosCaso:
@@ -13,6 +16,7 @@ class DadosCaso:
     Dados de execução e gerenciamento de um caso, com o histórico
     de flexibilizações.
     """
+
     def __init__(self,
                  programa: str,
                  caminho: str,
@@ -107,9 +111,22 @@ class DadosCaso:
                          0)
 
     def escreve_arquivo(self):
-        self.df_dados.to_csv(join(self.caminho, NOME_ARQUIVO_ESTADO),
-                             header=True,
-                             encoding="utf-8")
+        num_retry = 0
+        while num_retry < MAX_RETRY_ESCRITA:
+            try:
+                self.df_dados.to_csv(join(self.caminho, NOME_ARQUIVO_ESTADO),
+                                     header=True,
+                                     encoding="utf-8",
+                                     )
+                return
+            except OSError:
+                num_retry += 1
+                time.sleep(INTERVALO_RETRY_ESCRITA)
+                continue
+            except BlockingIOError:
+                num_retry += 1
+                time.sleep(INTERVALO_RETRY_ESCRITA)
+                continue
 
     def adiciona_flexibilizacao(self):
         if self.df_dados.shape[0] == 0:

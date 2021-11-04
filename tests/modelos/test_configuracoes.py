@@ -5,7 +5,7 @@ import pytest
 
 from encadeador.modelos.configuracoes import Configuracoes
 
-DIRETORIO_TESTE = "tests/modelos/_arquivos"
+DIRETORIO_TESTE = "tests/_arquivos/configuracoes"
 
 
 def test_configuracoes_validas():
@@ -27,6 +27,11 @@ def test_configuracoes_validas():
     assert c.maximo_flexibilizacoes_revisao == 30
     assert c.ultimas_iteracoes_flexibilizacao == 0
     assert c.metodo_flexibilizacao == "absoluto"
+    assert c.adequa_decks_newave
+    assert c.cvar == [50, 35]
+    assert c.opcao_parpa == [3, 0]
+    assert c.adequa_decks_decomp
+    assert c.previne_gap_negativo
     assert c.maximo_iteracoes_decomp == 500
     assert c.fator_aumento_gap_decomp == 0.01
     assert c.gap_maximo_decomp == 0.1
@@ -107,6 +112,41 @@ def test_metodo_flexibilizacao():
     with pytest.raises(ValueError):
         load_dotenv(join(DIRETORIO_TESTE,
                          "invalido_metodo_flexibilizacao.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()
+
+def test_adequa_decks_newave():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_adequa_decks_newave.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()
+
+def test_cvar():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_cvar.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()
+
+def test_opcao_parpa():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_opcao_parpa.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()
+
+def test_adequa_decks_decomp():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_adequa_decks_decomp.cfg"),
+                    override=True)
+        Configuracoes.le_variaveis_ambiente()
+
+def test_previne_gap_negativo():
+    with pytest.raises(ValueError):
+        load_dotenv(join(DIRETORIO_TESTE,
+                         "invalido_previne_gap_negativo.cfg"),
                     override=True)
         Configuracoes.le_variaveis_ambiente()
 

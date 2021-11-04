@@ -190,10 +190,9 @@ class GerenciadorFilaSGE(GerenciadorFila):
             raise ValueError(f"Erro na execução do qstat: código {cod}")
         # Sucesso:
         estado = __procura_codigo_estado(saidas)
-        print(estado)
         if "e" in estado:
             estadojob = EstadoJob.ERRO
-        elif estado == "qw" or estado == "t":
+        elif estado == "qw" or estado == "t" or estado == "q":
             estadojob = EstadoJob.ESPERANDO
         elif estado == "r":
             estadojob = EstadoJob.EXECUTANDO

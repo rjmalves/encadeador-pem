@@ -1,42 +1,9 @@
-# Configurações do encadeador
-
-# NOME_ESTUDO (str)
-# ARQUIVO_LISTA_CASOS (str)
-
-# DIRETORIO_NEWAVE (str)
-# DIRETORIO_DECOMP (str)
-# DIRETORIO_INSTALACAO_NEWAVES (str)
-# DIRETORIO_INSTALACAO_DECOMPS (str)
-# GERENCIADOR_FILA (str - PBS, SGE ou OGS)
-
-# VERSAO_NEWAVE (str)
-# VERSAO_DECOMP (str)
-# PROCESSADORES_POR_NO (int >= 1)
-# PROCESSADORES_MINIMOS_NEWAVE (int >= 1)
-# PROCESSADORES_MAXIMOS_NEWAVE (int >= 1)
-# PROCESSADORES_MINIMOS_DECOMP (int >= 1)
-# PROCESSADORES_MAXIMOS_DECOMP (int >= 1)
-# AJUSTE_PROCESSADORES_NEWAVE (bool)
-# AJUSTE_PROCESSADORES_DECOMP (bool)
-# VARIAVEIS_ENCADEADAS (list(str))
-# FREQUENCIA_NEWAVE (str - SEMANAL ou MENSAL)
-
-# FLEXIBILIZA_DEFICIT (bool)
-# MAXIMO_FLEXIBILIZACOES_REVISAO (int >= 1)
-# ULTIMAS_ITERACOES_FLEXIBILIZACAO (int >= 0)
-# METODO_FLEXIBILIZACAO (str - ABSOLUTA ou PERCENTUAL)
-
-# MAXIMO_ITERACOES_DECOMP (int >= 1)
-# FATOR_AUMENTO_GAP_DECOMP (float >= 1)
-# GAP_MAXIMO_DECOMP (float > 0)
-
-# Builder
-
 import pathlib
 from os import getenv, curdir
 from os.path import isfile, join
 from abc import abstractmethod
 import re
+from typing import List
 
 
 class Configuracoes:
@@ -67,6 +34,11 @@ class Configuracoes:
         self._maximo_flexibilizacoes_revisao = None
         self._ultimas_iteracoes_flexibilizacao = None
         self._metodo_flexibilizacao = None
+        self._adequa_decks_newave = None
+        self._cvar = None
+        self._opcao_parpa = None
+        self._adequa_decks_decomp = None
+        self._previne_gap_negativo = None
         self._maximo_iteracoes_decomp = None
         self._fator_aumento_gap_decomp = None
         self._gap_maximo_decomp = None
@@ -98,6 +70,11 @@ class Configuracoes:
             .maximo_flexibilizacoes_revisao("MAXIMO_FLEXIBILIZACOES_REVISAO")\
             .ultimas_iteracoes_flexibilizacao(var_ult_iter)\
             .metodo_flexibilizacao("METODO_FLEXIBILIZACAO")\
+            .adequa_decks_newave("ADEQUA_DECKS_NEWAVE")\
+            .cvar("CVAR")\
+            .opcao_parpa("OPCAO_PARPA")\
+            .adequa_decks_decomp("ADEQUA_DECKS_DECOMP")\
+            .previne_gap_negativo("PREVINE_GAP_NEGATIVO")\
             .maximo_iteracoes_decomp("MAXIMO_ITERACOES_DECOMP")\
             .fator_aumento_gap_decomp("FATOR_AUMENTO_GAP_DECOMP")\
             .gap_maximo_decomp("GAP_MAXIMO_DECOMP")\
@@ -267,6 +244,67 @@ class Configuracoes:
         return self._metodo_flexibilizacao
 
     @property
+    def adequa_decks_newave(self) -> bool:
+        """
+        Opção de adequar os decks do NEWAVE antes de iniciar o estudo.
+        São feitas as modificações de:
+
+        - Parâmetros de CVAR utilizados (ALFA, LAMBDA)
+        - Opção de PAR(p)-A utilizada (0 ou 3)
+
+        :return: O uso, ou não, da adequação de decks para NEWAVE.
+        :rtype: bool
+        """
+        return self._adequa_decks_newave
+
+    @property
+    def cvar(self) -> List[float]:
+        """
+        Parâmetros de CVAR usados para substituir no arquivo cvar.dat.
+
+        :return: O par de opções (ALFA, LAMBDA) para uso no cvar.dat
+        :rtype: List[float]
+        """
+        return self._cvar
+
+    @property
+    def opcao_parpa(self) -> List[int]:
+        """
+        Opção de PAR(p)-A utilizada para substituir no arquivo dger.dat e
+        o uso, ou não, da redução automática da ordem.
+
+        :return: O par de opções para uso no dger.dat.
+        :rtype: List[int]
+        """
+        return self._opcao_parpa
+
+    @property
+    def adequa_decks_decomp(self) -> bool:
+        """
+        Opção de adequar os decks do DECOMP antes de iniciar o estudo.
+        São feitas as modificações de:
+
+        - Número máximo de iterações (registro NI)
+        - Prevenção de gap negativo (registros RT), se habilitada
+
+        :return: O uso, ou não, da adequação de decks para DECOMP.
+        :rtype: bool
+        """
+        return self._adequa_decks_decomp
+
+    @property
+    def previne_gap_negativo(self) -> bool:
+        """
+        Habilita a prevenção, ou não, de gap negativo por meio da inserção
+        dos registros RT com mnemônicos CRISTA e DESVIO no processo de
+        adequação dos decks de DECOMP.
+
+        :return: O uso ou não da prevenção de gap negativo.
+        :rtype: bool
+        """
+        return self._previne_gap_negativo
+
+    @property
     def maximo_iteracoes_decomp(self) -> int:
         """
         Número máximo de iterações do DECOMP.
@@ -395,6 +433,26 @@ class BuilderConfiguracoes:
 
     @abstractmethod
     def metodo_flexibilizacao(self, variavel: str):
+        pass
+
+    @abstractmethod
+    def adequa_decks_newave(self, variavel: str):
+        pass
+
+    @abstractmethod
+    def cvar(self, variavel: str):
+        pass
+
+    @abstractmethod
+    def opcao_parpa(self, variavel: str):
+        pass
+
+    @abstractmethod
+    def adequa_decks_decomp(self, variavel: str):
+        pass
+
+    @abstractmethod
+    def previne_gap_negativo(self, variavel: str):
         pass
 
     @abstractmethod
@@ -663,6 +721,55 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
             raise ValueError(f"Método de flexibilização {valor} inválido" +
                              ". Métodos válidos: absoluto ou percentual.")
         self._configuracoes._metodo_flexibilizacao = valor
+        # Fluent method
+        return self
+
+    def adequa_decks_newave(self, variavel: str):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        valor = BuilderConfiguracoesENV.__valida_bool(valor)
+        self._configuracoes._adequa_decks_newave = valor
+        # Fluent method
+        return self
+
+    def cvar(self, variavel: str):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        valor = valor.split(',')
+        # Verifica se todos os valores são numéricos
+        if len(valor) != 2:
+            raise ValueError("Devem ser informados apenas 2 valores " +
+                             f" como parâmetros de CVAR, não {len(valor)}.")
+        if not all([v.replace(".", "0").isnumeric() for v in valor]):
+            raise ValueError("Devem ser informados parâmetros numéricos" +
+                             f" para o CVAR, não {valor}.")
+        self._configuracoes._cvar = [float(v) for v in valor]
+        # Fluent method
+        return self
+
+    def opcao_parpa(self, variavel: str):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        valor = valor.split(',')
+        # Verifica se todos os valores são inteiros
+        if len(valor) != 2:
+            raise ValueError("Devem ser informados apenas 2 valores " +
+                             f" como opção de PAR(p)-A, não {len(valor)}.")
+        if not all([v.isnumeric() for v in valor]):
+            raise ValueError("Devem ser informados parâmetros inteiros" +
+                             f" para o PAR(p)-A, não {valor}.")
+        self._configuracoes._opcao_parpa = [int(v) for v in valor]
+        # Fluent method
+        return self
+
+    def adequa_decks_decomp(self, variavel: str):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        valor = BuilderConfiguracoesENV.__valida_bool(valor)
+        self._configuracoes._adequa_decks_decomp = valor
+        # Fluent method
+        return self
+
+    def previne_gap_negativo(self, variavel: str):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        valor = BuilderConfiguracoesENV.__valida_bool(valor)
+        self._configuracoes._previne_gap_negativo = valor
         # Fluent method
         return self
 

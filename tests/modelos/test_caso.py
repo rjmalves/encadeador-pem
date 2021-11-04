@@ -8,7 +8,7 @@ from encadeador.modelos.caso import CasoNEWAVE
 from encadeador.modelos.caso import CasoDECOMP
 from encadeador.modelos.configuracoes import Configuracoes
 
-ARQ_CFG = join("tests", "modelos", "_arquivos", "valido.cfg")
+ARQ_CFG = join("tests", "_arquivos", "configuracoes", "valido.cfg")
 CAMINHO_TESTE = "/home/user"
 ANO_TESTE = 2021
 MES_TESTE = 1

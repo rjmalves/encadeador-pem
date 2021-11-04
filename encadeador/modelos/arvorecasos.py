@@ -89,6 +89,12 @@ class ArvoreCasos:
         self.__verifica_inicializacao(self._casos)
         return self._casos
 
+    def indice_caso(self, caso: Optional[Caso]) -> int:
+        if caso is None:
+            return 0
+        else:
+            return self._casos.index(caso)
+
     @property
     def proximo_caso(self) -> Optional[Caso]:
         for c in self.casos:

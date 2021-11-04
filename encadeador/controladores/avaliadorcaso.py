@@ -1,7 +1,8 @@
 from abc import abstractmethod
 from logging import Logger
 from inewave.newave import PMO  # type: ignore
-from idecomp.decomp.sumario import Sumario  # type: ignore
+from idecomp.decomp.sumario import Sumario
+from idecomp.decomp.inviabunic import InviabUnic
 
 from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
 
@@ -39,22 +40,22 @@ class AvaliadorNEWAVE(AvaliadorCaso):
 
     def avalia(self) -> bool:
         try:
-            self._log.info(f"Verificando saídas do NW {self._caso.nome}")
+            self._log.info(f"Verificando saídas do {self._caso.nome}")
             pmo = PMO.le_arquivo(self._caso.caminho)
             custos = pmo.custo_operacao_series_simuladas
             if custos.empty:
-                self._log.error("Erro no processamento do NW " +
+                self._log.error("Erro no processamento do " +
                                 f"{self._caso.nome}")
                 return False
             self._log.info(f"Caso concluído com sucesso: {self._caso.nome}")
             return True
         except FileNotFoundError:
             self._log.error("Arquivo pmo.dat não encontrado" +
-                            f" no diretório do NW {self._caso.nome}")
-            return False
+                            f" no diretório do {self._caso.nome}")
+            raise RuntimeError()
         except Exception as e:
             self._log.error("Erro na avaliação das saídas" +
-                            f" do NW {self._caso.nome}: {e}")
+                            f" do {self._caso.nome}: {e}")
             return False
 
 
@@ -69,20 +70,24 @@ class AvaliadorDECOMP(AvaliadorCaso):
     def avalia(self) -> bool:
         try:
             arq = f"sumario.rv{self._caso.revisao}"
-            self._log.info(f"Verificando saídas do DC {self._caso.nome}")
+            arq_inv = f"inviab_unic.rv{self._caso.revisao}"
+            self._log.info(f"Verificando saídas do {self._caso.nome}")
             sumario = Sumario.le_arquivo(self._caso.caminho, arq)
-            cmo = sumario.cmo_medio_subsistema
-            if cmo.empty:
-                self._log.error("Erro no processamento do DC " +
-                                f"{self._caso.nome}")
-                return False
+            sumario.cmo_medio_subsistema
+            self._log.info(f"Verificando inviabilidades do {self._caso.nome}")
+            inviab = InviabUnic.le_arquivo(self._caso.caminho, arq_inv)
+            if not inviab.inviabilidades_simulacao_final.empty:
+                self._log.warning(f"{self._caso.nome} convergiu com" +
+                                  " inviabilidades na simulação final")
+                if self._caso.configuracoes.flexibiliza_deficit:
+                    raise Exception()
             self._log.info(f"Caso concluído com sucesso: {self._caso.nome}")
             return True
         except FileNotFoundError:
-            self._log.error(f"Arquivo {arq} não encontrado" +
-                            f" no diretório do DC {self._caso.nome}")
-            return False
-        except Exception as e:
+            self._log.error(f"Arquivo {arq} ou {arq_inv} não encontrados" +
+                            f" no diretório do {self._caso.nome}")
+            raise RuntimeError()
+        except Exception:
             self._log.error("Erro na avaliação das saídas" +
-                            f" do DC {self._caso.nome}: {e}")
+                            f" do {self._caso.nome}: caso não convergiu.")
             return False

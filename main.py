@@ -5,7 +5,7 @@ from os.path import join
 from dotenv import load_dotenv
 
 from encadeador.app import App
-from encadeador.modelos.caso import Configuracoes
+from encadeador.modelos.configuracoes import Configuracoes
 
 # Lê as configurações das variáveis de ambiente
 load_dotenv(override=True)

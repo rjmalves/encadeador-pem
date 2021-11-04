@@ -2,10 +2,10 @@ from abc import abstractmethod
 from os import chdir
 from logging import Logger
 from typing import Optional
-from encadeador.controladores.avaliadorcaso import AvaliadorCaso
-from encadeador.controladores.flexibilizadorcaso import Flexibilizador
 
 from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
+from encadeador.controladores.avaliadorcaso import AvaliadorCaso
+from encadeador.controladores.flexibilizadorcaso import Flexibilizador
 from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
 from encadeador.controladores.preparadorcaso import PreparadorCaso
 from encadeador.controladores.monitorcaso import MonitorCaso
@@ -112,8 +112,13 @@ class ExecutorDECOMP(ExecutorCaso):
         if not self._monitor.executa_caso():
             self._log.error(f"Erro na execução do DC {self._caso.nome}")
             raise RuntimeError()
+        if not self._sintetizador.sintetiza_caso():
+            self._log.error(f"Erro ao sintetizar caso: {self._caso.nome}")
+            raise RuntimeError()
+        if not self._armazenador.armazena_caso():
+            self._log.error(f"Erro ao armazenar caso: {self._caso.nome}")
+            raise RuntimeError()
 
-        # Execuções adicionais: se necessárias
         while not self._caso.sucesso:
             max_flex = self._caso.configuracoes.maximo_flexibilizacoes_revisao
             if self._caso.numero_flexibilizacoes >= max_flex:
@@ -123,16 +128,15 @@ class ExecutorDECOMP(ExecutorCaso):
             # Se ainda pode flexibilizar
             flexibilizador = Flexibilizador.factory(self._caso, self._log)
             if not flexibilizador.flexibiliza():
-                self._log.error("Erro na flexibilização do " +
-                                f"DC {self._caso.nome}")
+                self._log.error("Erro na flexibilização do caso " +
+                                f"{self._caso.nome}")
                 raise RuntimeError()
             if not self._monitor.executa_caso():
                 self._log.error(f"Erro na execução do DC {self._caso.nome}")
                 raise RuntimeError()
-
-        if not self._sintetizador.sintetiza_caso():
-            self._log.error(f"Erro ao sintetizar caso: {self._caso.nome}")
-            raise RuntimeError()
-        if not self._armazenador.armazena_caso():
-            self._log.error(f"Erro ao armazenar caso: {self._caso.nome}")
-            raise RuntimeError()
+            if not self._sintetizador.sintetiza_caso():
+                self._log.error(f"Erro ao sintetizar caso: {self._caso.nome}")
+                raise RuntimeError()
+            if not self._armazenador.armazena_caso():
+                self._log.error(f"Erro ao armazenar caso: {self._caso.nome}")
+                raise RuntimeError()
