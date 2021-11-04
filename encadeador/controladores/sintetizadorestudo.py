@@ -60,7 +60,7 @@ class SintetizadorEstudo:
         num_retry = 0
         while num_retry < MAX_RETRY_ESCRITA:
             try:
-                dados = DadosEstudo.resume_arvore(self._arvore, self._log)
+                dados = DadosEstudo.resume_arvore(self._arvore)
                 # TODO - Ao invés de pegar o primeiro caso para ter as
                 # configurações, substituir pelo padrão Singleton
                 cfg = self._arvore.casos[0].configuracoes
