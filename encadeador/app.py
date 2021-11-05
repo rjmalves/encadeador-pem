@@ -75,5 +75,6 @@ class App:
             self._log.error(f"Execução do Encadeador interrompida: {e}")
             if prox is not None:
                 prox.finaliza_caso(False, erro=True)
+                executor._armazenador.armazena_caso()
             sucesso = False
             raise e
