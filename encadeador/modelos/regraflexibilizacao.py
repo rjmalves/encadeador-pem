@@ -426,10 +426,10 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
 
             # Flexibiliza
             valor_flex = int(np.ceil(max_viol._violacao))
-            novo_valor = np.max([0, reg._modificacao._dados[0] - valor_flex])
+            novo_valor = np.max([0, reg._modificacao._dados - valor_flex])
             self._log.info(f"Flexibilizando DEFMIN {max_viol._codigo} -" +
                            f" Estágio {max_viol._estagio}:" +
-                           f" {reg._modificacao._dados[0]} -> {novo_valor}")
+                           f" {reg._modificacao._dados} -> {novo_valor}")
             reg._modificacao._dados = novo_valor
 
     # Override
