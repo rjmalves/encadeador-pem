@@ -419,7 +419,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 reg_ac_novo.uhe = max_viol._codigo
                 reg_ac_novo.modificacao = "VAZMIN"
                 reg_ac_novo._modificacao = ACVAZMIN("")
-                reg_ac_novo._modificacao._dados = [max_viol._vazmin_hidr]
+                reg_ac_novo._modificacao._dados = max_viol._vazmin_hidr
                 dadger.cria_registro(dadger.ac(169, "NPOSNW"),
                                      reg_ac_novo)
                 reg = reg_ac_novo
