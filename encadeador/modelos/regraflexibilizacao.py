@@ -3,7 +3,7 @@ from logging import Logger
 from typing import List, Tuple
 import numpy as np  # type: ignore
 from idecomp.decomp.dadger import Dadger
-from idecomp.decomp.modelos.dadger import AC, ACVAZMIN
+from idecomp.decomp.modelos.dadger import AC, ACVAZMIN, FP
 
 from encadeador.modelos.inviabilidade import Inviabilidade
 from encadeador.modelos.inviabilidade import InviabilidadeEV
@@ -13,6 +13,7 @@ from encadeador.modelos.inviabilidade import InviabilidadeHQ
 from encadeador.modelos.inviabilidade import InviabilidadeRE
 from encadeador.modelos.inviabilidade import InviabilidadeHE
 from encadeador.modelos.inviabilidade import InviabilidadeDEFMIN
+from encadeador.modelos.inviabilidade import InviabilidadeFP
 from encadeador.modelos.inviabilidade import InviabilidadeDeficit
 
 
@@ -26,6 +27,7 @@ class RegraFlexibilizacao:
                             InviabilidadeRE,
                             InviabilidadeHE,
                             InviabilidadeDEFMIN,
+                            InviabilidadeFP,
                             InviabilidadeDeficit
                            ]
 
@@ -37,6 +39,7 @@ class RegraFlexibilizacao:
                              InviabilidadeRE: 1,
                              InviabilidadeHE: 0.1,
                              InviabilidadeDEFMIN: 0.2,
+                             InviabilidadeFP: 0,
                              InviabilidadeDeficit: 0
                             }
 
@@ -95,6 +98,12 @@ class RegraFlexibilizacao:
         pass
 
     @abstractmethod
+    def _flexibilizaFP(self,
+                       dadger: Dadger,
+                       inviabilidades: List[InviabilidadeFP]):
+        pass
+
+    @abstractmethod
     def _flexibiliza_deficit(self,
                              dadger: Dadger,
                              inviabilidades: List[InviabilidadeDeficit]):
@@ -118,6 +127,7 @@ class RegraFlexibilizacao:
         self._flexibilizaRE(dadger, invs_por_tipo[InviabilidadeRE])
         self._flexibilizaHE(dadger, invs_por_tipo[InviabilidadeHE])
         self._flexibilizaDEFMIN(dadger, invs_por_tipo[InviabilidadeDEFMIN])
+        self._flexibilizaFP(dadger, invs_por_tipo[InviabilidadeFP])
         self._flexibiliza_deficit(dadger, invs_por_tipo[InviabilidadeDeficit])
 
 
@@ -156,8 +166,13 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 continue
             # Senão, procura dentre todas as outras pela maior violação
             flexibilizados.append(identificacao)
-            _ = __inv_maxima_violacao_identificada(inviabilidades, inv)
-            # Flexibiliza (TODO)
+            max_viol = __inv_maxima_violacao_identificada(inviabilidades, inv)
+            # Flexibiliza - Remove a consideração de evaporação na usina
+            codigo = max_viol._codigo
+            dadger.uh(codigo).evaporacao = False
+            self._log.info(f"Flexibilizando EV {max_viol._codigo} " +
+                           f" ({max_viol._nome_usina}) - " +
+                           f"Evaporação do registro UH desabilitada.")
 
     # Override
     def _flexibilizaTI(self,
@@ -374,6 +389,60 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                            f" {max_viol._estagio} pat {max_viol._patamar}" +
                            f" - {max_viol._limite}: " +
                            f"{valor_atual} -> {novo_valor}")
+
+    # Override
+    def _flexibilizaFP(self,
+                       dadger: Dadger,
+                       inviabilidades: List[InviabilidadeFP]):
+
+        def __identifica_inv(inv: InviabilidadeFP) -> Tuple[int, int]:
+            return (inv._codigo, inv._estagio)
+
+        def __inv_maxima_violacao_identificada(invs: List[InviabilidadeFP],
+                                               inv_ini: InviabilidadeFP
+                                               ) -> InviabilidadeFP:
+            max_viol = inv_ini
+            ident_ini = __identifica_inv(inv_ini)
+            invs_mesma_id = [i for i in invs if
+                             __identifica_inv(i) == ident_ini]
+            for i in invs_mesma_id:
+                if i._violacao > max_viol._violacao:
+                    max_viol = i
+            return max_viol
+
+        # Estrutura para conter os pares (código, estágio) já flexibilizados
+        flexibilizados: List[Tuple[int, int]] = []
+        for inv in inviabilidades:
+            identificacao = __identifica_inv(inv)
+            # Se já flexibilizou essa restrição nesse estágio, ignora
+            if identificacao in flexibilizados:
+                continue
+            # Senão, procura dentre todas as outras pela maior violação
+            flexibilizados.append(identificacao)
+            max_viol = __inv_maxima_violacao_identificada(inviabilidades,
+                                                          inv)
+            # Procura por um registro FP
+            try:
+                reg = dadger.fp(max_viol._codigo, 1)
+            except ValueError:
+                self._log.warning("Flexibilizando FP - " +
+                                  "Não foi encontrado registro FP" +
+                                  f" para a usina {max_viol._codigo} " +
+                                  f" ({max_viol._usina})")
+                reg_fp_novo = FP()
+                reg_fp_novo.codigo = max_viol._codigo
+                reg_fp_novo.estagio = 1
+                reg_fp_novo.tipo_entrada_janela_turbinamento = 0
+                reg_fp_novo.numero_pontos_turbinamento = 20
+                reg_fp_novo.limite_inferior_janela_turbinamento = 0
+                reg_fp_novo.limite_superior_janela_turbinamento = 100
+                reg_fp_novo.tipo_entrada_janela_volume = 0
+                reg_fp_novo.numero_pontos_volume = 20
+                reg_fp_novo.limite_inferior_janela_volume = 100
+                reg_fp_novo.limite_superior_janela_volume = 100
+                dadger.cria_registro(dadger.fc("NEWCUT"),
+                                     reg_fp_novo)
+                reg = reg_fp_novo
 
     # Override
     def _flexibilizaDEFMIN(self,

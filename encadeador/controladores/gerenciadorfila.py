@@ -196,7 +196,7 @@ class GerenciadorFilaSGE(GerenciadorFila):
             estadojob = EstadoJob.ESPERANDO
         elif estado == "r":
             estadojob = EstadoJob.EXECUTANDO
-        elif estado == "dr":
+        elif estado == "dr" or estado == "d":
             estadojob = EstadoJob.DELETANDO
         elif estado == "":
             estadojob = EstadoJob.NAO_INICIADO
