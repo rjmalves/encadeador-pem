@@ -70,10 +70,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
                 return numero_newave
 
         def __correcao_serra_mesa_ficticia(vol: float) -> float:
-            if vol == 0:
-                return 0.0
-            else:
-                return min([100.0, vol / 0.55])
+            return min([100.0, vol / 0.55])
 
         self._log.info("Encadeando EARM")
         # Lê o relato do DC
@@ -96,6 +93,8 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
                                     "Estágio 1"])
             if num_dc == 251:
                 vol_fict = __correcao_serra_mesa_ficticia(vol)
+                self._log.info("Correção de Serra da Mesa fictícia: " +
+                               f"{vol} -> {vol_fict}")
                 usinas.loc[usinas["Número"] == 291,
                            "Volume Inicial"] = vol_fict
             usinas.loc[usinas["Número"] == num,
