@@ -390,7 +390,7 @@ class InviabilidadeFP(Inviabilidade):
         p = "PATAMAR"
         u = "USINA"
         pat = int(self._mensagem_restricao.split(p)[1])
-        nome = self._mensagem_restricao.split(u)[1].split(",").strip()
+        nome = self._mensagem_restricao.split(u)[1].split(",")[0].strip()
         codigo = int(list(hidr.tabela.loc[hidr.tabela["Nome"] == nome,
                                           :].index)[0])
         return [codigo, nome, pat]

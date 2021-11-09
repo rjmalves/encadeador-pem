@@ -3,7 +3,7 @@ from logging import Logger
 from typing import List, Tuple
 import numpy as np  # type: ignore
 from idecomp.decomp.dadger import Dadger
-from idecomp.decomp.modelos.dadger import AC, ACVAZMIN, FP
+from idecomp.decomp.modelos.dadger import AC, ACVAZMIN, ACVERTJU, FP
 
 from encadeador.modelos.inviabilidade import Inviabilidade
 from encadeador.modelos.inviabilidade import InviabilidadeEV
@@ -424,6 +424,27 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             # Procura por um registro FP
             try:
                 reg = dadger.fp(max_viol._codigo, 1)
+                # Procura por um AC VERTJU
+                try:
+                    reg = dadger.ac(max_viol._codigo, "VERTJU")
+                    self._log.info("Flexibilizando FP - " +
+                                   "Registro AC VERTJU" +
+                                   f" para a usina {max_viol._codigo} " +
+                                   f" ({max_viol._usina}) = 0")
+                    reg._modificacao._dados = 0
+                except ValueError:
+                    self._log.warning("Flexibilizando FP - " +
+                                      "Não foi encontrado registro AC VERTJU" +
+                                      f" para a usina {max_viol._codigo} " +
+                                      f" ({max_viol._usina})")
+                    reg_ac_novo = AC()
+                    reg_ac_novo.uhe = max_viol._codigo
+                    reg_ac_novo.modificacao = "VERTJU"
+                    reg_ac_novo._modificacao = ACVERTJU("")
+                    reg_ac_novo._modificacao._dados = 0
+                    dadger.cria_registro(dadger.ac(169, "NPOSNW"),
+                                         reg_ac_novo)
+
             except ValueError:
                 self._log.warning("Flexibilizando FP - " +
                                   "Não foi encontrado registro FP" +
@@ -442,7 +463,6 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 reg_fp_novo.limite_superior_janela_volume = 100
                 dadger.cria_registro(dadger.fc("NEWCUT"),
                                      reg_fp_novo)
-                reg = reg_fp_novo
 
     # Override
     def _flexibilizaDEFMIN(self,
