@@ -58,7 +58,6 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
                                     295: 156,
                                     308: 155,
                                     298: 148,
-                                    291: 251,
                                     292: 252,
                                     302: 261,
                                     303: 257,
