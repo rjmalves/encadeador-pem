@@ -95,7 +95,9 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             vol = float(volumes.loc[volumes["Número"] == num_dc,
                                     "Estágio 1"])
             if num_dc == 251:
-                vol = __correcao_serra_mesa_ficticia(vol)
+                vol_fict = __correcao_serra_mesa_ficticia(vol)
+                usinas.loc[usinas["Número"] == 291,
+                           "Volume Inicial"] = vol_fict
             usinas.loc[usinas["Número"] == num,
                        "Volume Inicial"] = vol
         # Escreve o confhd de saída
