@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from logging import Logger
 from typing import List
+import pandas as pd
 from idecomp.decomp.relato import Relato
 from idecomp.decomp.dadger import Dadger
 from inewave.newave import Confhd  # type: ignore
@@ -71,6 +72,33 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         def __correcao_serra_mesa_ficticia(vol: float) -> float:
             return min([100.0, vol / 0.55])
 
+        def __separou_ilha_solteira_equiv(volumes: pd.DataFrame,
+                                          usinas: pd.DataFrame) -> bool:
+            # Saber se tem I. Solteira Equiv. no DECOMP mas tem as
+            # usinas separadas no NEWAVE
+            usinas_newave = usinas["Número"].tolist()
+            usinas_decomp = volumes["Número"].tolist()
+            return all([
+                        44 not in usinas_newave,
+                        43 in usinas_newave,
+                        34 in usinas_newave,
+                        44 in usinas_decomp,
+                        43 not in usinas_decomp,
+                        34 not in usinas_decomp
+                       ])
+
+        def __encadeia_ilha_solteira_equiv(volumes: pd.DataFrame,
+                                           usinas: pd.DataFrame
+                                           ) -> pd.DataFrame:
+            vol = float(volumes.loc[volumes["Número"] == 44,
+                                    "Estágio 1"])
+            self._log.info(f"Caso especial de I. Solteira Equiv: {vol} %")
+            usinas.loc[usinas["Número"] == 34,
+                       "Volume Inicial"] = vol
+            usinas.loc[usinas["Número"] == 43,
+                       "Volume Inicial"] = vol
+            return usinas
+
         self._log.info("Encadeando EARM")
         # Lê o relato do DC
         # TODO - tratar casos de arquivos não encontrados
@@ -81,6 +109,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         # Lê o confhd do NW
         confhd = Confhd.le_arquivo(self._caso_atual.caminho)
         usinas = confhd.usinas
+
         # Atualiza cada armazenamento
         for _, linha in usinas.iterrows():
             num = linha["Número"]
@@ -98,6 +127,11 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
                            "Volume Inicial"] = vol_fict
             usinas.loc[usinas["Número"] == num,
                        "Volume Inicial"] = vol
+
+        # Trata o caso de I. Solteira Equiv.
+        if __separou_ilha_solteira_equiv(volumes, usinas):
+            usinas = __encadeia_ilha_solteira_equiv(volumes, usinas)
+
         # Escreve o confhd de saída
         confhd.escreve_arquivo(self._caso_atual.caminho)
 
@@ -120,6 +154,43 @@ class EncadeadorDECOMPDECOMP(Encadeador):
 
     def __encadeia_earm(self):
         self._log.info("Encadeando EARM")
+
+        def __separou_ilha_solteira_equiv(volumes: pd.DataFrame,
+                                          dadger: Dadger) -> bool:
+            # Saber se tem I. Solteira Equiv. no DECOMP mas tem as
+            # usinas separadas no próximo DECOMP
+            vols_relato = volumes["Número"].tolist()
+
+            existe_equiv_relato = 44 in vols_relato
+            existem_separadas_relato = all([34 in vols_relato,
+                                            43 in vols_relato])
+            try:
+                dadger.uh(44)
+                existe_equiv_dadger = True
+            except ValueError:
+                existe_equiv_dadger = False
+            try:
+                dadger.uh(34)
+                dadger.uh(43)
+                existem_separadas_dadger = True
+            except ValueError:
+                existem_separadas_dadger = False
+
+            return all([
+                        existe_equiv_relato,
+                        not existem_separadas_relato,
+                        not existe_equiv_dadger,
+                        existem_separadas_dadger
+                       ])
+ 
+        def __encadeia_ilha_solteira_equiv(volumes: pd.DataFrame,
+                                           dadger: Dadger):
+            vol = float(volumes.loc[volumes["Número"] == 44,
+                                    "Estágio 1"])
+            self._log.info(f"Caso especial de I. Solteira Equiv: {vol} %")
+            dadger.uh(34).volume_inicial = vol
+            dadger.uh(43).volume_inicial = vol
+
         # Lê o relato do DC anterior
         # TODO - tratar casos de arquivos não encontrados
         arq_relato = f"relato.rv{self._caso_anterior.revisao}"
@@ -136,9 +207,16 @@ class EncadeadorDECOMPDECOMP(Encadeador):
         # Encadeia cada armazenamento
         for _, linha in volumes.iterrows():
             num = linha["Número"]
+
+            # Caso especial de I. Solteira Equiv.
+            if num == 44 and __separou_ilha_solteira_equiv(volumes, dadger):
+                __encadeia_ilha_solteira_equiv(volumes, dadger)
+                continue
+
             vol = float(volumes.loc[volumes["Número"] == num,
                                     "Estágio 1"])
             dadger.uh(num).volume_inicial = vol
+
         # Escreve o dadger de saída
         dadger.escreve_arquivo(self._caso_atual.caminho,
                                arq_dadger)

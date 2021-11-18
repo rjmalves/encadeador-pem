@@ -776,10 +776,10 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
     def maximo_iteracoes_decomp(self, variavel: str):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
         valor = BuilderConfiguracoesENV.__valida_int(valor)
-        # Conferir se é >= 0 e inferior a 500 (máximo da versão 30.13)
-        if (valor < 0) or (valor > 500):
+        # Conferir se é >= 0 e inferior a 999 (máximo da versão 30.16)
+        if (valor < 0) or (valor > 999):
             raise ValueError(f"Valor da variável {variavel} informada" +
-                             " deve ser inteiro entre 1 e 500.")
+                             " deve ser inteiro entre 1 e 999.")
         self._configuracoes._maximo_iteracoes_decomp = valor
         # Fluent method
         return self

@@ -150,7 +150,7 @@ class MonitorCaso:
 class MonitorNEWAVE(MonitorCaso):
     INTERVALO_POLL = 5.0
     MAX_RETRY = 3
-    TIMEOUT_COMUNICACAO = 1800.0
+    TIMEOUT_COMUNICACAO = 2400.0
 
     def __init__(self,
                  caso: CasoNEWAVE,
