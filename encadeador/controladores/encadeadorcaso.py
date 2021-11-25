@@ -91,13 +91,23 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
                                            usinas: pd.DataFrame
                                            ) -> pd.DataFrame:
             vol = float(volumes.loc[volumes["Número"] == 44,
-                                    "Estágio 1"])
+                                    __coluna_para_encadear()])
             self._log.info(f"Caso especial de I. Solteira Equiv: {vol} %")
             usinas.loc[usinas["Número"] == 34,
                        "Volume Inicial"] = vol
             usinas.loc[usinas["Número"] == 43,
                        "Volume Inicial"] = vol
             return usinas
+
+        def __coluna_para_encadear() -> str:
+            if self._caso_atual.revisao == 0:
+                return "Estágio 1"
+            else:
+                return list(volumes.columns)[-1]
+
+        def __interpola_volume() -> float:
+            # TODO - implementar para maior precisão
+            pass
 
         self._log.info("Encadeando EARM")
         # Lê o relato do DC
@@ -118,7 +128,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             if num_dc not in set(volumes["Número"]):
                 continue
             vol = float(volumes.loc[volumes["Número"] == num_dc,
-                                    "Estágio 1"])
+                                    __coluna_para_encadear()])
             if num_dc == 251:
                 vol_fict = __correcao_serra_mesa_ficticia(vol)
                 self._log.info("Correção de Serra da Mesa fictícia: " +
