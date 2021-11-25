@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from os import chdir
 from logging import Logger
-from typing import Optional
+from typing import Optional, List
 
 from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
 from encadeador.controladores.avaliadorcaso import AvaliadorCaso
@@ -38,8 +38,8 @@ class ExecutorCaso:
 
     @abstractmethod
     def executa_e_monitora_caso(self,
-                                ultimo_newave: Optional[CasoNEWAVE],
-                                ultimo_decomp: Optional[CasoDECOMP]):
+                                casos_anteriores: List[Caso],
+                                ultimo_newave: Optional[CasoNEWAVE]):
         pass
 
 
@@ -52,8 +52,8 @@ class ExecutorNEWAVE(ExecutorCaso):
                          log)
 
     def executa_e_monitora_caso(self,
-                                ultimo_newave: Optional[CasoNEWAVE],
-                                ultimo_decomp: Optional[CasoDECOMP]):
+                                casos_anteriores: List[Caso],
+                                ultimo_newave: Optional[CasoNEWAVE]):
 
         chdir(self._caso.caminho)
 
@@ -67,7 +67,7 @@ class ExecutorNEWAVE(ExecutorCaso):
         if not self._preparador.prepara_caso():
             self._log.error(f"Erro na preparação do NW {self._caso.nome}")
             raise RuntimeError()
-        if not self._preparador.encadeia_variaveis(ultimo_decomp):
+        if not self._preparador.encadeia_variaveis(casos_anteriores):
             self._log.error(f"Erro no encadeamento do NW {self._caso.nome}")
             raise RuntimeError()
         if not self._monitor.executa_caso():
@@ -96,15 +96,15 @@ class ExecutorDECOMP(ExecutorCaso):
                          log)
 
     def executa_e_monitora_caso(self,
-                                ultimo_newave: Optional[CasoNEWAVE],
-                                ultimo_decomp: Optional[CasoDECOMP]):
+                                casos_anteriores: List[Caso],
+                                ultimo_newave: Optional[CasoNEWAVE]):
 
         chdir(self._caso.caminho)
 
         if not self._preparador.prepara_caso(caso_cortes=ultimo_newave):
             self._log.error(f"Erro na preparação do DC {self._caso.nome}")
             raise RuntimeError()
-        if not self._preparador.encadeia_variaveis(ultimo_decomp):
+        if not self._preparador.encadeia_variaveis(casos_anteriores):
             self._log.error(f"Erro no encadeamento do DC {self._caso.nome}")
             raise RuntimeError()
 

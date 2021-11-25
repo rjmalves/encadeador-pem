@@ -13,28 +13,44 @@ from encadeador.utils.terminal import converte_codificacao
 class Encadeador:
 
     def __init__(self,
-                 caso_anterior: Caso,
+                 casos_anteriores: List[Caso],
                  caso_atual: Caso,
                  log: Logger):
-        self._caso_anterior = caso_anterior
+
+        def __decomp_anterior():
+            return [c for c in reversed(casos_anteriores)
+                    if isinstance(c, CasoDECOMP)][0]
+
+        self._casos_anteriores = casos_anteriores
+        self._caso_anterior = __decomp_anterior()
         self._caso_atual = caso_atual
         self._log = log
 
     @staticmethod
-    def factory(caso_anterior: Caso,
+    def factory(casos_anteriores: List[Caso],
                 caso_atual: Caso,
                 log: Logger) -> 'Encadeador':
         if isinstance(caso_atual, CasoDECOMP):
-            return EncadeadorDECOMPDECOMP(caso_anterior,
+            return EncadeadorDECOMPDECOMP(casos_anteriores,
                                           caso_atual,
                                           log)
         elif isinstance(caso_atual, CasoNEWAVE):
-            return EncadeadorDECOMPNEWAVE(caso_anterior,
+            return EncadeadorDECOMPNEWAVE(casos_anteriores,
                                           caso_atual,
                                           log)
         else:
             raise TypeError(f"Caso do tipo {type(caso_atual)} " +
                             "não suportado para encadeamento")
+
+    @property
+    def newaves_anteriores(self) -> List[CasoNEWAVE]:
+        return [c for c in self._casos_anteriores
+                if isinstance(c, CasoNEWAVE)]
+
+    @property
+    def decomps_anteriores(self) -> List[CasoDECOMP]:
+        return [c for c in self._casos_anteriores
+                if isinstance(c, CasoDECOMP)]
 
     @abstractmethod
     def encadeia(self) -> bool:
@@ -44,10 +60,10 @@ class Encadeador:
 class EncadeadorDECOMPNEWAVE(Encadeador):
 
     def __init__(self,
-                 caso_anterior: Caso,
+                 casos_anteriores: List[Caso],
                  caso_atual: Caso,
                  log: Logger):
-        super().__init__(caso_anterior, caso_atual, log)
+        super().__init__(casos_anteriores, caso_atual, log)
 
     def __encadeia_earm(self):
 
@@ -145,22 +161,27 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         # Escreve o confhd de saída
         confhd.escreve_arquivo(self._caso_atual.caminho)
 
+    def __encadeia_ena(self):
+        pass
+
     def encadeia(self) -> bool:
         self._log.info(f"Encadeando casos: {self._caso_anterior.nome} -> " +
                        f"{self._caso_atual.nome}")
         v = self._caso_atual.configuracoes.variaveis_encadeadas
         if "EARM" in v:
             self.__encadeia_earm()
+        if "ENA" in v:
+            self.__encadeia_ena()
         return True
 
 
 class EncadeadorDECOMPDECOMP(Encadeador):
 
     def __init__(self,
-                 caso_anterior: Caso,
+                 casos_anteriores: List[Caso],
                  caso_atual: Caso,
                  log: Logger):
-        super().__init__(caso_anterior, caso_atual, log)
+        super().__init__(casos_anteriores, caso_atual, log)
 
     def __encadeia_earm(self):
         self._log.info("Encadeando EARM")
@@ -192,7 +213,7 @@ class EncadeadorDECOMPDECOMP(Encadeador):
                         not existe_equiv_dadger,
                         existem_separadas_dadger
                        ])
- 
+
         def __encadeia_ilha_solteira_equiv(volumes: pd.DataFrame,
                                            dadger: Dadger):
             vol = float(volumes.loc[volumes["Número"] == 44,

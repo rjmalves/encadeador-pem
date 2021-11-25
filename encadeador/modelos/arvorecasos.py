@@ -161,6 +161,17 @@ class ArvoreCasos:
         return c_convergido
 
     @property
+    def casos_concluidos(self) -> List[Caso]:
+        casos: List[Caso] = []
+        for c in self.casos:
+            try:
+                if c.sucesso:
+                    casos.append(c)
+            except ValueError:
+                break
+        return casos
+
+    @property
     def terminou(self) -> bool:
         sucesso: List[bool] = []
         try:

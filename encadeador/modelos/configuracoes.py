@@ -674,12 +674,13 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
 
     def variaveis_encadeadas(self, variavel: str):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
-        # Confere se as variáveis está dentro das: GNL, TVIAGEM, EARM
+        # Confere se as variáveis está dentro das: GNL, TVIAGEM, EARM, ENA
         valor = valor.split(',')
-        variaveis_validas = set(["", "GNL", "TVIAGEM", "EARM"])
+        variaveis_validas = set(["", "GNL", "TVIAGEM", "EARM", "ENA"])
         if not set(valor).issubset(variaveis_validas):
             raise ValueError(f"Variáveis encadeadas informadas {valor}" +
-                             " são inválidas. Válidas: EARM, TVIAGEM, GNL.")
+                             " são inválidas. " +
+                             " Válidas: EARM, TVIAGEM, GNL, ENA")
         self._configuracoes._variaveis_encadeadas = valor
         # Fluent method
         return self
