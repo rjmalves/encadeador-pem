@@ -2,9 +2,13 @@ from abc import abstractmethod
 from logging import Logger
 from typing import List
 import pandas as pd
+import numpy as np
 from idecomp.decomp.relato import Relato
 from idecomp.decomp.dadger import Dadger
-from inewave.newave import Confhd  # type: ignore
+from inewave.newave import Confhd
+from inewave.newave import PMO
+from inewave.newave import EafPast
+from inewave.config import MESES_DF
 
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 from encadeador.utils.terminal import converte_codificacao
@@ -162,7 +166,71 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         confhd.escreve_arquivo(self._caso_atual.caminho)
 
     def __encadeia_ena(self):
-        pass
+
+        def __interpola_mes_vigente():
+            # Remove a coluna de ENA prevista do 2º mês
+            ena_previsao = relato.ena_acoplamento_ree
+            ena_previsao = ena_previsao.loc[ena_previsao["Cenário"] == 1, :]
+            cols_ena_previsao = list(ena_previsao.columns)
+            cols_ena_previsao = cols_ena_previsao[:-1]
+            ena_previsao = ena_previsao[cols_ena_previsao]
+            cols_ena_previsao = [c for c in cols_ena_previsao
+                                 if "Estágio" in c]
+            # enas_previstas é um DF apenas com as colunas de ENA prevista
+            # para cada semana. É ordenado de maneira cronológica.
+            enas_previstas = ena_previsao[cols_ena_previsao]
+            enas_previstas.reset_index(drop=True, inplace=True)
+            # Prepara as ENAs verificadas
+            ena_pre_estudo = relato.ena_pre_estudo_semanal_ree
+            cols_ena_verif = list(ena_pre_estudo.columns)
+            cols_ena_verif = [c for c in cols_ena_verif
+                              if "Estágio Pré" in c]
+            enas_verificadas = ena_pre_estudo[reversed(cols_ena_verif)]
+            # enas_verificadas é um DF apenas com as colunas de ENA verificada
+            # para cada semana. É ordenado de maneira cronológica.
+            enas_semanas = pd.concat([enas_previstas,
+                                      enas_verificadas],
+                                     axis=1)
+            n_semanas = len(enas_semanas.columns)
+            enas_semanas.columns = [f"Semana {i}" for i in
+                                    range(1, n_semanas + 1)]
+            # enas_semanas é um DF apenas com as semanas, organizadas de maneira
+            # cronológia, pronto para ponderar.
+            dias_semana_inic = relato.dias_excluidos_semana_inicial
+            dias_semana_fin = relato.dias_excluidos_semana_final
+            # Corrige os pesos de cada semana com os dias excluídos
+            pesos_semanas = 7 * np.ones((n_semanas,))
+            pesos_semanas[0] -= dias_semana_inic
+            pesos_semanas[-1] -= dias_semana_fin
+            pesos_totais = np.sum(pesos_semanas)
+            ena_ponderada = pesos_semanas * enas_semanas / pesos_totais
+            return ena_ponderada.sum(axis=1)
+
+        # Não faz nada nas RV0
+        if self._caso_atual.revisao == 0:
+            return
+        # Senão, encadeia ENA
+        self._log.info("Encadeando ENA")
+        mes_caso = self._caso_atual.mes
+        ultimo_newave = self.newaves_anteriores[-1]
+        ultimo_decomp = self.decomps_anteriores[-1]
+        # TODO - tratar casos de arquivos não encontrados
+        # Lê o pmo.dat do último NEWAVE
+        pmo = PMO.le_arquivo(ultimo_newave.caminho)
+        eafpast_pmo = pmo.eafpast_tendencia_hidrologica
+        # Lê o eafpast do próximo NEWAVE
+        eafpast = EafPast.le_arquivo(self._caso_atual.caminho)
+        # Substitui pelos valores do pmo.dat
+        eafpast.tendencia[MESES_DF] = eafpast_pmo[MESES_DF]
+        # Lê o relato.rvX do DECOMP
+        arq_relato = f"relato.rv{ultimo_decomp.revisao}"
+        relato = Relato.le_arquivo(ultimo_decomp.caminho,
+                                   arq_relato)
+        # Interpola o mês vigente e substitui no eafpast
+        mes_eafpast = MESES_DF[mes_caso - 1]
+        eafpast.tendencia[mes_eafpast] = __interpola_mes_vigente()
+        # Escreve o Eafpast
+        eafpast.escreve_arquivo(self._caso_atual.caminho)
 
     def encadeia(self) -> bool:
         self._log.info(f"Encadeando casos: {self._caso_anterior.nome} -> " +
