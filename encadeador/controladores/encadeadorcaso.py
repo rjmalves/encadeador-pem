@@ -4,10 +4,14 @@ from typing import List
 import pandas as pd
 import numpy as np
 from idecomp.decomp.relato import Relato
+from idecomp.decomp.relgnl import RelGNL
 from idecomp.decomp.dadger import Dadger
+from idecomp.decomp.dadgnl import DadGNL
+from idecomp.decomp.modelos.dadgnl import NL, GL
 from inewave.newave import Confhd
 from inewave.newave import PMO
 from inewave.newave import EafPast
+from inewave.newave.adterm import AdTerm
 from inewave.config import MESES_DF
 
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
@@ -232,6 +236,60 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         # Escreve o Eafpast
         eafpast.escreve_arquivo(self._caso_atual.caminho)
 
+    def __encadeia_gnl(self):
+        ultimo_rv0 = None
+        for c in reversed(self._casos_anteriores):
+            if isinstance(c, CasoNEWAVE) and c.revisao == 0:
+                ultimo_rv0 = c
+                break
+        if ultimo_rv0 is None:
+            self._log.error("Último NW rv0 não encontrado para " +
+                            "encadeamento de GNL")
+            raise RuntimeError()
+        # Lê o AdTerm do caso atual
+        adterm = AdTerm.le_arquivo(self._caso_atual.caminho)
+        # Lê o AdTerm do último NEWAVE rv0
+        adterm_rv0 = AdTerm.le_arquivo(ultimo_rv0.caminho)
+        d = adterm.despachos
+        d_rv0 = adterm_rv0.despachos
+        indices_usinas = d["Índice UTE"].unique()
+        for u in indices_usinas:
+            if u not in d_rv0["Índice UTE"].tolist():
+                continue
+            filtro_d = (d["Índice UTE"] == u) & (d["Lag"] == 1)
+            filtro_d_rv0 = (d_rv0["Índice UTE"] == u) & (d_rv0["Lag"] == 2)
+            d.loc[filtro_d, :] = d_rv0.loc[filtro_d_rv0, :]
+
+        # Lê o RelGNL do último decomp
+        ultimo_dc = None
+        for c in reversed(self._casos_anteriores):
+            if isinstance(c, CasoDECOMP):
+                ultimo_dc = c
+                break
+        if ultimo_dc is None:
+            self._log.error("Último DC não encontrado para " +
+                            "encadeamento de GNL")
+            raise RuntimeError()
+        rel = RelGNL.le_arquivo(ultimo_dc.caminho)
+        codigos = rel.usinas_termicas["Código"].unique()
+        usinas = rel.usinas_termicas["Usina"].unique()
+        mapa_codigo_usina = {c: u for c, u in zip(codigos, usinas)}
+        cols_despacho = [f"Despacho Pat. {i}" for i in [1, 2, 3]]
+        cols_patamares = [f"Patamar {i}" for i in [1, 2, 3]]
+        op = rel.relatorio_operacao_termica
+        for u in indices_usinas:
+            if u not in mapa_codigo_usina:
+                continue
+            nome = mapa_codigo_usina[u]
+            d_dc = op.loc[(op["Usina"] == nome) &
+                          (op["Estágio"] == "MENSAL"),
+                          cols_despacho]
+            filtro_d = (d["Índice UTE"] == u) & (d["Lag"] == 2)
+            d.loc[filtro_d,
+                  cols_patamares] = d_dc
+        # Escreve o arquivo de saída
+        adterm.escreve_arquivo(self._caso_atual.caminho)
+
     def encadeia(self) -> bool:
         self._log.info(f"Encadeando casos: {self._caso_anterior.nome} -> " +
                        f"{self._caso_atual.nome}")
@@ -240,6 +298,8 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             self.__encadeia_earm()
         if "ENA" in v:
             self.__encadeia_ena()
+        if "GNL" in v:
+            self.__encadeia_gnl()
         return True
 
 
@@ -353,6 +413,60 @@ class EncadeadorDECOMPDECOMP(Encadeador):
         dadger.escreve_arquivo(self._caso_atual.caminho,
                                arq_dadger)
 
+    def __encadeia_gnl(self):
+        # Lê o DadGNL do decomp atual
+        dad = DadGNL.le_arquivo(self._caso_atual.caminho)
+        # Lê o RelGNL e DadGNL do último decomp
+        ultimo_dc = None
+        for c in reversed(self._casos_anteriores):
+            if isinstance(c, CasoDECOMP):
+                ultimo_dc = c
+                break
+        if ultimo_dc is None:
+            self._log.error("Último DC não encontrado para " +
+                            "encadeamento de GNL")
+            raise RuntimeError()
+        rel = RelGNL.le_arquivo(ultimo_dc.caminho)
+        dad_anterior = DadGNL.le_arquivo(ultimo_dc.caminho)
+
+        cods = rel.usinas_termicas["Código"].unique()
+        usinas = rel.usinas_termicas["Usina"].unique()
+        mapa_codigo_usina = {c: u for c, u in zip(cods, usinas)}
+
+        codigos = [r.codigo for r in dad.lista_registros(NL)]
+        registros = dad.lista_registros(GL)
+        registros_anteriores = dad_anterior.lista_registros(GL)
+        for c in codigos:
+            # Para cada semana i (exceto a última), o registro GL do DadGNL do
+            # caso atual deve ter o valor do respectivo registro GL do DadGNL
+            # do caso anterior na semana i + 1
+            registros_usina = [r for r in registros if r.codigo == c]
+            registros_usina_anterior = [r for r in registros_anteriores
+                                        if r.codigo == c]
+            cols_despacho = [f"Despacho Pat. {i}" for i in [1, 2, 3]]
+            for r in registros_usina:
+                # Para a última semana, o registro GL do DadGNL atual deve vir
+                # do RelGNL do caso anterior, onde a semana de início tenha o
+                # mesmo valor.
+                if r == registros_usina[-1]:
+                    op = rel.relatorio_operacao_termica
+                    data = r.dados[-1]
+                    data = data[:2] + "/" + data[2:4] + "/" + data[4:]
+                    # Procura pela linha em op filtrando por nome, data
+                    # e pegando as colunas dos despachos
+                    nome = mapa_codigo_usina[c]
+                    filtro = (op["Usina"] == nome) & (op["Início Semana"] == data)
+                    geracoes = op.loc[filtro, cols_despacho]
+                    r.geracoes = list(geracoes.to_numpy())
+                else:
+                    # Procura pelo registro anterior com a mesma data
+                    reg_ant = [ra for ra in registros_usina_anterior
+                               if ra.dados[-1] == r.dados[-1]][0]
+                    r.geracoes = reg_ant.geracoes
+
+        # Escreve o arquivo de saída
+        dad.escreve_arquivo(self._caso_atual.caminho)
+
     def encadeia(self) -> bool:
         self._log.info(f"Encadeando casos: {self._caso_anterior.nome} -> " +
                        f"{self._caso_atual.nome}")
@@ -361,4 +475,6 @@ class EncadeadorDECOMPDECOMP(Encadeador):
             self.__encadeia_earm()
         if "TVIAGEM" in v:
             self.__encadeia_tviagem()
+        if "GNL" in v:
+            self.__encadeia_gnl()
         return True
