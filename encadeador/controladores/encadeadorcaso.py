@@ -467,7 +467,7 @@ class EncadeadorDECOMPDECOMP(Encadeador):
                     nome = mapa_codigo_usina[c]
                     filtro = (op["Usina"] == nome) & (op["Início Semana"] == data)
                     geracoes = op.loc[filtro, cols_despacho]
-                    r.geracoes = list(geracoes.to_numpy())
+                    r.geracoes = [g for g in geracoes.to_numpy()]
                 else:
                     # Procura pelo registro anterior com a mesma data
                     reg_ant = [ra for ra in registros_usina_anterior
