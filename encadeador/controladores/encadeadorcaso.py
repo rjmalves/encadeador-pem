@@ -263,7 +263,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             filtro_d_rv0 = (d_rv0["Índice UTE"] == u) & (d_rv0["Lag"] == 2)
             d.loc[filtro_d,
                   cols_patamares] = d_rv0.loc[filtro_d_rv0,
-                                              cols_patamares]
+                                              cols_patamares].to_numpy()
         self._log.info(d)
         # Lê o RelGNL do último decomp
         ultimo_dc = None
