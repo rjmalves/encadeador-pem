@@ -178,21 +178,23 @@ class PreparadorDECOMP(PreparadorCaso):
     def encadeia_variaveis(self,
                            casos_anteriores: List[Caso]) -> bool:
 
-        def __decomp_anterior():
+        def __decomps_anteriores():
             return [c for c in reversed(casos_anteriores)
-                    if isinstance(c, CasoDECOMP)][0]
+                    if isinstance(c, CasoDECOMP)]
 
-        if len(casos_anteriores) == 0:
+        if len(__decomps_anteriores()) == 0:
             self._log.info(f"Primeiro: {self.caso.nome} - sem encadeamentos")
             return True
-        elif isinstance(__decomp_anterior(), CasoDECOMP):
+        elif isinstance(__decomps_anteriores()[0], CasoDECOMP):
             self._log.info("Encadeando variáveis dos casos " +
-                           f"{__decomp_anterior().nome} -> {self.caso.nome}")
+                           f"{__decomps_anteriores()[0].nome}" +
+                           f" -> {self.caso.nome}")
             encadeador = Encadeador.factory(casos_anteriores,
                                             self.caso,
                                             self._log)
             return encadeador.encadeia()
         else:
             self._log.error("Encadeamento NW com DC não suportado. Casos: " +
-                            f"{__decomp_anterior().nome} -> {self.caso.nome}")
+                            f"{__decomps_anteriores()[0].nome}" +
+                            f" -> {self.caso.nome}")
             return False
