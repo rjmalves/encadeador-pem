@@ -237,6 +237,8 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         eafpast.escreve_arquivo(self._caso_atual.caminho)
 
     def __encadeia_gnl(self):
+        self._log.info("Encadeando GNL")
+
         ultimo_rv0 = None
         for c in reversed(self._casos_anteriores):
             if isinstance(c, CasoNEWAVE) and c.revisao == 0:
@@ -416,6 +418,8 @@ class EncadeadorDECOMPDECOMP(Encadeador):
                                arq_dadger)
 
     def __encadeia_gnl(self):
+        self._log.info("Encadeando GNL")
+
         # Lê o DadGNL do decomp atual
         nome_dad = f"dadgnl.rv{self._caso_atual.revisao}"
         dad = DadGNL.le_arquivo(self._caso_atual.caminho, nome_dad)
