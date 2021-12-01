@@ -275,7 +275,8 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             self._log.error("Último DC não encontrado para " +
                             "encadeamento de GNL")
             raise RuntimeError()
-        rel = RelGNL.le_arquivo(ultimo_dc.caminho)
+        nome_rel = f"relgnl.rv{ultimo_dc.revisao}"
+        rel = RelGNL.le_arquivo(ultimo_dc.caminho, nome_rel)
         codigos = rel.usinas_termicas["Código"].unique()
         usinas = rel.usinas_termicas["Usina"].unique()
         mapa_codigo_usina = {c: u for c, u in zip(codigos, usinas)}
@@ -421,7 +422,8 @@ class EncadeadorDECOMPDECOMP(Encadeador):
 
     def __encadeia_gnl(self):
         # Lê o DadGNL do decomp atual
-        dad = DadGNL.le_arquivo(self._caso_atual.caminho)
+        nome_dad = f"dadgnl.rv{self._caso_atual.revisao}"
+        dad = DadGNL.le_arquivo(self._caso_atual.caminho, nome_dad)
         # Lê o RelGNL e DadGNL do último decomp
         ultimo_dc = None
         for c in reversed(self._casos_anteriores):
@@ -432,8 +434,10 @@ class EncadeadorDECOMPDECOMP(Encadeador):
             self._log.error("Último DC não encontrado para " +
                             "encadeamento de GNL")
             raise RuntimeError()
-        rel = RelGNL.le_arquivo(ultimo_dc.caminho)
-        dad_anterior = DadGNL.le_arquivo(ultimo_dc.caminho)
+        nome_rel = f"relgnl.rv{ultimo_dc.revisao}"
+        nome_dad_anterior = f"dadgnl.rv{ultimo_dc.revisao}"
+        rel = RelGNL.le_arquivo(ultimo_dc.caminho, nome_rel)
+        dad_anterior = DadGNL.le_arquivo(ultimo_dc.caminho, nome_dad_anterior)
 
         cods = rel.usinas_termicas["Código"].unique()
         usinas = rel.usinas_termicas["Usina"].unique()
