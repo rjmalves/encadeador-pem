@@ -251,15 +251,20 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         # Lê o AdTerm do último NEWAVE rv0
         adterm_rv0 = AdTerm.le_arquivo(ultimo_rv0.caminho)
         d = adterm.despachos
+        self._log.info(d)
         d_rv0 = adterm_rv0.despachos
         indices_usinas = d["Índice UTE"].unique()
+        cols_patamares = [f"Patamar {i}" for i in [1, 2, 3]]
         for u in indices_usinas:
+            self._log.info(f"NWNW - Atualizando GNL usina {u}")
             if u not in d_rv0["Índice UTE"].tolist():
                 continue
             filtro_d = (d["Índice UTE"] == u) & (d["Lag"] == 1)
             filtro_d_rv0 = (d_rv0["Índice UTE"] == u) & (d_rv0["Lag"] == 2)
-            d.loc[filtro_d, :] = d_rv0.loc[filtro_d_rv0, :]
-
+            d.loc[filtro_d,
+                  cols_patamares] = d_rv0.loc[filtro_d_rv0,
+                                              cols_patamares]
+        self._log.info(d)
         # Lê o RelGNL do último decomp
         ultimo_dc = None
         for c in reversed(self._casos_anteriores):
@@ -275,18 +280,19 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         usinas = rel.usinas_termicas["Usina"].unique()
         mapa_codigo_usina = {c: u for c, u in zip(codigos, usinas)}
         cols_despacho = [f"Despacho Pat. {i}" for i in [1, 2, 3]]
-        cols_patamares = [f"Patamar {i}" for i in [1, 2, 3]]
         op = rel.relatorio_operacao_termica
         for u in indices_usinas:
+            self._log.info(f"NWDC - Atualizando GNL usina {u}")
             if u not in mapa_codigo_usina:
                 continue
             nome = mapa_codigo_usina[u]
             d_dc = op.loc[(op["Usina"] == nome) &
                           (op["Estágio"] == "MENSAL"),
-                          cols_despacho]
+                          cols_despacho].to_numpy()
             filtro_d = (d["Índice UTE"] == u) & (d["Lag"] == 2)
             d.loc[filtro_d,
                   cols_patamares] = d_dc
+        self._log.info(d)
         # Escreve o arquivo de saída
         adterm.escreve_arquivo(self._caso_atual.caminho)
 
