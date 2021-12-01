@@ -475,7 +475,7 @@ class EncadeadorDECOMPDECOMP(Encadeador):
                     r.geracoes = reg_ant.geracoes
 
         # Escreve o arquivo de saída
-        dad.escreve_arquivo(self._caso_atual.caminho)
+        dad.escreve_arquivo(self._caso_atual.caminho, nome_dad)
 
     def encadeia(self) -> bool:
         self._log.info(f"Encadeando casos: {self._caso_anterior.nome} -> " +
