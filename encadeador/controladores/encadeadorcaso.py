@@ -466,7 +466,9 @@ class EncadeadorDECOMPDECOMP(Encadeador):
                     # e pegando as colunas dos despachos
                     nome = mapa_codigo_usina[c]
                     filtro = (op["Usina"] == nome) & (op["Início Semana"] == data)
+                    self._log.info(f"Debug GNL: {op.loc[filtro, cols_despacho]}")
                     geracoes = op.loc[filtro, cols_despacho].to_numpy()
+                    self._log.info(f"Debug GNL: {geracoes}")
                     self._log.info(f"Encadeando GNL: {[g for g in geracoes]}")
                     r.geracoes = [g for g in geracoes]
                 else:
