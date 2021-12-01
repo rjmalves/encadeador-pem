@@ -127,7 +127,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             if self._caso_atual.revisao == 0:
                 return "Estágio 1"
             else:
-                return list(volumes.columns)[-1]
+                return list(volumes.columns)[-2]
 
         def __interpola_volume() -> float:
             # TODO - implementar para maior precisão
