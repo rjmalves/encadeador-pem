@@ -11,7 +11,8 @@ from idecomp.decomp.modelos.dadgnl import NL, GL
 from inewave.newave import Confhd
 from inewave.newave import PMO
 from inewave.newave import EafPast
-from inewave.newave.adterm import AdTerm
+from inewave.newave import AdTerm
+from inewave.newave import Term
 from inewave.config import MESES_DF
 
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
@@ -250,6 +251,12 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             raise RuntimeError()
         # Lê o AdTerm do caso atual
         adterm = AdTerm.le_arquivo(self._caso_atual.caminho)
+
+        # Lê o Term do newave atual
+        term = Term.le_arquivo(self._caso_atual.caminho)
+        utes = term.usinas
+        col_gtmin = f"GT Min {MESES_DF.index(self._caso_atual.mes - 1)}"
+        
         # Lê o AdTerm do último NEWAVE rv0
         adterm_rv0 = AdTerm.le_arquivo(ultimo_rv0.caminho)
         d = adterm.despachos
@@ -261,9 +268,9 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
                 continue
             filtro_d = (d["Índice UTE"] == u) & (d["Lag"] == 1)
             filtro_d_rv0 = (d_rv0["Índice UTE"] == u) & (d_rv0["Lag"] == 2)
-            d.loc[filtro_d,
-                  cols_patamares] = d_rv0.loc[filtro_d_rv0,
-                                              cols_patamares].to_numpy()
+            gtmin = float(utes.loc[utes["Número"] == u, col_gtmin])
+            valores = d_rv0.loc[filtro_d_rv0, cols_patamares].to_numpy()
+            d.loc[filtro_d, cols_patamares] = np.clip(valores, gtmin, None)
         # Lê o RelGNL do último decomp
         ultimo_dc = None
         for c in reversed(self._casos_anteriores):
@@ -281,16 +288,20 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         mapa_codigo_usina = {c: u for c, u in zip(codigos, usinas)}
         cols_despacho = [f"Despacho Pat. {i}" for i in [1, 2, 3]]
         op = rel.relatorio_operacao_termica
+        # Para cada usina GNL, garante que o despacho está maior ou igual
+        # a sua geração mínima
         for u in indices_usinas:
             if u not in mapa_codigo_usina:
                 continue
             nome = mapa_codigo_usina[u]
+            gtmin = float(utes.loc[utes["Número"] == u, col_gtmin])
             d_dc = op.loc[(op["Usina"] == nome) &
                           (op["Estágio"] == "MENSAL"),
                           cols_despacho].to_numpy()
             filtro_d = (d["Índice UTE"] == u) & (d["Lag"] == 2)
             d.loc[filtro_d,
-                  cols_patamares] = d_dc
+                  cols_patamares] = np.clip(d_dc, gtmin, None)
+        
         # Escreve o arquivo de saída
         adterm.escreve_arquivo(self._caso_atual.caminho)
 
