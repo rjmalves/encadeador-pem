@@ -255,7 +255,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         # Lê o Term do newave atual
         term = Term.le_arquivo(self._caso_atual.caminho)
         utes = term.usinas
-        col_gtmin = f"GT Min {MESES_DF.index(self._caso_atual.mes - 1)}"
+        col_gtmin = f"GT Min {MESES_DF[self._caso_atual.mes - 1]}"
         
         # Lê o AdTerm do último NEWAVE rv0
         adterm_rv0 = AdTerm.le_arquivo(ultimo_rv0.caminho)
