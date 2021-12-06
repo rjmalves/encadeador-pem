@@ -93,6 +93,9 @@ class DadosEstudo:
             gt_sin = pd.read_csv(join(diretorio_resumo,
                                       "gt_sin.csv"),
                                  index_col=0)
+            gt_perc = pd.read_csv(join(diretorio_resumo,
+                                      "gt_percentual.csv"),
+                                  index_col=0)
             gh_subsis = pd.read_csv(join(diretorio_resumo,
                                          "gh_subsis.csv"),
                                     index_col=0)
@@ -105,16 +108,23 @@ class DadosEstudo:
             merc_sin = pd.read_csv(join(diretorio_resumo,
                                         "mercado_sin.csv"),
                                    index_col=0)
+            def_subsis = pd.read_csv(join(diretorio_resumo,
+                                          "deficit_subsis.csv"),
+                                     index_col=0)
             nomes: List[str] = []
             cmos: Dict[str, List[float]] = {s: [] for s in subsistemas}
             earms_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
             gts_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
+            gts_perc_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
             ghs_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
             mercs_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
+            defs_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
             earms_sin: List[float] = []
             gts_sin: List[float] = []
+            gts_perc_sin: List[float] = []
             ghs_sin: List[float] = []
             mercs_sin: List[float] = []
+            defs_sin: List[float] = []
             if primeiro:
                 nomes.append("Inicial")
                 for s in subsistemas:
@@ -123,12 +133,16 @@ class DadosEstudo:
                                           "Inicial"]
                     earms_sub[s].append(float(eas))
                     gts_sub[s].append(np.nan)
+                    gts_perc_sub[s].append(np.nan)
                     ghs_sub[s].append(np.nan)
                     mercs_sub[s].append(np.nan)
+                    defs_sub[s].append(np.nan)
                 earms_sin.append(float(earm_sin["Inicial"]))
                 gts_sin.append(np.nan)
+                gts_perc_sin.append(np.nan)
                 ghs_sin.append(np.nan)
                 mercs_sin.append(np.nan)
+                defs_sin.append(np.nan)
             nomes.append(nome)
             for s in subsistemas:
                 cmos[s].append(float(cmo.loc[(cmo["Subsistema"] == s) &
@@ -140,16 +154,28 @@ class DadosEstudo:
                 gts = float(gt_subsis.loc[gt_subsis["Subsistema"] == s,
                                           "Estágio 1"])
                 gts_sub[s].append(gts)
+                gts_p = float(gt_perc.loc[gt_perc["Subsistema"] == s,
+                                          "Estágio 1"])
+                gts_perc_sub[s].append(gts_p)
                 ghs = float(gh_subsis.loc[gh_subsis["Subsistema"] == s,
                                           "Estágio 1"])
                 ghs_sub[s].append(ghs)
                 mrs = float(merc_subsis.loc[merc_subsis["Subsistema"] == s,
                                             "Estágio 1"])
                 mercs_sub[s].append(mrs)
+                cols = [c for c in list(def_subsis.columns) if "Estágio" in c]
+                dfs = float(def_subsis.loc[def_subsis["Subsistema"] == s,
+                                           cols].sum(axis=1))
+                defs_sub[s].append(dfs)
+
             earms_sin.append(float(earm_sin["Estágio 1"]))
             gts_sin.append(float(gt_sin["Estágio 1"]))
+            gts_p = float(gt_perc.loc[gt_perc["Subsistema"] == "SIN",
+                                      "Estágio 1"])
+            gts_perc_sin.append(gts_p)
             ghs_sin.append(float(gh_sin["Estágio 1"]))
             mercs_sin.append(float(merc_sin["Estágio 1"]))
+            defs_sin.append(sum([def_subsis[s] for s in subsistemas]))
             # Organiza os dados em um DataFrame
             dados_variaveis: Dict[str, list] = {c: [] for c in colunas_resumo}
             dados_variaveis["Caso"] = nomes
@@ -157,12 +183,16 @@ class DadosEstudo:
                 dados_variaveis[f"CMO {s}"] = cmos[s]
                 dados_variaveis[f"EARM {s}"] = earms_sub[s]
                 dados_variaveis[f"GT {s}"] = gts_sub[s]
+                dados_variaveis[f"GT % {s}"] = gts_perc_sub[s]
                 dados_variaveis[f"GH {s}"] = ghs_sub[s]
                 dados_variaveis[f"Mercado {s}"] = mercs_sub[s]
+                dados_variaveis[f"Déficit {s}"] = defs_sub[s]
             dados_variaveis["EARM SIN"] = earms_sin
             dados_variaveis["GT SIN"] = gts_sin
+            dados_variaveis["GT % SIN"] = gts_perc_sin
             dados_variaveis["GH SIN"] = ghs_sin
             dados_variaveis["Mercado SIN"] = mercs_sin
+            dados_variaveis["Déficit SIN"] = defs_sin
             df_variaveis = pd.DataFrame(data=dados_variaveis)
             if resumo_decomps.empty:
                 resumo_decomps = df_variaveis
