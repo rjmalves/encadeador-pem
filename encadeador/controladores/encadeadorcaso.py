@@ -255,7 +255,8 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         # Lê o Term do newave atual
         term = Term.le_arquivo(self._caso_atual.caminho)
         utes = term.usinas
-        col_gtmin = f"GT Min {MESES_DF[self._caso_atual.mes - 1]}"
+        cols_gtmin = [f"GT Min {MESES_DF[i - 1]}"
+                      for i in range(self._caso_atual.mes, 13)]
         
         # Lê o AdTerm do último NEWAVE rv0
         adterm_rv0 = AdTerm.le_arquivo(ultimo_rv0.caminho)
@@ -268,7 +269,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
                 continue
             filtro_d = (d["Índice UTE"] == u) & (d["Lag"] == 1)
             filtro_d_rv0 = (d_rv0["Índice UTE"] == u) & (d_rv0["Lag"] == 2)
-            gtmin = float(utes.loc[utes["Número"] == u, col_gtmin])
+            gtmin = float(utes.loc[utes["Número"] == u, cols_gtmin].max())
             valores = d_rv0.loc[filtro_d_rv0, cols_patamares].to_numpy()
             d.loc[filtro_d, cols_patamares] = np.clip(valores, gtmin, None)
         # Lê o RelGNL do último decomp
@@ -294,7 +295,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             if u not in mapa_codigo_usina:
                 continue
             nome = mapa_codigo_usina[u]
-            gtmin = float(utes.loc[utes["Número"] == u, col_gtmin])
+            gtmin = float(utes.loc[utes["Número"] == u, cols_gtmin].max())
             d_dc = op.loc[(op["Usina"] == nome) &
                           (op["Estágio"] == "MENSAL"),
                           cols_despacho].to_numpy()
