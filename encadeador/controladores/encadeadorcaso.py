@@ -270,7 +270,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
                 continue
             filtro_d = (d["Índice UTE"] == u) & (d["Lag"] == 1)
             filtro_d_rv0 = (d_rv0["Índice UTE"] == u) & (d_rv0["Lag"] == 2)
-            gtmin = float(utes.loc[utes["Número"] == u, cols_gtmin].max())
+            gtmin = float(utes.loc[utes["Número"] == u, cols_gtmin].max(axis=1))
             valores = d_rv0.loc[filtro_d_rv0, cols_patamares].to_numpy()
             d.loc[filtro_d, cols_patamares] = np.clip(valores, gtmin, None)
         # Lê o RelGNL do último decomp
@@ -296,7 +296,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             if u not in mapa_codigo_usina:
                 continue
             nome = mapa_codigo_usina[u]
-            gtmin = float(utes.loc[utes["Número"] == u, cols_gtmin].max())
+            gtmin = float(utes.loc[utes["Número"] == u, cols_gtmin].max(axis=1))
             d_dc = op.loc[(op["Usina"] == nome) &
                           (op["Estágio"] == "MENSAL"),
                           cols_despacho].to_numpy()
