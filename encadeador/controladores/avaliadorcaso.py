@@ -88,6 +88,6 @@ class AvaliadorDECOMP(AvaliadorCaso):
                             f" no diretório do {self._caso.nome}")
             raise RuntimeError()
         except Exception:
-            self._log.error("Erro na avaliação das saídas" +
-                            f" do {self._caso.nome}: caso não convergiu.")
+            self._log.warning("Erro na avaliação das saídas" +
+                              f" do {self._caso.nome}: caso não convergiu.")
             return False
