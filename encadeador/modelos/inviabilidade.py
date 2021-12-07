@@ -453,5 +453,5 @@ class InviabilidadeDeficit(Inviabilidade):
         except ValueError:
             earmax_subsis = np.inf
         # Calcula a violação em percentual
-        violacao_percentual = violacao_ponderada / earmax_subsis
+        violacao_percentual = 100 * (violacao_ponderada / earmax_subsis)
         return [subsis, pat, violacao_percentual]
