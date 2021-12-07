@@ -7,7 +7,8 @@ class ProcessadorDecomp:
 
     @staticmethod
     def gt_percentual(relato: Relato,
-                      relgnl: RelGNL) -> pd.DataFrame:
+                      relgnl: RelGNL,
+                      col: str) -> pd.DataFrame:
 
         def extrai_gts_semana(relato: Relato,
                               semana: int) -> pd.DataFrame:
@@ -77,11 +78,11 @@ class ProcessadorDecomp:
             term_grupo = term_1s.groupby("Subsistema").sum()[[cmi, cma]]
             return term_grupo
 
-        def extrai_gt_pertencual_semana(relato: Relato,
+        def extrai_gt_percentual_semana(relato: Relato,
                                         relgnl: RelGNL,
                                         semana: int) -> pd.DataFrame:
             df_gt = extrai_gts_semana(relato, semana)
-            df_gt_min_max = extrai_gts_min_max_semana(relato, semana)
+            df_gt_min_max = extrai_gts_min_max_semana(relato, relgnl, semana)
             df_gt_min_max["GT"] = df_gt[f"Estágio {semana}"].copy()
             df_gt_min_max["Subsistema"] = df_gt_min_max.index
             df_gt_min_max = df_gt_min_max[["Subsistema",
@@ -100,7 +101,7 @@ class ProcessadorDecomp:
         df_completo = None
         n_semanas = len(list(relato.volume_util_reservatorios.columns)) - 3
         for i in range(1, n_semanas + 1):
-            df = extrai_gt_pertencual_semana(relato, relgnl, i)
+            df = extrai_gt_percentual_semana(relato, relgnl, i)
             df["Estágio"] = i
             if df_completo is None:
                 df_completo = df
@@ -111,6 +112,34 @@ class ProcessadorDecomp:
         # Reordena as columas do dataframe
         cols_sem_estagio = [c for c in df_completo.columns
                             if c != "Estágio"]
-        df_completo = df_completo[["Estágio"] + cols_sem_estagio]
+        dfc = df_completo[["Estágio"] + cols_sem_estagio].copy()
 
-        return df_completo
+        dfc.loc[:, "GT Percentual Max"] = 100 * dfc["GT"] / dfc["GT Max"]
+        dfc.loc[:, "GT Percentual Flex"] = 100 * ((dfc["GT"] - dfc["GT Min"]) /
+                                                  (dfc["GT Max"] - dfc["GT Min"]))
+
+        # Transforma só para o DF com percentual da máxima, no padrão
+        # das demais variáveis
+        estagios = dfc["Estágio"].unique()
+        subsistemas = dfc["Subsistema"].unique()
+        cols = ["Subsistema"] + [f"Estágio {e}" for e in estagios]
+        df_final = pd.DataFrame(columns=cols)
+        for i, s in enumerate(subsistemas):
+            df_final.loc[i, "Subsistema"] = s
+            gt = dfc.loc[dfc["Subsistema"] == s,
+                         col].to_numpy()
+            df_final.loc[i, [f"Estágio {e}" for e in estagios]] = gt
+
+        return df_final
+
+    @staticmethod
+    def gt_percentual_maxima(relato: Relato,
+                             relgnl: RelGNL):
+        return ProcessadorDecomp.gt_percentual(relato, relgnl,
+                                               "GT Percentual Max")
+
+    @staticmethod
+    def gt_percentual_flexivel(relato: Relato,
+                               relgnl: RelGNL):
+        return ProcessadorDecomp.gt_percentual(relato, relgnl,
+                                               "GT Percentual Flex")

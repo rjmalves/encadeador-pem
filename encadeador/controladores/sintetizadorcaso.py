@@ -235,9 +235,14 @@ class SintetizadorDECOMP(SintetizadorCaso):
         return df
 
     @staticmethod
-    def __processa_gt_percentual(relato: Relato,
-                                 relgnl: RelGNL) -> pd.DataFrame:
-        return ProcessadorDecomp.gt_percentual(relato, relgnl)
+    def __processa_gt_percentual_max(relato: Relato,
+                                     relgnl: RelGNL) -> pd.DataFrame:
+        return ProcessadorDecomp.gt_percentual_maxima(relato, relgnl)
+
+    @staticmethod
+    def __processa_gt_percentual_flex(relato: Relato,
+                                      relgnl: RelGNL) -> pd.DataFrame:
+        return ProcessadorDecomp.gt_percentual_flexivel(relato, relgnl)
 
     def sintetiza_caso(self) -> bool:
         num_retry = 0
@@ -294,8 +299,10 @@ class SintetizadorDECOMP(SintetizadorCaso):
                                                                   earmax)
                 gt_subsis = relato.geracao_termica_subsistema
                 gt_sin = SintetizadorDECOMP.__processa_dado_sin(gt_subsis)
-                gt_perc = SintetizadorDECOMP.__processa_gt_percentual(relato,
-                                                                      relgnl)
+                gt_perc_m = SintetizadorDECOMP.__processa_gt_percentual_max(relato,
+                                                                            relgnl)
+                gt_perc_f = SintetizadorDECOMP.__processa_gt_percentual_flex(relato,
+                                                                             relgnl)
                 balanco = relato.balanco_energetico
                 gh_subsis = SintetizadorDECOMP.__processa_gh(balanco)
                 gh_sin = SintetizadorDECOMP.__processa_dado_sin(gh_subsis)
@@ -319,9 +326,12 @@ class SintetizadorDECOMP(SintetizadorCaso):
                 gt_sin.to_csv(join(caminho_saida, "gt_sin.csv"),
                               header=True,
                               encoding="utf-8")
-                gt_perc.to_csv(join(caminho_saida, "gt_percentual.csv"),
-                               header=True,
-                               encoding="utf-8")
+                gt_perc_m.to_csv(join(caminho_saida, "gt_percentual_max.csv"),
+                                 header=True,
+                                 encoding="utf-8")
+                gt_perc_f.to_csv(join(caminho_saida, "gt_percentual_flex.csv"),
+                                 header=True,
+                                 encoding="utf-8")
                 gh_subsis.to_csv(join(caminho_saida, "gh_subsis.csv"),
                                  header=True,
                                  encoding="utf-8")

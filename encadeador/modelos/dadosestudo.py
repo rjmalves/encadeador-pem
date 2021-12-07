@@ -93,9 +93,12 @@ class DadosEstudo:
             gt_sin = pd.read_csv(join(diretorio_resumo,
                                       "gt_sin.csv"),
                                  index_col=0)
-            gt_perc = pd.read_csv(join(diretorio_resumo,
-                                      "gt_percentual.csv"),
-                                  index_col=0)
+            gt_perc_m = pd.read_csv(join(diretorio_resumo,
+                                         "gt_percentual_max.csv"),
+                                     index_col=0)
+            gt_perc_f = pd.read_csv(join(diretorio_resumo,
+                                         "gt_percentual_flex.csv"),
+                                    index_col=0)
             gh_subsis = pd.read_csv(join(diretorio_resumo,
                                          "gh_subsis.csv"),
                                     index_col=0)
@@ -115,13 +118,15 @@ class DadosEstudo:
             cmos: Dict[str, List[float]] = {s: [] for s in subsistemas}
             earms_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
             gts_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
-            gts_perc_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
+            gts_perc_m_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
+            gts_perc_f_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
             ghs_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
             mercs_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
             defs_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
             earms_sin: List[float] = []
             gts_sin: List[float] = []
-            gts_perc_sin: List[float] = []
+            gts_perc_m_sin: List[float] = []
+            gts_perc_f_sin: List[float] = []
             ghs_sin: List[float] = []
             mercs_sin: List[float] = []
             defs_sin: List[float] = []
@@ -133,13 +138,15 @@ class DadosEstudo:
                                           "Inicial"]
                     earms_sub[s].append(float(eas))
                     gts_sub[s].append(np.nan)
-                    gts_perc_sub[s].append(np.nan)
+                    gts_perc_m_sub[s].append(np.nan)
+                    gts_perc_f_sub[s].append(np.nan)
                     ghs_sub[s].append(np.nan)
                     mercs_sub[s].append(np.nan)
                     defs_sub[s].append(np.nan)
                 earms_sin.append(float(earm_sin["Inicial"]))
                 gts_sin.append(np.nan)
-                gts_perc_sin.append(np.nan)
+                gts_perc_m_sin.append(np.nan)
+                gts_perc_f_sin.append(np.nan)
                 ghs_sin.append(np.nan)
                 mercs_sin.append(np.nan)
                 defs_sin.append(np.nan)
@@ -154,9 +161,12 @@ class DadosEstudo:
                 gts = float(gt_subsis.loc[gt_subsis["Subsistema"] == s,
                                           "Estágio 1"])
                 gts_sub[s].append(gts)
-                gts_p = float(gt_perc.loc[gt_perc["Subsistema"] == s,
-                                          "Estágio 1"])
-                gts_perc_sub[s].append(gts_p)
+                gts_p_m = float(gt_perc_m.loc[gt_perc_m["Subsistema"] == s,
+                                              "Estágio 1"])
+                gts_perc_m_sub[s].append(gts_p_m)
+                gts_p_f = float(gt_perc_f.loc[gt_perc_f["Subsistema"] == s,
+                                              "Estágio 1"])
+                gts_perc_f_sub[s].append(gts_p_f)
                 ghs = float(gh_subsis.loc[gh_subsis["Subsistema"] == s,
                                           "Estágio 1"])
                 ghs_sub[s].append(ghs)
@@ -170,9 +180,12 @@ class DadosEstudo:
 
             earms_sin.append(float(earm_sin["Estágio 1"]))
             gts_sin.append(float(gt_sin["Estágio 1"]))
-            gts_p = float(gt_perc.loc[gt_perc["Subsistema"] == "SIN",
-                                      "Estágio 1"])
-            gts_perc_sin.append(gts_p)
+            gts_p_m = float(gt_perc_m.loc[gt_perc_m["Subsistema"] == "SIN",
+                                          "Estágio 1"])
+            gts_perc_m_sin.append(gts_p_m)
+            gts_p_f = float(gt_perc_f.loc[gt_perc_f["Subsistema"] == "SIN",
+                                          "Estágio 1"])
+            gts_perc_f_sin.append(gts_p_f)
             ghs_sin.append(float(gh_sin["Estágio 1"]))
             mercs_sin.append(float(merc_sin["Estágio 1"]))
             defs_sin.append(sum([def_subsis[s] for s in subsistemas]))
@@ -183,13 +196,15 @@ class DadosEstudo:
                 dados_variaveis[f"CMO {s}"] = cmos[s]
                 dados_variaveis[f"EARM {s}"] = earms_sub[s]
                 dados_variaveis[f"GT {s}"] = gts_sub[s]
-                dados_variaveis[f"GT % {s}"] = gts_perc_sub[s]
+                dados_variaveis[f"GT {s} (% MAX)"] = gts_perc_m_sub[s]
+                dados_variaveis[f"GT {s} (% FLEX)"] = gts_perc_f_sub[s]
                 dados_variaveis[f"GH {s}"] = ghs_sub[s]
                 dados_variaveis[f"Mercado {s}"] = mercs_sub[s]
                 dados_variaveis[f"Déficit {s}"] = defs_sub[s]
             dados_variaveis["EARM SIN"] = earms_sin
             dados_variaveis["GT SIN"] = gts_sin
-            dados_variaveis["GT % SIN"] = gts_perc_sin
+            dados_variaveis["GT SIN (% MAX)"] = gts_perc_m_sin
+            dados_variaveis["GT SIN (% FLEX)"] = gts_perc_f_sin
             dados_variaveis["GH SIN"] = ghs_sin
             dados_variaveis["Mercado SIN"] = mercs_sin
             dados_variaveis["Déficit SIN"] = defs_sin
