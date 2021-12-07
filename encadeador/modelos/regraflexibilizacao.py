@@ -3,7 +3,7 @@ from logging import Logger
 from typing import List, Tuple
 import numpy as np  # type: ignore
 from idecomp.decomp.dadger import Dadger
-from idecomp.decomp.modelos.dadger import AC, ACVAZMIN, ACVERTJU, FP
+from idecomp.decomp.modelos.dadger import AC, ACVAZMIN, ACVERTJU, FP, HE, CM
 
 from encadeador.modelos.inviabilidade import Inviabilidade
 from encadeador.modelos.inviabilidade import InviabilidadeEV
@@ -40,7 +40,7 @@ class RegraFlexibilizacao:
                              InviabilidadeHE: 0.1,
                              InviabilidadeDEFMIN: 0.2,
                              InviabilidadeFP: 0,
-                             InviabilidadeDeficit: 0
+                             InviabilidadeDeficit: 0.5
                             }
 
     def __init__(self,
@@ -128,7 +128,11 @@ class RegraFlexibilizacao:
         self._flexibilizaHE(dadger, invs_por_tipo[InviabilidadeHE])
         self._flexibilizaDEFMIN(dadger, invs_por_tipo[InviabilidadeDEFMIN])
         self._flexibilizaFP(dadger, invs_por_tipo[InviabilidadeFP])
-        self._flexibiliza_deficit(dadger, invs_por_tipo[InviabilidadeDeficit])
+        # PREMISSA
+        # Só flexibiliza déficit se todas as inviabilidades forem déficit
+        if len(inviabilidades) == len(invs_por_tipo[InviabilidadeDeficit]):
+            self._flexibiliza_deficit(dadger,
+                                      invs_por_tipo[InviabilidadeDeficit])
 
 
 class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
@@ -574,5 +578,77 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
     def _flexibiliza_deficit(self,
                              dadger: Dadger,
                              inviabilidades: List[InviabilidadeDeficit]):
-        if len(inviabilidades) > 0:
-            self._log.warning("Flexibilização de déficit não implementada")
+
+        def __identifica_inv_pat(inv: InviabilidadeDeficit) -> Tuple[int,
+                                                                     int,
+                                                                     str]:
+            return (inv._estagio, inv._patamar, inv._subsistema)
+
+        def __identifica_inv(inv: InviabilidadeDeficit) -> Tuple[int, str]:
+            return (inv._estagio, inv._subsistema)
+
+        def __inv_maxima_violacao_identificada(invs: List[InviabilidadeDeficit],
+                                               inv_ini: InviabilidadeDeficit
+                                               ) -> InviabilidadeDeficit:
+            max_viol = inv_ini
+            ident_ini = __identifica_inv(inv_ini)
+            invs_mesma_id = [i for i in invs if
+                             __identifica_inv(i) == ident_ini]
+            for i in invs_mesma_id:
+                max_viol._violacao_percentual += i._violacao_percentual
+            return max_viol
+
+        # TODO - não precisar dessa constante de mapeamento SUB-REE
+        rees_subsistema = {
+            "SE": [1, 5, 6, 7, 10, 12],
+            "S": [2, 11],
+            "NE": [3],
+            "N": [4, 8, 9]
+        }
+
+        # Estrutura para conter as tuplas
+        # (código, estágio, limite) já flexibilizados
+        flexibilizados: List[Tuple[int, int, str]] = []
+        for inv in inviabilidades:
+            # Ignora os cenários do 2º mês
+            if inv._cenario != 1:
+                continue
+            identificacao = __identifica_inv(inv)
+            # Se já flexibilizou essa restrição nesse estágio, ignora
+            if identificacao in flexibilizados:
+                continue
+            # Senão, procura dentre todas as outras pela maior violação
+            flexibilizados.append(identificacao)
+            max_viol = __inv_maxima_violacao_identificada(inviabilidades,
+                                                          inv)
+            # Tenta flexibilizar todos os REEs daquele subsistema, que tiverem
+            # restrições RHE
+            for r in rees_subsistema[max_viol._subsistema]:
+                # Lista as restrições RHE
+                cms = dadger.lista_registros(CM)
+                # O atributo estagio na verdade é o REE
+                cms_ree = [c for c in cms if c.estagio == r]
+                # Se tiver pelo menos um CM para o REE, flexibiliza os
+                # RHE que existirem, para os respectivos estágios
+                if len(cms_ree) > 0:
+                    for cm in cms_ree:
+                        try:
+                            reg = dadger.he(cm.codigo, max_viol._estagio)
+                            valor_atual = reg.limite
+                            deltas = RegraFlexibilizacao.deltas_inviabilidades
+                            delta = deltas[InviabilidadeDeficit]
+                            valor_flex = max_viol._violacao_percentual + delta
+                            novo_valor = max([0., valor_atual - valor_flex])
+                            dadger.he(cm.codigo, max_viol._estagio).limite = novo_valor
+                            msg = (f"Flexibilizando (DEFICIT) HE {reg.codigo} -" +
+                                   f"Estágio {max_viol._estagio} -" +
+                                   f"{reg.tipo_penalidade}: {valor_atual} ->" +
+                                   f" {novo_valor}")
+                            self._log.info(msg)
+                            if novo_valor == 0:
+                                self._log.warning(f"Valor da HE {reg.codigo} chegou a" +
+                                                  " 0. e deveria ser" +
+                                                  f" {valor_atual - valor_flex}" +
+                                                  " pelo déficit")
+                        except ValueError:
+                            continue

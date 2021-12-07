@@ -1,6 +1,8 @@
 from abc import abstractmethod
+import numpy as np
 import pandas as pd  # type: ignore
 from idecomp.decomp.hidr import Hidr
+from idecomp.decomp.relato import Relato
 
 
 class Inviabilidade:
@@ -27,7 +29,8 @@ class Inviabilidade:
 
     @staticmethod
     def factory(linha_inviab_unic: pd.Series,
-                hidr: Hidr) -> 'Inviabilidade':
+                hidr: Hidr,
+                relato: Relato) -> 'Inviabilidade':
         if "Iteração" in list(linha_inviab_unic.index):
             iteracao = int(linha_inviab_unic["Iteração"])
         else:
@@ -103,7 +106,8 @@ class Inviabilidade:
                                         cenario,
                                         mensagem_restricao,
                                         violacao,
-                                        unidade)
+                                        unidade,
+                                        relato)
         else:
             raise TypeError(f"Restrição {mensagem_restricao} não suportada")
 
@@ -404,7 +408,8 @@ class InviabilidadeDeficit(Inviabilidade):
                  cenario: int,
                  mensagem_restricao: str,
                  violacao: float,
-                 unidade: str):
+                 unidade: str,
+                 relato: Relato):
 
         super().__init__(iteracao,
                          estagio,
@@ -412,6 +417,10 @@ class InviabilidadeDeficit(Inviabilidade):
                          mensagem_restricao,
                          violacao,
                          unidade)
+        dados = self.processa_mensagem(relato)
+        self._subsistema = dados[0]
+        self._patamar = dados[1]
+        self._violacao_percentual = dados[2]
 
     def __str__(self) -> str:
         return ("DEF " +
@@ -420,4 +429,29 @@ class InviabilidadeDeficit(Inviabilidade):
                 f" - Viol. {self._violacao} {self._unidade}")
 
     def processa_mensagem(self, *args) -> list:
-        pass
+        relato: Relato = args[0]
+        msg = self._mensagem_restricao
+        subsis = msg.split("SUBSISTEMA ")[1].split(",")[0].strip()
+        pat = int(msg.split("PATAMAR")[1].strip())
+        # Tenta obter informações úteis do Relato
+        # Duração dos patamares
+        try:
+            merc = relato.dados_mercado
+            cols_pat = [c for c in merc.columns if "Patamar" in c]
+            duracoes = merc.loc[(merc["Estágio"] == self._estagio) &
+                                (merc["Subsistema"] == subsis),
+                                cols_pat].to_numpy()
+            fracao = duracoes[pat - 1] / np.sum(duracoes)
+            violacao_ponderada = self._violacao * fracao
+        except ValueError:
+            violacao_ponderada = 0
+        # EARMax
+        try:
+            earmax = relato.energia_armazenada_maxima_subsistema
+            earmax_subsis = float(earmax.loc[earmax["Subsistema"] == subsis,
+                                             "Earmax"])
+        except ValueError:
+            earmax_subsis = np.inf
+        # Calcula a violação em percentual
+        violacao_percentual = violacao_ponderada / earmax_subsis
+        return [subsis, pat, violacao_percentual]

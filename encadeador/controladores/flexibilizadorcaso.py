@@ -4,6 +4,7 @@ from typing import List
 from idecomp.decomp.inviabunic import InviabUnic
 from idecomp.decomp.dadger import Dadger
 from idecomp.decomp.hidr import Hidr
+from idecomp.decomp.relato import Relato
 
 from encadeador.modelos.caso import Caso, CasoDECOMP
 from encadeador.modelos.inviabilidade import Inviabilidade
@@ -57,10 +58,13 @@ class FlexibilizadorDECOMP(Flexibilizador):
             # Lê o hidr.dat
             hidr = Hidr.le_arquivo(self._caso.caminho)
             self._log.info("Arquivo hidr.dat lido com sucesso")
+            # Lê o relato.rvX
+            arq_relato = f"relato.rv{self._caso.revisao}"
+            relato = Relato.le_arquivo(self._caso.caminho, arq_relato)
             # Cria as inviabilidades
             inviabilidades: List[Inviabilidade] = []
             for _, linha in inviab.inviabilidades_simulacao_final.iterrows():
-                inv = Inviabilidade.factory(linha, hidr)
+                inv = Inviabilidade.factory(linha, hidr, relato)
                 self._log.info(inv)
                 inviabilidades.append(inv)
             self._log.info("Inviabilidades processadas com sucesso")
