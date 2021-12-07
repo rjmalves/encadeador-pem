@@ -79,7 +79,13 @@ class AvaliadorDECOMP(AvaliadorCaso):
             if not inviab.inviabilidades_simulacao_final.empty:
                 self._log.warning(f"{self._caso.nome} convergiu com" +
                                   " inviabilidades na simulação final")
-                if self._caso.configuracoes.flexibiliza_deficit:
+                cmo = sumario.cmo_medio_subsistema
+                n_estagios = len([c for c in list(cmo.columns)
+                                  if "Estágio" in c]) + 1
+                invs = inviab.inviabilidades_simulacao_final
+                inviabs_primeiro_mes = invs.loc[invs["Estágio"] != n_estagios, :]
+                if (self._caso.configuracoes.flexibiliza_deficit
+                        and not inviabs_primeiro_mes.empty):
                     return False
             self._log.info(f"Caso concluído com sucesso: {self._caso.nome}")
             return True

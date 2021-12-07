@@ -3,7 +3,7 @@ from logging import Logger
 from typing import List, Tuple
 import numpy as np  # type: ignore
 from idecomp.decomp.dadger import Dadger
-from idecomp.decomp.modelos.dadger import AC, ACVAZMIN, ACVERTJU, FP, HE, CM
+from idecomp.decomp.modelos.dadger import AC, ACVAZMIN, ACVERTJU, DP, FP, HE, CM
 
 from encadeador.modelos.inviabilidade import Inviabilidade
 from encadeador.modelos.inviabilidade import InviabilidadeEV
@@ -611,7 +611,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
         flexibilizados: List[Tuple[int, int, str]] = []
         for inv in inviabilidades:
             # Ignora os cenários do 2º mês
-            if inv._cenario != 1:
+            if inv._estagio == dadger.lista_registros(DP)[-1].estagio:
                 continue
             identificacao = __identifica_inv(inv)
             # Se já flexibilizou essa restrição nesse estágio, ignora
