@@ -440,7 +440,7 @@ class InviabilidadeDeficit(Inviabilidade):
             cols_pat = [c for c in merc.columns if "Patamar" in c]
             duracoes = merc.loc[(merc["Estágio"] == self._estagio) &
                                 (merc["Subsistema"] == subsis),
-                                cols_pat].to_numpy()
+                                cols_pat].to_numpy()[0]
             fracao = duracoes[pat - 1] / np.sum(duracoes)
             violacao_ponderada = self._violacao * fracao
         except ValueError:

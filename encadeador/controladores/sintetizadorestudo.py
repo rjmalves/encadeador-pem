@@ -61,7 +61,6 @@ class SintetizadorEstudo:
         while num_retry < MAX_RETRY_ESCRITA:
             try:
                 dados = DadosEstudo.resume_arvore(self._arvore)
-                self._log.info("Chegou a resumir a árvore")
                 # TODO - Ao invés de pegar o primeiro caso para ter as
                 # configurações, substituir pelo padrão Singleton
                 cfg = self._arvore.casos[0].configuracoes
