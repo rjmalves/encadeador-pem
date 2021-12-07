@@ -188,7 +188,7 @@ class DadosEstudo:
             gts_perc_f_sin.append(gts_p_f)
             ghs_sin.append(float(gh_sin["Estágio 1"]))
             mercs_sin.append(float(merc_sin["Estágio 1"]))
-            defs_sin.append(sum([def_subsis[s] for s in subsistemas]))
+            defs_sin.append(sum([defs_sub[s] for s in subsistemas]))
             # Organiza os dados em um DataFrame
             dados_variaveis: Dict[str, list] = {c: [] for c in colunas_resumo}
             dados_variaveis["Caso"] = nomes
