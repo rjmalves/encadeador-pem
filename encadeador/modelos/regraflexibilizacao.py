@@ -40,7 +40,7 @@ class RegraFlexibilizacao:
                              InviabilidadeHE: 0.1,
                              InviabilidadeDEFMIN: 0.2,
                              InviabilidadeFP: 0,
-                             InviabilidadeDeficit: 0.5
+                             InviabilidadeDeficit: 2.0
                             }
 
     def __init__(self,
