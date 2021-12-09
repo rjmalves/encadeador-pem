@@ -92,5 +92,8 @@ class SintetizadorEstudo:
                 num_retry += 1
                 time.sleep(INTERVALO_RETRY_ESCRITA)
                 continue
+            except Exception as e:
+                self._log.error(f"Erro na síntese do estudo: {e}")
+                break
         self._log.info("Erro na síntese do estudo encadeado")
         return False
