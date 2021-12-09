@@ -172,6 +172,10 @@ class DadosCaso:
     def caminho(self) -> str:
         return self._caminho
 
+    @caminho.setter
+    def caminho(self, c: str) -> str:
+        self._caminho = c
+
     @property
     def nome(self) -> str:
         return self._nome

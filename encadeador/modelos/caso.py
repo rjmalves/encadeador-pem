@@ -100,6 +100,10 @@ class Caso:
         Caso._verifica_caso_configurado(self._dados)
         return self._dados.caminho
 
+    @caminho.setter
+    def caminho(self, c: str) -> str:
+        self._dados.caminho = c
+
     @property
     def nome(self) -> str:
         Caso._verifica_caso_configurado(self._dados)
