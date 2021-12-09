@@ -76,6 +76,9 @@ class ArvoreCasos:
             try:
                 caso = ArmazenadorCaso.recupera_caso(self._configuracoes,
                                                      c)
+                # TODO - Pensar em como permitir mudanças de diretório
+                # do estudo encadeado, uma vez já concluído.
+                caso.caminho = c
                 self._casos.append(caso)
             except FileNotFoundError:
                 ret = __le_caso(c)
