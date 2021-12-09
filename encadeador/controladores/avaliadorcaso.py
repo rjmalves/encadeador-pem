@@ -93,7 +93,7 @@ class AvaliadorDECOMP(AvaliadorCaso):
             self._log.error(f"Arquivo {arq} ou {arq_inv} não encontrados" +
                             f" no diretório do {self._caso.nome}")
             raise RuntimeError()
-        except Exception:
+        except Exception as e:
             self._log.warning("Erro na avaliação das saídas" +
-                              f" do {self._caso.nome}: caso não convergiu.")
+                              f" do {self._caso.nome}: caso não convergiu: {e}")
             return False
