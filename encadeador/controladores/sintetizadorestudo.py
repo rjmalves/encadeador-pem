@@ -84,13 +84,15 @@ class SintetizadorEstudo:
                 dados.convergencias_decomps.to_csv(convergencias_decomps)
                 dados.inviabilidades_decomps.to_csv(inviabilidades_decomps)
                 return True
-            except OSError:
+            except OSError as e:
                 num_retry += 1
                 time.sleep(INTERVALO_RETRY_ESCRITA)
+                self._log.warning(f"Retry na síntese do estudo: {e}")
                 continue
-            except BlockingIOError:
+            except BlockingIOError as e:
                 num_retry += 1
                 time.sleep(INTERVALO_RETRY_ESCRITA)
+                self._log.warning(f"Retry na síntese do estudo: {e}")
                 continue
             except Exception as e:
                 self._log.error(f"Erro na síntese do estudo: {e}")
