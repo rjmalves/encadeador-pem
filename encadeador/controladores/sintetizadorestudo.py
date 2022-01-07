@@ -30,10 +30,7 @@ class SintetizadorEstudo:
         self._log = log
 
     @staticmethod
-    def sintetiza_proximo_caso(caso: Optional[Caso],
-                               cfg: Configuracoes):
-        # TODO - quando usar o padrão Singleton, não precisa
-        # mais passar as Configurações
+    def sintetiza_proximo_caso(caso: Optional[Caso]):
         df_proximo_caso = pd.DataFrame(columns=["Caminho"])
         if caso is not None:
             caminho = join(caso.caminho, NOME_ARQUIVO_ESTADO)
@@ -41,7 +38,8 @@ class SintetizadorEstudo:
         num_retry = 0
         while num_retry < MAX_RETRY_ESCRITA:
             try:
-                df_proximo_caso.to_csv(join(cfg.caminho_base_estudo,
+                caminho = Configuracoes().caminho_base_estudo
+                df_proximo_caso.to_csv(join(caminho,
                                             ARQUIVO_PROXIMO_CASO))
                 return
             except OSError:
@@ -61,10 +59,7 @@ class SintetizadorEstudo:
         while num_retry < MAX_RETRY_ESCRITA:
             try:
                 dados = DadosEstudo.resume_arvore(self._arvore)
-                # TODO - Ao invés de pegar o primeiro caso para ter as
-                # configurações, substituir pelo padrão Singleton
-                cfg = self._arvore.casos[0].configuracoes
-                diretorio_estudo = cfg.caminho_base_estudo
+                diretorio_estudo = Configuracoes().caminho_base_estudo
                 resumo_estados = join(diretorio_estudo,
                                       ARQUIVO_RESUMO_ESTADOS)
                 resumo_newaves = join(diretorio_estudo,

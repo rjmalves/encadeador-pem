@@ -2,7 +2,6 @@ from logging import Logger
 from os.path import isfile
 from os.path import join
 
-from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.dadoscaso import DadosCaso
 from encadeador.modelos.caso import Caso
 
@@ -27,8 +26,7 @@ class ArmazenadorCaso:
             return False
 
     @staticmethod
-    def recupera_caso(cfg: Configuracoes,
-                      caminho: str) -> Caso:
+    def recupera_caso(caminho: str) -> Caso:
 
         # Se não tem arquivo de resumo, o caso não começou a ser rodado
         arq = join(caminho, NOME_ARQUIVO_ESTADO)
@@ -39,7 +37,7 @@ class ArmazenadorCaso:
         # Se tem, então o caso pelo menos começou
         dados = DadosCaso.le_arquivo(caminho)
         c = Caso.factory(dados.programa)
-        c.recupera_caso_dos_dados(dados, cfg)
+        c.recupera_caso_dos_dados(dados)
         return c
 
     @property

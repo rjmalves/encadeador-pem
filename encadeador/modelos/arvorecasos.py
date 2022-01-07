@@ -11,10 +11,8 @@ from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 class ArvoreCasos:
 
     def __init__(self,
-                 cfg: Configuracoes,
                  log: Logger) -> None:
         self._log = log
-        self._configuracoes = cfg
         self._diretorios_revisoes: List[str] = []
         self._diretorios_casos: List[str] = []
         self._casos: List[Caso] = []
@@ -28,18 +26,18 @@ class ArvoreCasos:
         def __le_diretorios():
             for d in self._diretorios_revisoes:
                 subd = [a for a in listdir(d) if isdir(join(d, a))]
-                if self._configuracoes._nome_diretorio_newave in subd:
-                    c = join(self._configuracoes.caminho_base_estudo,
+                if Configuracoes().nome_diretorio_newave in subd:
+                    c = join(Configuracoes().caminho_base_estudo,
                              d,
-                             self._configuracoes._nome_diretorio_newave)
+                             Configuracoes()._nome_diretorio_newave)
                     self._diretorios_casos.append(c)
-                if self._configuracoes._nome_diretorio_decomp in subd:
-                    c = join(self._configuracoes.caminho_base_estudo,
+                if Configuracoes()._nome_diretorio_decomp in subd:
+                    c = join(Configuracoes().caminho_base_estudo,
                              d,
-                             self._configuracoes._nome_diretorio_decomp)
+                             Configuracoes()._nome_diretorio_decomp)
                     self._diretorios_casos.append(c)
 
-        lista = self._configuracoes.arquivo_lista_casos
+        lista = Configuracoes().arquivo_lista_casos
         with open(lista, "r") as arq:
             dirs = arq.readlines()
         dirs = [c.strip("\n").strip() for c in dirs]
@@ -58,14 +56,14 @@ class ArvoreCasos:
             rv = int(componentes_caso[2].split("rv")[1])
             # Identifica o programa
             diretorio_prog = pastas[-1]
-            if self._configuracoes._nome_diretorio_newave == diretorio_prog:
+            if Configuracoes()._nome_diretorio_newave == diretorio_prog:
                 caso_nw = CasoNEWAVE()
-                caso_nw.configura_caso(c, ano, mes, rv, self._configuracoes)
+                caso_nw.configura_caso(c, ano, mes, rv, Configuracoes())
                 self._casos.append(caso_nw)
                 return True
-            elif self._configuracoes._nome_diretorio_decomp == diretorio_prog:
+            elif Configuracoes()._nome_diretorio_decomp == diretorio_prog:
                 caso_dcp = CasoDECOMP()
-                caso_dcp.configura_caso(c, ano, mes, rv, self._configuracoes)
+                caso_dcp.configura_caso(c, ano, mes, rv, Configuracoes())
                 self._casos.append(caso_dcp)
                 return True
             else:

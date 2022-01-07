@@ -5,6 +5,7 @@ from idecomp.decomp.sumario import Sumario
 from idecomp.decomp.inviabunic import InviabUnic
 
 from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
+from encadeador.modelos.configuracoes import Configuracoes
 
 
 class AvaliadorCaso:
@@ -84,7 +85,7 @@ class AvaliadorDECOMP(AvaliadorCaso):
                                   if "Estágio" in c]) + 1
                 invs = inviab.inviabilidades_simulacao_final
                 inviabs_primeiro_mes = invs.loc[invs["Estágio"] != n_estagios, :]
-                if (self._caso.configuracoes.flexibiliza_deficit
+                if (Configuracoes().flexibiliza_deficit
                         and not inviabs_primeiro_mes.empty):
                     return False
             self._log.info(f"Caso concluído com sucesso: {self._caso.nome}")

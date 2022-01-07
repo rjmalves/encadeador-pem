@@ -12,14 +12,12 @@ from encadeador.controladores.sintetizadorestudo import SintetizadorEstudo
 class App:
 
     def __init__(self,
-                 cfg: Configuracoes,
                  log: Logger) -> None:
-        self._cfg = cfg
         self._log = log
         self._arvore: ArvoreCasos = None  # type: ignore
 
     def __constroi_arvore_casos(self) -> ArvoreCasos:
-        self._arvore = ArvoreCasos(self._cfg, self._log)
+        self._arvore = ArvoreCasos(self._log)
         self._arvore.le_arquivo_casos()
         if not self._arvore.constroi_casos():
             self._log.error("Erro na construção dos casos")
@@ -41,7 +39,7 @@ class App:
                                 f" < ({indice_ult_nw}, {indice_ult_dc})")
                 raise RuntimeError()
 
-        self._log.info(f"Iniciando Encadeador - {self._cfg.nome_estudo}")
+        self._log.info(f"Iniciando Encadeador - {Configuracoes().nome_estudo}")
         sucesso = True
         try:
             self.__constroi_arvore_casos()
@@ -51,7 +49,7 @@ class App:
                 raise RuntimeError()
             # Refaz a síntese como estão as coisas
             while not self._arvore.terminou:
-                chdir(self._cfg.caminho_base_estudo)
+                chdir(Configuracoes().caminho_base_estudo)
                 prox = self._arvore.proximo_caso
                 if prox is None:
                     raise RuntimeError()
@@ -63,8 +61,7 @@ class App:
                 verifica_ordenacao_casos(prox, ult_nw, ult_dc)
                 # Salva o caso a ser executado na raiz do estudo
                 # para visualização
-                SintetizadorEstudo.sintetiza_proximo_caso(prox,
-                                                          self._cfg)
+                SintetizadorEstudo.sintetiza_proximo_caso(prox)
                 executor.executa_e_monitora_caso(self._arvore.casos_concluidos,
                                                  ult_nw)
                 # Faz a síntese do estudo

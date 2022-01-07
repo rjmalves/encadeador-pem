@@ -15,7 +15,6 @@ class Caso:
     """
     def __init__(self,) -> None:
         self._dados: DadosCaso = None  # type: ignore
-        self._configuracoes: Configuracoes = None  # type: ignore
 
     @staticmethod
     def factory(prog: str) -> 'Caso':
@@ -31,8 +30,7 @@ class Caso:
                        caminho: str,
                        ano: int,
                        mes: int,
-                       revisao: int,
-                       cfg: Configuracoes):
+                       revisao: int):
         pass
 
     @abstractmethod
@@ -84,20 +82,16 @@ class Caso:
         self._dados.adiciona_flexibilizacao()
 
     def recupera_caso_dos_dados(self,
-                                dados: DadosCaso,
-                                cfg: Configuracoes):
+                                dados: DadosCaso):
         self._dados = dados
-        self._configuracoes = cfg
 
-    @staticmethod
-    def _verifica_caso_configurado(valor):
-        if valor is None:
+    def _verifica_caso_configurado(self):
+        if self._dados is None:
             raise ValueError("Caso não configurado!")
-        return valor
 
     @property
     def caminho(self) -> str:
-        Caso._verifica_caso_configurado(self._dados)
+        self._verifica_caso_configurado()
         return self._dados.caminho
 
     @caminho.setter
@@ -106,13 +100,8 @@ class Caso:
 
     @property
     def nome(self) -> str:
-        Caso._verifica_caso_configurado(self._dados)
+        self._verifica_caso_configurado()
         return self._dados.nome
-
-    @property
-    def configuracoes(self) -> Configuracoes:
-        Caso._verifica_caso_configurado(self._configuracoes)
-        return self._configuracoes
 
     @property
     def instante_entrada_fila(self) -> float:
@@ -128,7 +117,7 @@ class Caso:
 
     @property
     def tempo_fila(self) -> float:
-        Caso._verifica_caso_configurado(self._dados)
+        self._verifica_caso_configurado()
         if self.instante_entrada_fila == 0:
             t_fila = 0.
         elif self.instante_inicio_execucao == 0:
@@ -140,7 +129,7 @@ class Caso:
 
     @property
     def tempo_execucao(self) -> float:
-        Caso._verifica_caso_configurado(self._dados)
+        self._verifica_caso_configurado()
         if self.instante_inicio_execucao == 0:
             t_exec = 0.
         elif self.instante_fim_execucao == 0:
@@ -152,37 +141,37 @@ class Caso:
 
     @property
     def ano(self) -> int:
-        Caso._verifica_caso_configurado(self._dados)
+        self._verifica_caso_configurado()
         return self._dados.ano
 
     @property
     def mes(self) -> int:
-        Caso._verifica_caso_configurado(self._dados)
+        self._verifica_caso_configurado()
         return self._dados.mes
 
     @property
     def revisao(self) -> int:
-        Caso._verifica_caso_configurado(self._dados)
+        self._verifica_caso_configurado()
         return self._dados.revisao
 
     @property
     def numero_tentativas(self) -> int:
-        Caso._verifica_caso_configurado(self._dados)
+        self._verifica_caso_configurado()
         return self._dados.numero_tentativas
 
     @property
     def numero_processadores(self) -> int:
-        Caso._verifica_caso_configurado(self._dados)
+        self._verifica_caso_configurado()
         return self._dados.numero_processadores
 
     @property
     def sucesso(self) -> bool:
-        Caso._verifica_caso_configurado(self._dados)
+        self._verifica_caso_configurado()
         return self._dados.sucesso
 
     @property
     def numero_flexibilizacoes(self) -> int:
-        Caso._verifica_caso_configurado(self._dados)
+        self._verifica_caso_configurado()
         return self._dados.numero_flexibilizacoes
 
     @property
@@ -200,9 +189,7 @@ class CasoNEWAVE(Caso):
                        caminho: str,
                        ano: int,
                        mes: int,
-                       revisao: int,
-                       cfg: Configuracoes):
-        self._configuracoes = cfg
+                       revisao: int):
         nome = self._constroi_nome_caso(ano, mes, revisao)
         procs = self._obtem_numero_processadores()
         self._dados = DadosCaso.obtem_dados_do_caso("NEWAVE",
@@ -216,9 +203,9 @@ class CasoNEWAVE(Caso):
     def _obtem_numero_processadores(self) -> int:
         # TODO - Ler o dger.dat e conferir as restrições de número
         # de processadores (séries forward)
-        minimo = self.configuracoes.processadores_minimos_newave
-        maximo = self.configuracoes.processadores_maximos_newave
-        ajuste = self.configuracoes.ajuste_processadores_newave
+        minimo = Configuracoes().processadores_minimos_newave
+        maximo = Configuracoes().processadores_maximos_newave
+        ajuste = Configuracoes().ajuste_processadores_newave
         num_proc = minimo
         if ajuste:
             num_proc = maximo
@@ -228,7 +215,7 @@ class CasoNEWAVE(Caso):
                             ano: int,
                             mes: int,
                             revisao: int) -> str:
-        return f"{self.configuracoes.nome_estudo} - NW {mes}/{ano}"
+        return f"{Configuracoes().nome_estudo} - NW {mes}/{ano}"
 
 
 class CasoDECOMP(Caso):
@@ -240,9 +227,7 @@ class CasoDECOMP(Caso):
                        caminho: str,
                        ano: int,
                        mes: int,
-                       revisao: int,
-                       cfg: Configuracoes):
-        self._configuracoes = cfg
+                       revisao: int):
         nome = self._constroi_nome_caso(ano, mes, revisao)
         procs = self._obtem_numero_processadores()
         self._dados = DadosCaso.obtem_dados_do_caso("DECOMP",
@@ -256,9 +241,9 @@ class CasoDECOMP(Caso):
     def _obtem_numero_processadores(self) -> int:
         # TODO - Ler o dadger.rvX e conferir as restrições de número
         # de processadores (séries do 2º mês)
-        minimo = self.configuracoes.processadores_minimos_decomp
-        maximo = self.configuracoes.processadores_maximos_decomp
-        ajuste = self.configuracoes.ajuste_processadores_decomp
+        minimo = Configuracoes().processadores_minimos_decomp
+        maximo = Configuracoes().processadores_maximos_decomp
+        ajuste = Configuracoes().ajuste_processadores_decomp
         num_proc = minimo
         if ajuste:
             num_proc = maximo
@@ -268,5 +253,5 @@ class CasoDECOMP(Caso):
                             ano: int,
                             mes: int,
                             revisao: int) -> str:
-        return (f"{self.configuracoes.nome_estudo} - DC" +
+        return (f"{Configuracoes().nome_estudo} - DC" +
                 f" {mes}/{ano} rv{revisao}")

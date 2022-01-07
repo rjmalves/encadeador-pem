@@ -7,6 +7,7 @@ from idecomp.decomp.hidr import Hidr
 from idecomp.decomp.relato import Relato
 
 from encadeador.modelos.caso import Caso, CasoDECOMP
+from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.inviabilidade import Inviabilidade
 from encadeador.modelos.regraflexibilizacao import RegraFlexibilizacao
 
@@ -42,7 +43,7 @@ class FlexibilizadorDECOMP(Flexibilizador):
         super().__init__(caso, log)
 
     def flexibiliza(self) -> bool:
-        max_flex = self._caso.configuracoes.maximo_flexibilizacoes_revisao
+        max_flex = Configuracoes().maximo_flexibilizacoes_revisao
         self._caso.adiciona_flexibilizacao()
         self._log.info(f"Flexibilizando caso {self._caso.nome}: " +
                        f"{self._caso.numero_flexibilizacoes } de {max_flex}")
@@ -69,7 +70,7 @@ class FlexibilizadorDECOMP(Flexibilizador):
                 inviabilidades.append(inv)
             self._log.info("Inviabilidades processadas com sucesso")
             # Cria a regra de flexibilização
-            metodo_flex = self._caso.configuracoes.metodo_flexibilizacao
+            metodo_flex = Configuracoes().metodo_flexibilizacao
             regra = RegraFlexibilizacao.factory(metodo_flex, self._log)
             # Flexibiliza
             regra.flexibiliza(dadger, inviabilidades)

@@ -6,6 +6,7 @@ from typing import List
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 from encadeador.controladores.encadeadorcaso import Encadeador
 from encadeador.controladores.sintetizadorcaso import SintetizadorNEWAVE
+from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.utils.terminal import converte_codificacao
 from inewave.newave import DGer, Arquivos, CVAR  # type: ignore
 from idecomp.decomp.dadger import Dadger
@@ -54,28 +55,28 @@ class PreparadorNEWAVE(PreparadorCaso):
 
     def prepara_caso(self,
                      **kwargs) -> bool:
-        script = self.caso._configuracoes.script_converte_codificacao
+        script = Configuracoes().script_converte_codificacao
         converte_codificacao(self.caso.caminho, script)
         self._log.info(f"Preparando caso do NEWAVE: {self.caso.nome}")
         try:
             # Adequa o nome do caso
-            nome_estudo = self.caso.configuracoes.nome_estudo
+            nome_estudo = Configuracoes().nome_estudo
             ano = self.caso.ano
             mes = self.caso.mes
             dger = DGer.le_arquivo(self.caso.caminho)
             self._log.info("DGer lido com sucesso")
             dger.nome_caso = f"{nome_estudo} - NW {mes}/{ano}"
-            if self.caso._configuracoes.adequa_decks_newave:
+            if Configuracoes().adequa_decks_newave:
                 self._log.info(f"Adequando caso do NEWAVE: {self.caso.nome}")
                 # Adequa parâmetros de CVAR
                 cvar = CVAR.le_arquivo(self.caso.caminho)
                 self._log.info("CVAR lido com sucesso")
-                par_cvar = self.caso._configuracoes.cvar
+                par_cvar = Configuracoes().cvar
                 self._log.info(f"Valores de CVAR alterados: {par_cvar}")
                 cvar.valores_constantes = par_cvar
                 cvar.escreve_arquivo(self.caso.caminho)
                 # Adequa opção do PAR(p)-A
-                opcao_parpa = self.caso._configuracoes.opcao_parpa
+                opcao_parpa = Configuracoes().opcao_parpa
                 dger.afluencia_anual_parp = opcao_parpa
                 self._log.info(f"Opção do PAR(p)-A alterada: {opcao_parpa}")
             # Salva o dger de entrada
@@ -115,13 +116,13 @@ class PreparadorDECOMP(PreparadorCaso):
                      **kwargs) -> bool:
         self._log.info(f"Preparando caso do DECOMP: {self.caso.nome}")
         try:
-            script = self.caso._configuracoes.script_converte_codificacao
+            script = Configuracoes().script_converte_codificacao
             converte_codificacao(self.caso.caminho, script)
             dadger = Dadger.le_arquivo(self.caso.caminho,
                                        f"dadger.rv{self.caso.revisao}")
             self._log.info("Dadger lido com sucesso")
             # Adequa registro TE
-            nome_estudo = self.caso.configuracoes.nome_estudo
+            nome_estudo = Configuracoes().nome_estudo
             ano = self.caso.ano
             mes = self.caso.mes
             rv = self.caso.revisao
@@ -143,15 +144,15 @@ class PreparadorDECOMP(PreparadorCaso):
                                                arq.cortesh)
             dadger.fc("NEWCUT").caminho = join(caso_cortes.caminho,
                                                arq.cortes)
-            if self.caso._configuracoes.adequa_decks_decomp:
+            if Configuracoes().adequa_decks_decomp:
                 self._log.info(f"Adequando caso do DECOMP: {self.caso.nome}")
                 # Adequa registro NI
-                n_iter = self.caso.configuracoes.maximo_iteracoes_decomp
+                n_iter = Configuracoes().maximo_iteracoes_decomp
                 dadger.ni.iteracoes = n_iter
                 # Adequa registro GP
                 # TODO
                 # Prevenção de Gap Negativo
-                if self.caso._configuracoes.previne_gap_negativo:
+                if Configuracoes().previne_gap_negativo:
                     # Se não tem RT DESVIO, cria
                     try:
                         dadger.rt("DESVIO")

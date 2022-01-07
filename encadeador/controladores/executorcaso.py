@@ -11,6 +11,7 @@ from encadeador.controladores.preparadorcaso import PreparadorCaso
 from encadeador.controladores.monitorcaso import MonitorCaso
 from encadeador.controladores.sintetizadorcaso import SintetizadorCaso
 from encadeador.controladores.sintetizadorcaso import SintetizadorNEWAVE
+from encadeador.modelos.configuracoes import Configuracoes
 
 
 class ExecutorCaso:
@@ -120,7 +121,7 @@ class ExecutorDECOMP(ExecutorCaso):
             raise RuntimeError()
 
         while not self._caso.sucesso:
-            max_flex = self._caso.configuracoes.maximo_flexibilizacoes_revisao
+            max_flex = Configuracoes().maximo_flexibilizacoes_revisao
             if self._caso.numero_flexibilizacoes >= max_flex:
                 self._log.error("Máximo de flexibilizações atingido" +
                                 f" no DC {self._caso.nome}")

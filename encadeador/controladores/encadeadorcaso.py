@@ -16,6 +16,7 @@ from inewave.newave import Term
 from inewave.config import MESES_DF
 
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
+from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.utils.terminal import converte_codificacao
 
 
@@ -310,7 +311,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
     def encadeia(self) -> bool:
         self._log.info(f"Encadeando casos: {self._caso_anterior.nome} -> " +
                        f"{self._caso_atual.nome}")
-        v = self._caso_atual.configuracoes.variaveis_encadeadas
+        v = Configuracoes().variaveis_encadeadas
         if "EARM" in v:
             self.__encadeia_earm()
         if "ENA" in v:
@@ -374,7 +375,7 @@ class EncadeadorDECOMPDECOMP(Encadeador):
                                    arq_relato)
         volumes = relato.volume_util_reservatorios
         # Lê o dadger do DC atual
-        conv = self._caso_atual.configuracoes.script_converte_codificacao
+        conv = Configuracoes().script_converte_codificacao
         converte_codificacao(self._caso_atual.caminho,
                              conv)
         arq_dadger = f"dadger.rv{self._caso_atual.revisao}"
@@ -410,7 +411,7 @@ class EncadeadorDECOMPDECOMP(Encadeador):
                                    arq_relato)
         relatorio = relato.relatorio_operacao_uhe
         # Lê o dadger do DC atual
-        conv = self._caso_atual.configuracoes.script_converte_codificacao
+        conv = Configuracoes().script_converte_codificacao
         converte_codificacao(self._caso_atual.caminho,
                              conv)
         arq_dadger = f"dadger.rv{self._caso_atual.revisao}"
@@ -492,7 +493,7 @@ class EncadeadorDECOMPDECOMP(Encadeador):
     def encadeia(self) -> bool:
         self._log.info(f"Encadeando casos: {self._caso_anterior.nome} -> " +
                        f"{self._caso_atual.nome}")
-        v = self._caso_atual.configuracoes.variaveis_encadeadas
+        v = Configuracoes().variaveis_encadeadas
         if "EARM" in v:
             self.__encadeia_earm()
         if "TVIAGEM" in v:

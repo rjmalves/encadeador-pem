@@ -5,8 +5,10 @@ from abc import abstractmethod
 import re
 from typing import List
 
+from encadeador.utils.singleton import Singleton
 
-class Configuracoes:
+
+class Configuracoes(metaclass=Singleton):
     """
     Configurações gerais para execução de um estudo
     encadeado NEWAVE/DECOMP.

@@ -7,6 +7,7 @@ import time
 from encadeador.controladores.avaliadorcaso import AvaliadorCaso
 
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
+from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.estadojob import EstadoJob
 from encadeador.controladores.gerenciadorfila import GerenciadorFila
 from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
@@ -26,7 +27,7 @@ class MonitorCaso:
                  log: Logger):
         self._caso = caso
         self._log = log
-        g = caso.configuracoes.gerenciador_fila
+        g = Configuracoes().gerenciador_fila
         self._gerenciador = GerenciadorFila.factory(g)
         self._armazenador = ArmazenadorCaso(caso, log)
         self._avaliador = AvaliadorCaso.factory(caso, log)
@@ -166,9 +167,8 @@ class MonitorNEWAVE(MonitorCaso):
     # Override
     @property
     def caminho_job(self) -> str:
-        cfg = self.caso.configuracoes
-        dir_base = cfg.diretorio_instalacao_newaves
-        versao = cfg.versao_newave
+        dir_base = Configuracoes().diretorio_instalacao_newaves
+        versao = Configuracoes().versao_newave
         dir_versao = join(dir_base, versao)
         arquivos_versao = listdir(dir_versao)
         arq_job = [a for a in arquivos_versao if ".job" in a]
@@ -197,9 +197,8 @@ class MonitorDECOMP(MonitorCaso):
     # Override
     @property
     def caminho_job(self) -> str:
-        cfg = self.caso.configuracoes
-        dir_base = cfg.diretorio_instalacao_decomps
-        versao = cfg.versao_decomp
+        dir_base = Configuracoes().diretorio_instalacao_decomps
+        versao = Configuracoes().versao_decomp
         dir_versao = join(dir_base, versao)
         arquivos_versao = listdir(dir_versao)
         arq_job = [a for a in arquivos_versao if ".job" in a]
