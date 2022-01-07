@@ -65,7 +65,8 @@ class App:
                 # para visualização
                 SintetizadorEstudo.sintetiza_proximo_caso(prox,
                                                           self._cfg)
-                executor.executa_e_monitora_caso(ult_nw, ult_dc)
+                executor.executa_e_monitora_caso(self._arvore.casos_concluidos,
+                                                 ult_nw)
                 # Faz a síntese do estudo
                 if not sintetizador.sintetiza_estudo():
                     raise RuntimeError()

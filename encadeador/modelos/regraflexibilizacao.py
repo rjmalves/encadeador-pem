@@ -176,7 +176,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             dadger.uh(codigo).evaporacao = False
             self._log.info(f"Flexibilizando EV {max_viol._codigo} " +
                            f" ({max_viol._nome_usina}) - " +
-                           f"Evaporação do registro UH desabilitada.")
+                           "Evaporação do registro UH desabilitada.")
 
     # Override
     def _flexibilizaTI(self,
