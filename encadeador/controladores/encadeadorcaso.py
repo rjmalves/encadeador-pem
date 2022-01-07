@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from logging import Logger
 from typing import List
 import pandas as pd
 import numpy as np
@@ -18,14 +17,14 @@ from inewave.config import MESES_DF
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.utils.terminal import converte_codificacao
+from encadeador.utils.log import Log
 
 
 class Encadeador:
 
     def __init__(self,
                  casos_anteriores: List[Caso],
-                 caso_atual: Caso,
-                 log: Logger):
+                 caso_atual: Caso):
 
         def __decomp_anterior():
             return [c for c in reversed(casos_anteriores)
@@ -34,20 +33,16 @@ class Encadeador:
         self._casos_anteriores = casos_anteriores
         self._caso_anterior = __decomp_anterior()
         self._caso_atual = caso_atual
-        self._log = log
 
     @staticmethod
     def factory(casos_anteriores: List[Caso],
-                caso_atual: Caso,
-                log: Logger) -> 'Encadeador':
+                caso_atual: Caso) -> 'Encadeador':
         if isinstance(caso_atual, CasoDECOMP):
             return EncadeadorDECOMPDECOMP(casos_anteriores,
-                                          caso_atual,
-                                          log)
+                                          caso_atual)
         elif isinstance(caso_atual, CasoNEWAVE):
             return EncadeadorDECOMPNEWAVE(casos_anteriores,
-                                          caso_atual,
-                                          log)
+                                          caso_atual)
         else:
             raise TypeError(f"Caso do tipo {type(caso_atual)} " +
                             "não suportado para encadeamento")
@@ -71,9 +66,8 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
 
     def __init__(self,
                  casos_anteriores: List[Caso],
-                 caso_atual: Caso,
-                 log: Logger):
-        super().__init__(casos_anteriores, caso_atual, log)
+                 caso_atual: Caso):
+        super().__init__(casos_anteriores, caso_atual)
 
     def __encadeia_earm(self):
 
@@ -118,7 +112,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
                                            ) -> pd.DataFrame:
             vol = float(volumes.loc[volumes["Número"] == 44,
                                     __coluna_para_encadear()])
-            self._log.info(f"Caso especial de I. Solteira Equiv: {vol} %")
+            Log.log().info(f"Caso especial de I. Solteira Equiv: {vol} %")
             usinas.loc[usinas["Número"] == 34,
                        "Volume Inicial"] = vol
             usinas.loc[usinas["Número"] == 43,
@@ -135,7 +129,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             # TODO - implementar para maior precisão
             pass
 
-        self._log.info("Encadeando EARM")
+        Log.log().info("Encadeando EARM")
         # Lê o relato do DC
         # TODO - tratar casos de arquivos não encontrados
         arq_relato = f"relato.rv{self._caso_anterior.revisao}"
@@ -157,7 +151,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
                                     __coluna_para_encadear()])
             if num_dc == 251:
                 vol_fict = __correcao_serra_mesa_ficticia(vol)
-                self._log.info("Correção de Serra da Mesa fictícia: " +
+                Log.log().info("Correção de Serra da Mesa fictícia: " +
                                f"{vol} -> {vol_fict}")
                 usinas.loc[usinas["Número"] == 291,
                            "Volume Inicial"] = vol_fict
@@ -216,7 +210,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         if self._caso_atual.revisao == 0:
             return
         # Senão, encadeia ENA
-        self._log.info("Encadeando ENA")
+        Log.log().info("Encadeando ENA")
         mes_caso = self._caso_atual.mes
         ultimo_newave = self.newaves_anteriores[-1]
         ultimo_decomp = self.decomps_anteriores[-1]
@@ -239,7 +233,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         eafpast.escreve_arquivo(self._caso_atual.caminho)
 
     def __encadeia_gnl(self):
-        self._log.info("Encadeando GNL")
+        Log.log().info("Encadeando GNL")
 
         ultimo_rv0 = None
         for c in reversed(self._casos_anteriores):
@@ -247,7 +241,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
                 ultimo_rv0 = c
                 break
         if ultimo_rv0 is None:
-            self._log.error("Último NW rv0 não encontrado para " +
+            Log.log().error("Último NW rv0 não encontrado para " +
                             "encadeamento de GNL")
             raise RuntimeError()
         # Lê o AdTerm do caso atual
@@ -281,7 +275,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
                 ultimo_dc = c
                 break
         if ultimo_dc is None:
-            self._log.error("Último DC não encontrado para " +
+            Log.log().error("Último DC não encontrado para " +
                             "encadeamento de GNL")
             raise RuntimeError()
         nome_rel = f"relgnl.rv{ultimo_dc.revisao}"
@@ -309,7 +303,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         adterm.escreve_arquivo(self._caso_atual.caminho)
 
     def encadeia(self) -> bool:
-        self._log.info(f"Encadeando casos: {self._caso_anterior.nome} -> " +
+        Log.log().info(f"Encadeando casos: {self._caso_anterior.nome} -> " +
                        f"{self._caso_atual.nome}")
         v = Configuracoes().variaveis_encadeadas
         if "EARM" in v:
@@ -325,12 +319,11 @@ class EncadeadorDECOMPDECOMP(Encadeador):
 
     def __init__(self,
                  casos_anteriores: List[Caso],
-                 caso_atual: Caso,
-                 log: Logger):
-        super().__init__(casos_anteriores, caso_atual, log)
+                 caso_atual: Caso):
+        super().__init__(casos_anteriores, caso_atual)
 
     def __encadeia_earm(self):
-        self._log.info("Encadeando EARM")
+        Log.log().info("Encadeando EARM")
 
         def __separou_ilha_solteira_equiv(volumes: pd.DataFrame,
                                           dadger: Dadger) -> bool:
@@ -364,7 +357,7 @@ class EncadeadorDECOMPDECOMP(Encadeador):
                                            dadger: Dadger):
             vol = float(volumes.loc[volumes["Número"] == 44,
                                     "Estágio 1"])
-            self._log.info(f"Caso especial de I. Solteira Equiv: {vol} %")
+            Log.log().info(f"Caso especial de I. Solteira Equiv: {vol} %")
             dadger.uh(34).volume_inicial = vol
             dadger.uh(43).volume_inicial = vol
 
@@ -403,7 +396,7 @@ class EncadeadorDECOMPDECOMP(Encadeador):
         def __codigos_usinas_tviagem() -> List[int]:
             return [156, 162]
 
-        self._log.info("Encadeando TVIAGEM")
+        Log.log().info("Encadeando TVIAGEM")
         # Lê o relato do DC anterior
         # TODO - tratar casos de arquivos não encontrados
         arq_relato = f"relato.rv{self._caso_anterior.revisao}"
@@ -432,7 +425,7 @@ class EncadeadorDECOMPDECOMP(Encadeador):
                                arq_dadger)
 
     def __encadeia_gnl(self):
-        self._log.info("Encadeando GNL")
+        Log.log().info("Encadeando GNL")
 
         # Lê o DadGNL do decomp atual
         nome_dad = f"dadgnl.rv{self._caso_atual.revisao}"
@@ -444,7 +437,7 @@ class EncadeadorDECOMPDECOMP(Encadeador):
                 ultimo_dc = c
                 break
         if ultimo_dc is None:
-            self._log.error("Último DC não encontrado para " +
+            Log.log().error("Último DC não encontrado para " +
                             "encadeamento de GNL")
             raise RuntimeError()
         nome_rel = f"relgnl.rv{ultimo_dc.revisao}"
@@ -491,7 +484,7 @@ class EncadeadorDECOMPDECOMP(Encadeador):
         dad.escreve_arquivo(self._caso_atual.caminho, nome_dad)
 
     def encadeia(self) -> bool:
-        self._log.info(f"Encadeando casos: {self._caso_anterior.nome} -> " +
+        Log.log().info(f"Encadeando casos: {self._caso_anterior.nome} -> " +
                        f"{self._caso_atual.nome}")
         v = Configuracoes().variaveis_encadeadas
         if "EARM" in v:

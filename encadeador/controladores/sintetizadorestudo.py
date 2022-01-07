@@ -1,5 +1,4 @@
 from os.path import join
-from logging import Logger
 from typing import Optional
 import time
 import pandas as pd  # type: ignore
@@ -11,6 +10,7 @@ from encadeador.modelos.arvorecasos import ArvoreCasos
 from encadeador.modelos.dadosestudo import DadosEstudo
 from encadeador.modelos.dadoscaso import INTERVALO_RETRY_ESCRITA
 from encadeador.modelos.dadoscaso import MAX_RETRY_ESCRITA
+from encadeador.utils.log import Log
 
 ARQUIVO_PROXIMO_CASO = "proximo_caso.csv"
 ARQUIVO_RESUMO_ESTADOS = "estudo_encadeado.csv"
@@ -24,10 +24,8 @@ ARQUIVO_INVIABILIDADES_DECOMPS = "inviabilidades_decomps.csv"
 class SintetizadorEstudo:
 
     def __init__(self,
-                 arvore: ArvoreCasos,
-                 log: Logger) -> None:
+                 arvore: ArvoreCasos) -> None:
         self._arvore = arvore
-        self._log = log
 
     @staticmethod
     def sintetiza_proximo_caso(caso: Optional[Caso]):
@@ -54,7 +52,7 @@ class SintetizadorEstudo:
                            "encadeado.")
 
     def sintetiza_estudo(self) -> bool:
-        self._log.info("Sintetizando dados do estudo encadeado")
+        Log.log().info("Sintetizando dados do estudo encadeado")
         num_retry = 0
         while num_retry < MAX_RETRY_ESCRITA:
             try:
@@ -82,15 +80,15 @@ class SintetizadorEstudo:
             except OSError as e:
                 num_retry += 1
                 time.sleep(INTERVALO_RETRY_ESCRITA)
-                self._log.warning(f"Retry na síntese do estudo: {e}")
+                Log.log().warning(f"Retry na síntese do estudo: {e}")
                 continue
             except BlockingIOError as e:
                 num_retry += 1
                 time.sleep(INTERVALO_RETRY_ESCRITA)
-                self._log.warning(f"Retry na síntese do estudo: {e}")
+                Log.log().warning(f"Retry na síntese do estudo: {e}")
                 continue
             except Exception as e:
-                self._log.error(f"Erro na síntese do estudo: {e}")
+                Log.log().error(f"Erro na síntese do estudo: {e}")
                 break
-        self._log.info("Erro na síntese do estudo encadeado")
+        Log.log().info("Erro na síntese do estudo encadeado")
         return False

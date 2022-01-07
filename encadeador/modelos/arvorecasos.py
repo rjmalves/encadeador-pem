@@ -1,4 +1,3 @@
-from logging import Logger
 from os import listdir, sep
 from typing import List, Optional
 from os.path import isdir, join, normpath
@@ -6,13 +5,12 @@ from os.path import isdir, join, normpath
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
+from encadeador.utils.log import Log
 
 
 class ArvoreCasos:
 
-    def __init__(self,
-                 log: Logger) -> None:
-        self._log = log
+    def __init__(self) -> None:
         self._diretorios_revisoes: List[str] = []
         self._diretorios_casos: List[str] = []
         self._casos: List[Caso] = []
@@ -67,13 +65,12 @@ class ArvoreCasos:
                 self._casos.append(caso_dcp)
                 return True
             else:
-                self._log.error(f"Diretório inválido: {diretorio_prog}")
+                Log.log().error(f"Diretório inválido: {diretorio_prog}")
                 return False
 
         for c in self._diretorios_casos:
             try:
-                caso = ArmazenadorCaso.recupera_caso(self._configuracoes,
-                                                     c)
+                caso = ArmazenadorCaso.recupera_caso(c)
                 # TODO - Pensar em como permitir mudanças de diretório
                 # do estudo encadeado, uma vez já concluído.
                 caso.caminho = c

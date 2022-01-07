@@ -1,6 +1,5 @@
 from abc import abstractmethod
 from os.path import join
-from logging import Logger
 from typing import List
 
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
@@ -8,6 +7,7 @@ from encadeador.controladores.encadeadorcaso import Encadeador
 from encadeador.controladores.sintetizadorcaso import SintetizadorNEWAVE
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.utils.terminal import converte_codificacao
+from encadeador.utils.log import Log
 from inewave.newave import DGer, Arquivos, CVAR  # type: ignore
 from idecomp.decomp.dadger import Dadger
 from idecomp.decomp.modelos.dadger import RT
@@ -16,18 +16,15 @@ from idecomp.decomp.modelos.dadger import RT
 class PreparadorCaso:
 
     def __init__(self,
-                 caso: Caso,
-                 log: Logger) -> None:
+                 caso: Caso) -> None:
         self._caso = caso
-        self._log = log
 
     @staticmethod
-    def factory(caso: Caso,
-                log: Logger) -> 'PreparadorCaso':
+    def factory(caso: Caso) -> 'PreparadorCaso':
         if isinstance(caso, CasoNEWAVE):
-            return PreparadorNEWAVE(caso, log)
+            return PreparadorNEWAVE(caso)
         elif isinstance(caso, CasoDECOMP):
-            return PreparadorDECOMP(caso, log)
+            return PreparadorDECOMP(caso)
         else:
             raise ValueError(f"Caso do tipo {type(caso)} não suportado")
 
@@ -49,58 +46,56 @@ class PreparadorCaso:
 class PreparadorNEWAVE(PreparadorCaso):
 
     def __init__(self,
-                 caso: CasoNEWAVE,
-                 log: Logger) -> None:
-        super().__init__(caso, log)
+                 caso: CasoNEWAVE) -> None:
+        super().__init__(caso)
 
     def prepara_caso(self,
                      **kwargs) -> bool:
         script = Configuracoes().script_converte_codificacao
         converte_codificacao(self.caso.caminho, script)
-        self._log.info(f"Preparando caso do NEWAVE: {self.caso.nome}")
+        Log.log().info(f"Preparando caso do NEWAVE: {self.caso.nome}")
         try:
             # Adequa o nome do caso
             nome_estudo = Configuracoes().nome_estudo
             ano = self.caso.ano
             mes = self.caso.mes
             dger = DGer.le_arquivo(self.caso.caminho)
-            self._log.info("DGer lido com sucesso")
+            Log.log().info("DGer lido com sucesso")
             dger.nome_caso = f"{nome_estudo} - NW {mes}/{ano}"
             if Configuracoes().adequa_decks_newave:
-                self._log.info(f"Adequando caso do NEWAVE: {self.caso.nome}")
+                Log.log().info(f"Adequando caso do NEWAVE: {self.caso.nome}")
                 # Adequa parâmetros de CVAR
                 cvar = CVAR.le_arquivo(self.caso.caminho)
-                self._log.info("CVAR lido com sucesso")
+                Log.log().info("CVAR lido com sucesso")
                 par_cvar = Configuracoes().cvar
-                self._log.info(f"Valores de CVAR alterados: {par_cvar}")
+                Log.log().info(f"Valores de CVAR alterados: {par_cvar}")
                 cvar.valores_constantes = par_cvar
                 cvar.escreve_arquivo(self.caso.caminho)
                 # Adequa opção do PAR(p)-A
                 opcao_parpa = Configuracoes().opcao_parpa
                 dger.afluencia_anual_parp = opcao_parpa
-                self._log.info(f"Opção do PAR(p)-A alterada: {opcao_parpa}")
+                Log.log().info(f"Opção do PAR(p)-A alterada: {opcao_parpa}")
             # Salva o dger de entrada
             dger.escreve_arquivo(self.caso.caminho)
-            self._log.info("Adequação do caso concluída com sucesso")
+            Log.log().info("Adequação do caso concluída com sucesso")
             return True
         except FileNotFoundError as e:
-            self._log.error(f"Erro na leitura do deck de entrada: {e}")
+            Log.log().error(f"Erro na leitura do deck de entrada: {e}")
             return False
 
     def encadeia_variaveis(self,
                            casos_anteriores: List[Caso]) -> bool:
         if len(casos_anteriores) == 0:
-            self._log.info(f"Primeiro: {self.caso.nome} - sem encadeamentos")
+            Log.log().info(f"Primeiro: {self.caso.nome} - sem encadeamentos")
             return True
         elif isinstance(casos_anteriores[-1], CasoDECOMP):
-            self._log.info("Encadeando variáveis dos casos " +
+            Log.log().info("Encadeando variáveis dos casos " +
                            f"{casos_anteriores[-1].nome} -> {self.caso.nome}")
             encadeador = Encadeador.factory(casos_anteriores,
-                                            self.caso,
-                                            self._log)
+                                            self.caso)
             return encadeador.encadeia()
         else:
-            self._log.error("Encadeamento NW com NW não suportado. Casos: " +
+            Log.log().error("Encadeamento NW com NW não suportado. Casos: " +
                             f"{casos_anteriores[-1].nome} -> {self.caso.nome}")
             return False
 
@@ -108,19 +103,18 @@ class PreparadorNEWAVE(PreparadorCaso):
 class PreparadorDECOMP(PreparadorCaso):
 
     def __init__(self,
-                 caso: CasoDECOMP,
-                 log: Logger) -> None:
+                 caso: CasoDECOMP) -> None:
         super().__init__(caso, log)
 
     def prepara_caso(self,
                      **kwargs) -> bool:
-        self._log.info(f"Preparando caso do DECOMP: {self.caso.nome}")
+        Log.log().info(f"Preparando caso do DECOMP: {self.caso.nome}")
         try:
             script = Configuracoes().script_converte_codificacao
             converte_codificacao(self.caso.caminho, script)
             dadger = Dadger.le_arquivo(self.caso.caminho,
                                        f"dadger.rv{self.caso.revisao}")
-            self._log.info("Dadger lido com sucesso")
+            Log.log().info("Dadger lido com sucesso")
             # Adequa registro TE
             nome_estudo = Configuracoes().nome_estudo
             ano = self.caso.ano
@@ -131,11 +125,11 @@ class PreparadorDECOMP(PreparadorCaso):
             caso_entrada = kwargs.get("caso_cortes")
             if caso_entrada is None or not isinstance(caso_entrada,
                                                       CasoNEWAVE):
-                self._log.error("Erro na especificação dos cortes da FCF")
+                Log.log().error("Erro na especificação dos cortes da FCF")
                 return False
             caso_cortes: CasoNEWAVE = caso_entrada
             # Verifica se é necessário e extrai os cortes
-            sintetizador = SintetizadorNEWAVE(caso_cortes, self._log)
+            sintetizador = SintetizadorNEWAVE(caso_cortes)
             if not sintetizador.verifica_cortes_extraidos():
                 sintetizador.extrai_cortes()
             # Altera os registros FC
@@ -145,7 +139,7 @@ class PreparadorDECOMP(PreparadorCaso):
             dadger.fc("NEWCUT").caminho = join(caso_cortes.caminho,
                                                arq.cortes)
             if Configuracoes().adequa_decks_decomp:
-                self._log.info(f"Adequando caso do DECOMP: {self.caso.nome}")
+                Log.log().info(f"Adequando caso do DECOMP: {self.caso.nome}")
                 # Adequa registro NI
                 n_iter = Configuracoes().maximo_iteracoes_decomp
                 dadger.ni.iteracoes = n_iter
@@ -170,10 +164,10 @@ class PreparadorDECOMP(PreparadorCaso):
             # Salva o dadger
             dadger.escreve_arquivo(self.caso.caminho,
                                    f"dadger.rv{self.caso.revisao}")
-            self._log.info("Adequação do caso concluída com sucesso")
+            Log.log().info("Adequação do caso concluída com sucesso")
             return True
         except FileNotFoundError as e:
-            self._log.error(f"Erro na leitura do dadger: {e}")
+            Log.log().error(f"Erro na leitura do dadger: {e}")
             return False
 
     def encadeia_variaveis(self,
@@ -184,18 +178,17 @@ class PreparadorDECOMP(PreparadorCaso):
                     if isinstance(c, CasoDECOMP)]
 
         if len(__decomps_anteriores()) == 0:
-            self._log.info(f"Primeiro: {self.caso.nome} - sem encadeamentos")
+            Log.log().info(f"Primeiro: {self.caso.nome} - sem encadeamentos")
             return True
         elif isinstance(__decomps_anteriores()[0], CasoDECOMP):
-            self._log.info("Encadeando variáveis dos casos " +
+            Log.log().info("Encadeando variáveis dos casos " +
                            f"{__decomps_anteriores()[0].nome}" +
                            f" -> {self.caso.nome}")
             encadeador = Encadeador.factory(casos_anteriores,
-                                            self.caso,
-                                            self._log)
+                                            self.caso)
             return encadeador.encadeia()
         else:
-            self._log.error("Encadeamento NW com DC não suportado. Casos: " +
+            Log.log().error("Encadeamento NW com DC não suportado. Casos: " +
                             f"{__decomps_anteriores()[0].nome}" +
                             f" -> {self.caso.nome}")
             return False

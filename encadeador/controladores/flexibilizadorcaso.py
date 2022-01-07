@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from logging import Logger
 from typing import List
 from idecomp.decomp.inviabunic import InviabUnic
 from idecomp.decomp.dadger import Dadger
@@ -10,22 +9,19 @@ from encadeador.modelos.caso import Caso, CasoDECOMP
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.inviabilidade import Inviabilidade
 from encadeador.modelos.regraflexibilizacao import RegraFlexibilizacao
+from encadeador.utils.log import Log
 
 
 class Flexibilizador:
 
     def __init__(self,
-                 caso: Caso,
-                 log: Logger):
+                 caso: Caso):
         self._caso = caso
-        self._log = log
 
     @staticmethod
-    def factory(caso: Caso,
-                log: Logger) -> 'Flexibilizador':
+    def factory(caso: Caso) -> 'Flexibilizador':
         if isinstance(caso, CasoDECOMP):
-            return FlexibilizadorDECOMP(caso,
-                                        log)
+            return FlexibilizadorDECOMP(caso)
         else:
             raise TypeError(f"Caso do tipo {type(caso)} " +
                             "não suportado para encadeamento")
@@ -38,27 +34,26 @@ class Flexibilizador:
 class FlexibilizadorDECOMP(Flexibilizador):
 
     def __init__(self,
-                 caso: Caso,
-                 log: Logger):
-        super().__init__(caso, log)
+                 caso: Caso):
+        super().__init__(caso)
 
     def flexibiliza(self) -> bool:
         max_flex = Configuracoes().maximo_flexibilizacoes_revisao
         self._caso.adiciona_flexibilizacao()
-        self._log.info(f"Flexibilizando caso {self._caso.nome}: " +
+        Log.log().info(f"Flexibilizando caso {self._caso.nome}: " +
                        f"{self._caso.numero_flexibilizacoes } de {max_flex}")
         try:
             # Lê o inviab_unic.rvX
             arq_inviab = f"inviab_unic.rv{self._caso.revisao}"
             inviab = InviabUnic.le_arquivo(self._caso.caminho, arq_inviab)
-            self._log.info(f"Arquivo {arq_inviab} lido com sucesso")
+            Log.log().info(f"Arquivo {arq_inviab} lido com sucesso")
             # Lê o dadger.rvX
             arq_dadger = f"dadger.rv{self._caso.revisao}"
             dadger = Dadger.le_arquivo(self._caso.caminho, arq_dadger)
-            self._log.info(f"Arquivo {arq_dadger} lido com sucesso")
+            Log.log().info(f"Arquivo {arq_dadger} lido com sucesso")
             # Lê o hidr.dat
             hidr = Hidr.le_arquivo(self._caso.caminho)
-            self._log.info("Arquivo hidr.dat lido com sucesso")
+            Log.log().info("Arquivo hidr.dat lido com sucesso")
             # Lê o relato.rvX
             arq_relato = f"relato.rv{self._caso.revisao}"
             relato = Relato.le_arquivo(self._caso.caminho, arq_relato)
@@ -66,19 +61,19 @@ class FlexibilizadorDECOMP(Flexibilizador):
             inviabilidades: List[Inviabilidade] = []
             for _, linha in inviab.inviabilidades_simulacao_final.iterrows():
                 inv = Inviabilidade.factory(linha, hidr, relato)
-                self._log.info(inv)
+                Log.log().info(inv)
                 inviabilidades.append(inv)
-            self._log.info("Inviabilidades processadas com sucesso")
+            Log.log().info("Inviabilidades processadas com sucesso")
             # Cria a regra de flexibilização
             metodo_flex = Configuracoes().metodo_flexibilizacao
-            regra = RegraFlexibilizacao.factory(metodo_flex, self._log)
+            regra = RegraFlexibilizacao.factory(metodo_flex)
             # Flexibiliza
             regra.flexibiliza(dadger, inviabilidades)
-            self._log.info("Inviabilidades flexibilizadas")
+            Log.log().info("Inviabilidades flexibilizadas")
             # Escreve o dadger.rvX de saída
             dadger.escreve_arquivo(self._caso.caminho, arq_dadger)
-            self._log.info(f"Arquivo {arq_dadger} escrito com sucesso")
+            Log.log().info(f"Arquivo {arq_dadger} escrito com sucesso")
             return True
         except Exception as e:
-            self._log.error(e)
+            Log.log().error(e)
             return False

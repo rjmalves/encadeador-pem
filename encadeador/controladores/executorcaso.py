@@ -1,6 +1,5 @@
 from abc import abstractmethod
 from os import chdir
-from logging import Logger
 from typing import Optional, List
 
 from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
@@ -12,28 +11,26 @@ from encadeador.controladores.monitorcaso import MonitorCaso
 from encadeador.controladores.sintetizadorcaso import SintetizadorCaso
 from encadeador.controladores.sintetizadorcaso import SintetizadorNEWAVE
 from encadeador.modelos.configuracoes import Configuracoes
+from encadeador.utils.log import Log
 
 
 class ExecutorCaso:
 
     def __init__(self,
-                 caso: Caso,
-                 log: Logger) -> None:
+                 caso: Caso) -> None:
         self._caso = caso
-        self._log = log
-        self._preparador = PreparadorCaso.factory(caso, log)
-        self._monitor = MonitorCaso.factory(caso, log)
-        self._armazenador = ArmazenadorCaso(caso, log)
-        self._sintetizador = SintetizadorCaso.factory(caso, log)
-        self._avaliador = AvaliadorCaso.factory(caso, log)
+        self._preparador = PreparadorCaso.factory(caso)
+        self._monitor = MonitorCaso.factory(caso)
+        self._armazenador = ArmazenadorCaso(caso)
+        self._sintetizador = SintetizadorCaso.factory(caso)
+        self._avaliador = AvaliadorCaso.factory(caso)
 
     @staticmethod
-    def factory(caso: Caso,
-                log: Logger) -> 'ExecutorCaso':
+    def factory(caso: Caso) -> 'ExecutorCaso':
         if isinstance(caso, CasoNEWAVE):
-            return ExecutorNEWAVE(caso, log)
+            return ExecutorNEWAVE(caso)
         elif isinstance(caso, CasoDECOMP):
-            return ExecutorDECOMP(caso, log)
+            return ExecutorDECOMP(caso)
         else:
             raise ValueError(f"Caso do tipo {type(caso)} não suportado")
 
@@ -47,10 +44,8 @@ class ExecutorCaso:
 class ExecutorNEWAVE(ExecutorCaso):
 
     def __init__(self,
-                 caso: CasoNEWAVE,
-                 log: Logger) -> None:
-        super().__init__(caso,
-                         log)
+                 caso: CasoNEWAVE) -> None:
+        super().__init__(caso)
 
     def executa_e_monitora_caso(self,
                                 casos_anteriores: List[Caso],
@@ -60,41 +55,38 @@ class ExecutorNEWAVE(ExecutorCaso):
 
         # Se não é o primeiro NEWAVE, apaga os cortes do último
         if ultimo_newave is not None:
-            sint_ultimo = SintetizadorNEWAVE(ultimo_newave,
-                                             self._log)
+            sint_ultimo = SintetizadorNEWAVE(ultimo_newave)
             if sint_ultimo.verifica_cortes_extraidos():
                 sint_ultimo.deleta_cortes()
 
         if not self._preparador.prepara_caso():
-            self._log.error(f"Erro na preparação do NW {self._caso.nome}")
+            Log.log().error(f"Erro na preparação do NW {self._caso.nome}")
             raise RuntimeError()
         if not self._preparador.encadeia_variaveis(casos_anteriores):
-            self._log.error(f"Erro no encadeamento do NW {self._caso.nome}")
+            Log.log().error(f"Erro no encadeamento do NW {self._caso.nome}")
             raise RuntimeError()
         if not self._monitor.executa_caso():
-            self._log.error(f"Erro na execução do NW {self._caso.nome}")
+            Log.log().error(f"Erro na execução do NW {self._caso.nome}")
             raise RuntimeError()
 
         # Se o NEWAVE não obteve sucesso, está com erro
         if not self._caso.sucesso:
-            self._log.error(f"Erro nas saídas do NW {self._caso.nome}")
+            Log.log().error(f"Erro nas saídas do NW {self._caso.nome}")
             raise RuntimeError()
 
         if not self._sintetizador.sintetiza_caso():
-            self._log.error(f"Erro ao sintetizar caso: {self._caso.nome}")
+            Log.log().error(f"Erro ao sintetizar caso: {self._caso.nome}")
             raise RuntimeError()
         if not self._armazenador.armazena_caso():
-            self._log.error(f"Erro ao armazenar caso: {self._caso.nome}")
+            Log.log().error(f"Erro ao armazenar caso: {self._caso.nome}")
             raise RuntimeError()
 
 
 class ExecutorDECOMP(ExecutorCaso):
 
     def __init__(self,
-                 caso: CasoDECOMP,
-                 log: Logger) -> None:
-        super().__init__(caso,
-                         log)
+                 caso: CasoDECOMP) -> None:
+        super().__init__(caso)
 
     def executa_e_monitora_caso(self,
                                 casos_anteriores: List[Caso],
@@ -103,41 +95,41 @@ class ExecutorDECOMP(ExecutorCaso):
         chdir(self._caso.caminho)
 
         if not self._preparador.prepara_caso(caso_cortes=ultimo_newave):
-            self._log.error(f"Erro na preparação do DC {self._caso.nome}")
+            Log.log().error(f"Erro na preparação do DC {self._caso.nome}")
             raise RuntimeError()
         if not self._preparador.encadeia_variaveis(casos_anteriores):
-            self._log.error(f"Erro no encadeamento do DC {self._caso.nome}")
+            Log.log().error(f"Erro no encadeamento do DC {self._caso.nome}")
             raise RuntimeError()
 
         # Primeira execução: obrigatória
         if not self._monitor.executa_caso():
-            self._log.error(f"Erro na execução do DC {self._caso.nome}")
+            Log.log().error(f"Erro na execução do DC {self._caso.nome}")
             raise RuntimeError()
         if not self._sintetizador.sintetiza_caso():
-            self._log.error(f"Erro ao sintetizar caso: {self._caso.nome}")
+            Log.log().error(f"Erro ao sintetizar caso: {self._caso.nome}")
             raise RuntimeError()
         if not self._armazenador.armazena_caso():
-            self._log.error(f"Erro ao armazenar caso: {self._caso.nome}")
+            Log.log().error(f"Erro ao armazenar caso: {self._caso.nome}")
             raise RuntimeError()
 
         while not self._caso.sucesso:
             max_flex = Configuracoes().maximo_flexibilizacoes_revisao
             if self._caso.numero_flexibilizacoes >= max_flex:
-                self._log.error("Máximo de flexibilizações atingido" +
+                Log.log().error("Máximo de flexibilizações atingido" +
                                 f" no DC {self._caso.nome}")
                 raise RuntimeError()
             # Se ainda pode flexibilizar
-            flexibilizador = Flexibilizador.factory(self._caso, self._log)
+            flexibilizador = Flexibilizador.factory(self._caso)
             if not flexibilizador.flexibiliza():
-                self._log.error("Erro na flexibilização do caso " +
+                Log.log().error("Erro na flexibilização do caso " +
                                 f"{self._caso.nome}")
                 raise RuntimeError()
             if not self._monitor.executa_caso():
-                self._log.error(f"Erro na execução do DC {self._caso.nome}")
+                Log.log().error(f"Erro na execução do DC {self._caso.nome}")
                 raise RuntimeError()
             if not self._sintetizador.sintetiza_caso():
-                self._log.error(f"Erro ao sintetizar caso: {self._caso.nome}")
+                Log.log().error(f"Erro ao sintetizar caso: {self._caso.nome}")
                 raise RuntimeError()
             if not self._armazenador.armazena_caso():
-                self._log.error(f"Erro ao armazenar caso: {self._caso.nome}")
+                Log.log().error(f"Erro ao armazenar caso: {self._caso.nome}")
                 raise RuntimeError()

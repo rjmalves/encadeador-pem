@@ -1,6 +1,5 @@
 from abc import abstractmethod
 from typing import Tuple
-from logging import Logger
 from os.path import join
 from os import listdir
 import time
@@ -11,6 +10,7 @@ from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.estadojob import EstadoJob
 from encadeador.controladores.gerenciadorfila import GerenciadorFila
 from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
+from encadeador.utils.log import Log
 
 
 class MonitorCaso:
@@ -23,22 +23,19 @@ class MonitorCaso:
     TIMEOUT_COMUNICACAO = 1800.0
 
     def __init__(self,
-                 caso: Caso,
-                 log: Logger):
+                 caso: Caso):
         self._caso = caso
-        self._log = log
         g = Configuracoes().gerenciador_fila
         self._gerenciador = GerenciadorFila.factory(g)
-        self._armazenador = ArmazenadorCaso(caso, log)
-        self._avaliador = AvaliadorCaso.factory(caso, log)
+        self._armazenador = ArmazenadorCaso(caso)
+        self._avaliador = AvaliadorCaso.factory(caso)
 
     @staticmethod
-    def factory(caso: Caso,
-                log: Logger) -> 'MonitorCaso':
+    def factory(caso: Caso) -> 'MonitorCaso':
         if isinstance(caso, CasoNEWAVE):
-            return MonitorNEWAVE(caso, log)
+            return MonitorNEWAVE(caso)
         elif isinstance(caso, CasoDECOMP):
-            return MonitorDECOMP(caso, log)
+            return MonitorDECOMP(caso)
         else:
             raise ValueError(f"Caso do tipo {type(caso)} não suportado")
 
@@ -57,7 +54,7 @@ class MonitorCaso:
             raise ValueError(f"Caso {self.caso.nome} com falha" +
                              f"após {self.__class__.MAX_RETRY}" +
                              " tentativas")
-        self._log.info("Reagendando job para o caso:" +
+        Log.log().info("Reagendando job para o caso:" +
                        f" {self.caso.nome}")
         self.caso.coloca_caso_na_fila()
         self._gerenciador.agenda_job(self.caminho_job,
@@ -71,10 +68,10 @@ class MonitorCaso:
         if not iniciado:
             iniciou = True
             self.caso.inicia_caso()
-            self._log.info(f"Iniciando execução do caso: {self.caso.nome}")
+            Log.log().info(f"Iniciando execução do caso: {self.caso.nome}")
         elif (self._gerenciador.tempo_job_idle >
               self.__class__.TIMEOUT_COMUNICACAO):
-            self._log.info(f"Erro de comunicacao no caso: {self.caso.nome}.")
+            Log.log().info(f"Erro de comunicacao no caso: {self.caso.nome}.")
             s = self._gerenciador.deleta_job()
             if not s:
                 raise ValueError("Erro ao deletar o job " +
@@ -83,8 +80,8 @@ class MonitorCaso:
         return retry, iniciou
 
     def _trata_caso_erro(self) -> bool:
-        self._log.error(f"Erro na execução do caso: {self.caso.nome}")
-        self._log.info("Deletando job da fila...")
+        Log.log().error(f"Erro na execução do caso: {self.caso.nome}")
+        Log.log().info("Deletando job da fila...")
         s = self._gerenciador.deleta_job()
         if not s:
             raise ValueError("Erro ao deletar o job " +
@@ -94,7 +91,7 @@ class MonitorCaso:
     def executa_caso(self) -> bool:
         try:
             # Inicia a execução do job
-            self._log.info(f"Agendando job para o caso: {self.caso.nome}")
+            Log.log().info(f"Agendando job para o caso: {self.caso.nome}")
             self.caso.inicializa_parametros_execucao()
             self.caso.coloca_caso_na_fila()
             self._gerenciador.agenda_job(self.caminho_job,
@@ -115,11 +112,11 @@ class MonitorCaso:
                     if ultimo_estado == EstadoJob.EXECUTANDO:
                         sucesso = self._avaliador.avalia()
                         self.caso.finaliza_caso(sucesso)
-                        self._log.info("Finalizada execução do caso " +
+                        Log.log().info("Finalizada execução do caso " +
                                        f"{self.caso.nome}")
                         return True
                     elif iniciou:
-                        self._log.error("Erro na execução do caso" +
+                        Log.log().error("Erro na execução do caso" +
                                         f" {self.caso.nome}")
                         return False
                 elif estado == EstadoJob.ESPERANDO:
@@ -137,10 +134,10 @@ class MonitorCaso:
                     raise ValueError(f"Erro ao armazenar {self.caso.nome}")
                 time.sleep(self.__class__.INTERVALO_POLL)
         except TimeoutError:
-            self._log.error(f"Timeout na execução do caso {self.caso.nome}")
+            Log.log().error(f"Timeout na execução do caso {self.caso.nome}")
             return False
         except ValueError as e:
-            self._log.error(f"Erro na execução do caso {self.caso.nome}: {e}")
+            Log.log().error(f"Erro na execução do caso {self.caso.nome}: {e}")
             return False
 
     @property
@@ -154,9 +151,8 @@ class MonitorNEWAVE(MonitorCaso):
     TIMEOUT_COMUNICACAO = 2400.0
 
     def __init__(self,
-                 caso: CasoNEWAVE,
-                 log: Logger):
-        super().__init__(caso, log)
+                 caso: CasoNEWAVE):
+        super().__init__(caso)
 
     @property
     def caso(self) -> CasoNEWAVE:
@@ -185,8 +181,8 @@ class MonitorDECOMP(MonitorCaso):
     MAX_RETRY = 3
     TIMEOUT_COMUNICACAO = 300.0
 
-    def __init__(self, caso: CasoDECOMP, log: Logger):
-        super().__init__(caso, log)
+    def __init__(self, caso: CasoDECOMP):
+        super().__init__(caso)
 
     @property
     def caso(self) -> CasoDECOMP:
