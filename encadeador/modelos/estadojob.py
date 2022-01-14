@@ -2,12 +2,13 @@ from enum import Enum
 
 
 class EstadoJob(Enum):
-    NAO_INICIADO = "NAO INICIADO"
+    NAO_INICIADO = "NAO_INICIADO"
     ESPERANDO = "ESPERANDO"
     EXECUTANDO = "EXECUTANDO"
     DELETANDO = "DELETANDO"
+    TIMEOUT = "TIMEOUT"
     ERRO = "ERRO"
-    CONCLUIDO = "CONCLUIDO"
+    FINALIZADO = "FINALIZADO"
 
     @staticmethod
     def factory(valor: str) -> 'EstadoJob':

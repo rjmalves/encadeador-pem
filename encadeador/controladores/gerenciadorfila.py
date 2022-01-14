@@ -1,10 +1,11 @@
 from abc import abstractmethod
 from os.path import getmtime, isfile
-from typing import List
+from typing import Callable, List
 import time
 
 from encadeador.modelos.estadojob import EstadoJob
 from encadeador.utils.terminal import executa_terminal
+from encadeador.utils.event import Event
 
 
 class GerenciadorFila:
@@ -12,6 +13,7 @@ class GerenciadorFila:
     Interface base para representação dos gerenciadores de fila
     para execução dos casos no estudo encadeado.
     """
+    TIMEOUT_COMUNICACAO = 1800
     TIMEOUT_DELETE = 120
 
     def __init__(self):
@@ -21,6 +23,8 @@ class GerenciadorFila:
         self._arquivo_stderr = None
         self._comandos = None
         self._respostas = None
+        self._estado_job = EstadoJob.NAO_INICIADO
+        self._mudou_estado = Event()
 
     def __confere_inicializacao(self, valor):
         if valor is None:
@@ -33,6 +37,9 @@ class GerenciadorFila:
             return GerenciadorFilaSGE()
         else:
             raise ValueError(f"Gerenciador de fila '{ger}' não suportado")
+
+    def observa(self, f: Callable):
+        self._mudou_estado.append(f)
 
     @property
     def id_job(self) -> int:
@@ -83,6 +90,21 @@ class GerenciadorFila:
         else:
             return time.time() - getmtime(self.arquivo_stdout)
 
+    @abstractmethod
+    def comando_qsub(self,
+                     caminho_job: str,
+                     nome_job: str,
+                     num_processadores: int) -> List[str]:
+        pass
+
+    @abstractmethod
+    def comando_qstat(self) -> str:
+        pass
+
+    @abstractmethod
+    def comando_qdel(self) -> str:
+        pass
+
     def agenda_job(self,
                    caminho_job: str,
                    nome_job: str,
@@ -105,6 +127,9 @@ class GerenciadorFila:
         self._inicializa_gerenciador()
         return cod == 0
 
+    def deleta_job(self) -> bool:
+        executa_terminal(self.comando_qdel())
+
     @abstractmethod
     def _inicializa_gerenciador(self):
         """
@@ -113,8 +138,66 @@ class GerenciadorFila:
         """
         pass
 
-    @property
     @abstractmethod
+    def _estado_timeout(self, e: str) -> bool:
+        return self
+
+    @abstractmethod
+    def _estado_esperando(self, e: str) -> bool:
+        pass
+
+    @abstractmethod
+    def _estado_executando(self, e: str) -> bool:
+        pass
+
+    @abstractmethod
+    def _estado_deletando(self, e: str) -> bool:
+        pass
+
+    @abstractmethod
+    def _estado_erro(self, e: str) -> bool:
+        pass
+
+    @abstractmethod
+    def _estado_finalizado(self, e: str) -> bool:
+        pass
+
+    def atualiza_estado_job(self):
+
+        def __procura_codigo_estado() -> str:
+            try:
+                cod, saidas = executa_terminal([self.comando_qstat])
+            except TimeoutError as e:
+                raise e
+            if cod != 0:
+                raise ValueError(f"Erro na execução do qstat: código {cod}")
+            estado = ""
+            for linha in saidas[2:]:
+                lin = linha.strip()
+                if lin.split(" ")[0] == "":
+                    break
+                if int(lin.split(" ")[0]) == self.id_job:
+                    estado = linha[34:38].strip()
+                    break
+            return estado
+
+        estado = __procura_codigo_estado()
+        if self._estado_timeout(estado):
+            self.estado_job = EstadoJob.TIMEOUT
+        elif self._estado_erro(estado):
+            self.estado_job = EstadoJob.ERRO
+        elif self._estado_finalizado(estado):
+            self.estado_job = EstadoJob.FINALIZADO
+        elif self._estado_esperando(estado):
+            self.estado_job = EstadoJob.ESPERANDO
+        elif self._estado_executando(estado):
+            self.estado_job = EstadoJob.EXECUTANDO
+        elif self._estado_deletando(estado):
+            self.estado_job = EstadoJob.DELETANDO
+        else:
+            raise ValueError(f"Estado não reconhecido: {estado}")
+
+    @property
     def estado_job(self) -> EstadoJob:
         """
         Retorna uma interpretação do estado do job
@@ -123,25 +206,14 @@ class GerenciadorFila:
         :return: Estado do job no gerenciador de filas.
         :rtype: EstadoJob
         """
-        pass
+        return self._estado_job
 
-    @abstractmethod
-    def deleta_job(self) -> bool:
-        """
-        Solicita a deleção do job no gerenciador de filas
-        e aguarda pela realização.
-
-        :return: Sucesso ou não da deleção do job.
-        :rtype: bool
-        """
-        pass
-
-    @abstractmethod
-    def comando_qsub(self,
-                     caminho_job: str,
-                     nome_job: str,
-                     num_processadores: int) -> List[str]:
-        pass
+    @estado_job.setter
+    def estado_job(self, e: EstadoJob):
+        if self._estado_job == e:
+            return
+        self._estado_job = e
+        self._mudou_estado(e)
 
 
 class GerenciadorFilaSGE(GerenciadorFila):
@@ -167,53 +239,8 @@ class GerenciadorFilaSGE(GerenciadorFila):
         self._arquivo_stdout = f"{self.nome_job}.o{self.id_job}"
         self._arquivo_stderr = f"{self.nome_job}.e{self.id_job}"
 
-    @property
-    def estado_job(self) -> EstadoJob:
-
-        def __procura_codigo_estado(saidas: List[str]):
-            estado = ""
-            for linha in saidas[2:]:
-                lin = linha.strip()
-                if lin.split(" ")[0] == "":
-                    break
-                if int(lin.split(" ")[0]) == self.id_job:
-                    estado = linha[34:38].strip()
-                    break
-            return estado
-
-        # Verificações de erro:
-        try:
-            cod, saidas = executa_terminal(["qstat"])
-        except TimeoutError as e:
-            raise e
-        if cod != 0:
-            raise ValueError(f"Erro na execução do qstat: código {cod}")
-        # Sucesso:
-        estado = __procura_codigo_estado(saidas)
-        if "e" in estado:
-            estadojob = EstadoJob.ERRO
-        elif estado == "qw" or estado == "t" or estado == "q":
-            estadojob = EstadoJob.ESPERANDO
-        elif estado == "r":
-            estadojob = EstadoJob.EXECUTANDO
-        elif estado == "dr" or estado == "d":
-            estadojob = EstadoJob.DELETANDO
-        elif estado == "":
-            estadojob = EstadoJob.NAO_INICIADO
-        else:
-            raise ValueError(f"Estado não reconhecido: {estado}")
-        return estadojob
-
-    def deleta_job(self) -> bool:
-        ti = time.time()
-        while time.time() - ti < GerenciadorFilaSGE.TIMEOUT_DELETE:
-            estado = self.estado_job
-            if estado == EstadoJob.NAO_INICIADO:
-                return True
-            elif estado != EstadoJob.DELETANDO:
-                cod, _ = executa_terminal(["qdel", f"{self.id_job}"])
-            time.sleep(5)
-        return False
+    def comando_qstat(self) -> List[str]:
+        return ["qstat"]
 
     def comando_qsub(self,
                      caminho_job: str,
@@ -230,3 +257,26 @@ class GerenciadorFilaSGE(GerenciadorFila):
                 caminho_job,
                 str(num_processadores)
                 ]
+
+    def comando_qdel(self) -> List[str]:
+        return ["qdel", str(self.id_job)]
+
+    def _estado_timeout(self, e: str) -> bool:
+        return (e == "r" and
+                self.tempo_job_idle >= __class__.TIMEOUT_COMUNICACAO)
+
+    def _estado_esperando(self, e: str) -> bool:
+        return e in ["qw", "t", "q"]
+
+    def _estado_executando(self, e: str) -> bool:
+        return (e == "r" and
+                self.tempo_job_idle < __class__.TIMEOUT_COMUNICACAO)
+
+    def _estado_deletando(self, e: str) -> bool:
+        return e in ["dr", "d"]
+
+    def _estado_erro(self, e: str) -> bool:
+        return "e" in e
+
+    def _estado_finalizado(self, e: str) -> bool:
+        return self.estado_job != EstadoJob.NAO_INICIADO and e == ""
