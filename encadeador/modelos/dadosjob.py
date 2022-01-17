@@ -1,4 +1,5 @@
-import pandas as pd  # type: ignore
+from typing import Dict, Any
+
 
 class DadosJob:
     """
@@ -10,40 +11,25 @@ class DadosJob:
     def __init__(self,
                  id: str,
                  nome: str,
+                 caminho: str,
                  instante_entrada_fila: float,
                  instante_inicio_execucao: float,
                  instante_saida_fila: float,
                  numero_processadores: int) -> None:
         self._id = id
         self._nome = nome
+        self._caminho = caminho
         self._instante_entrada_fila = instante_entrada_fila
         self._instante_inicio_execucao = instante_inicio_execucao
         self._instante_saida_fila = instante_saida_fila
         self._numero_processadores = numero_processadores
 
     @staticmethod
-    def recupera_dados_linha(linha: pd.Series) -> 'DadosJob':
+    def from_json(json_dict: Dict[str, Any]) -> 'DadosJob':
+        return DadosJob(**json_dict)
 
-        return DadosJob(linha["ID"],
-                        linha["Nome"],
-                        linha["Instante Entrada Fila"],
-                        linha["Instante Inicio Execucao"],
-                        linha["Instante Saida Fila"],
-                        linha["Numero Processadores"])
-
-    def resume_dados(self) -> pd.Series:
-        return pd.Series([self._id,
-                          self._nome,
-                          self._instante_entrada_fila,
-                          self._instante_inicio_execucao,
-                          self._instante_saida_fila,
-                          self._numero_processadores],
-                          index=["ID",
-                                 "Nome",
-                                 "Instante Entrada Fila",
-                                 "Instante Inicio Execucao",
-                                 "Instante Saida Fila",
-                                 "Numero Processadores"])
+    def to_json(self) -> Dict[str, Any]:
+        return self.__dict__
 
     @property
     def id(self) -> str:
@@ -56,6 +42,10 @@ class DadosJob:
     @nome.setter
     def nome(self, n: str):
         self._nome = n
+
+    @property
+    def caminho(self, c: str):
+        return self._caminho
 
     @property
     def instante_entrada_fila(self) -> float:
@@ -82,5 +72,9 @@ class DadosJob:
         self._instante_saida_fila = i
 
     @property
-    def numero_processadores(self) -> float:
+    def numero_processadores(self) -> int:
         return self._numero_processadores
+
+    @numero_processadores.setter
+    def numero_processadores(self, n: int):
+        self._numero_processadores = n

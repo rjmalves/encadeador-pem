@@ -104,7 +104,7 @@ class PreparadorDECOMP(PreparadorCaso):
 
     def __init__(self,
                  caso: CasoDECOMP) -> None:
-        super().__init__(caso, log)
+        super().__init__(caso)
 
     def prepara_caso(self,
                      **kwargs) -> bool:

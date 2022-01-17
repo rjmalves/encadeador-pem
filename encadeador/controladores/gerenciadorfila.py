@@ -128,7 +128,8 @@ class GerenciadorFila:
         return cod == 0
 
     def deleta_job(self) -> bool:
-        executa_terminal(self.comando_qdel())
+        cod, _ = executa_terminal(self.comando_qdel())
+        return cod == 0
 
     @abstractmethod
     def _inicializa_gerenciador(self):
@@ -140,7 +141,7 @@ class GerenciadorFila:
 
     @abstractmethod
     def _estado_timeout(self, e: str) -> bool:
-        return self
+        pass
 
     @abstractmethod
     def _estado_esperando(self, e: str) -> bool:
@@ -162,7 +163,7 @@ class GerenciadorFila:
     def _estado_finalizado(self, e: str) -> bool:
         pass
 
-    def atualiza_estado_job(self):
+    def monitora_estado_job(self):
 
         def __procura_codigo_estado() -> str:
             try:

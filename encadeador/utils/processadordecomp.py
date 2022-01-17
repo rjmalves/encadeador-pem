@@ -1,6 +1,6 @@
 from idecomp.decomp.relato import Relato
 from idecomp.decomp.relgnl import RelGNL
-import pandas as pd
+import pandas as pd  # type: ignore
 
 
 class ProcessadorDecomp:

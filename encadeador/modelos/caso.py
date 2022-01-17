@@ -1,9 +1,10 @@
 from abc import abstractmethod
-import time
+from typing import Dict, List, Any
 
 from encadeador.modelos.dadoscaso import DadosCaso
 from encadeador.modelos.configuracoes import Configuracoes
-from encadeador.modelos.estadojob import EstadoJob
+from encadeador.modelos.job import Job
+from encadeador.modelos.estadocaso import EstadoCaso
 
 
 class Caso:
@@ -13,17 +14,47 @@ class Caso:
     associadas ao caso. Não lida com a sua execução, pré ou pós
     processamento dos decks.
     """
-    def __init__(self,) -> None:
-        self._dados: DadosCaso = None  # type: ignore
+    def __init__(self,
+                 dados: DadosCaso,
+                 jobs: List[Job],
+                 estado: EstadoCaso = EstadoCaso.NAO_INICIADO) -> None:
+        self._dados = dados
+        self._jobs = jobs
+        self._estado = estado
 
     @staticmethod
-    def factory(prog: str) -> 'Caso':
-        if prog == "NEWAVE":
-            return CasoNEWAVE()
-        elif prog == "DECOMP":
-            return CasoDECOMP()
+    def factory(dados: DadosCaso,
+                jobs: List[Job],
+                estado: EstadoCaso = EstadoCaso.NAO_INICIADO) -> 'Caso':
+        if dados.programa == "NEWAVE":
+            return CasoNEWAVE(dados, jobs, estado)
+        elif dados.programa == "DECOMP":
+            return CasoDECOMP(dados, jobs, estado)
         else:
-            raise ValueError(f"Programa {prog} não suportado")
+            raise ValueError(f"Programa {dados.programa} não suportado")
+
+    @staticmethod
+    def from_json(json_dict: Dict[str, Any]):
+        dados = DadosCaso.from_json(json_dict["_dados"])
+        jobs = [Job.from_json(j) for j in json_dict["_jobs"]]
+        estado = EstadoCaso.factory(json_dict["_estado"])
+        return Caso.factory(dados, jobs, estado)
+
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "_dados": self._dados.to_json(),
+            "_jobs": [j.to_json() for j in self._jobs],
+            "_estado": str(self._estado.value)
+        }
+
+    def atualiza(self, estado: EstadoCaso):
+        self._estado = estado
+
+    def adiciona_job(self, job: Job, retry: bool):
+        if retry:
+            self._jobs[-1] = job
+        else:
+            self._jobs.append(job)
 
     @abstractmethod
     def configura_caso(self,
@@ -40,50 +71,6 @@ class Caso:
                             revisao: int) -> str:
         pass
 
-    @abstractmethod
-    def _obtem_numero_processadores(self) -> int:
-        pass
-
-    def reseta_parametros_execucao(self):
-        self._dados.instante_entrada_fila = 0
-        self._dados.instante_inicio_execucao = 0
-        self._dados.instante_fim_execucao = 0
-        self._dados.sucesso = False
-
-    def inicializa_parametros_execucao(self):
-        self.reseta_parametros_execucao()
-        self._dados.numero_tentativas = 0
-        procs = self._obtem_numero_processadores()
-        self._dados.numero_processadores = procs
-        self._dados.sucesso = False
-        self._dados.estado = EstadoJob.NAO_INICIADO
-
-    def coloca_caso_na_fila(self):
-        self.reseta_parametros_execucao()
-        self._dados.instante_entrada_fila = time.time()
-        self._dados.estado = EstadoJob.ESPERANDO
-
-    def inicia_caso(self):
-        self._dados.instante_inicio_execucao = time.time()
-        self._dados.numero_tentativas += 1
-        self._dados.estado = EstadoJob.EXECUTANDO
-
-    def finaliza_caso(self,
-                      sucesso: bool,
-                      erro: bool = False):
-        self._dados.sucesso = sucesso
-        self._dados.instante_fim_execucao = time.time()
-        if erro:
-            self._dados.estado = EstadoJob.ERRO
-        else:
-            self._dados.estado = EstadoJob.CONCLUIDO
-
-    def adiciona_flexibilizacao(self):
-        self._dados.adiciona_flexibilizacao()
-
-    def recupera_caso_dos_dados(self,
-                                dados: DadosCaso):
-        self._dados = dados
 
     def _verifica_caso_configurado(self):
         if self._dados is None:
@@ -104,40 +91,14 @@ class Caso:
         return self._dados.nome
 
     @property
-    def instante_entrada_fila(self) -> float:
-        return self._dados.instante_entrada_fila
-
-    @property
-    def instante_inicio_execucao(self) -> float:
-        return self._dados.instante_inicio_execucao
-
-    @property
-    def instante_fim_execucao(self) -> float:
-        return self._dados.instante_fim_execucao
-
-    @property
     def tempo_fila(self) -> float:
         self._verifica_caso_configurado()
-        if self.instante_entrada_fila == 0:
-            t_fila = 0.
-        elif self.instante_inicio_execucao == 0:
-            t_fila = time.time() - self.instante_entrada_fila
-        else:
-            t_fila = (self.instante_inicio_execucao -
-                      self.instante_entrada_fila)
-        return t_fila
+        return sum([j.tempo_fila for j in self._jobs])
 
     @property
     def tempo_execucao(self) -> float:
         self._verifica_caso_configurado()
-        if self.instante_inicio_execucao == 0:
-            t_exec = 0.
-        elif self.instante_fim_execucao == 0:
-            t_exec = time.time() - self.instante_inicio_execucao
-        else:
-            t_exec = (self.instante_fim_execucao -
-                      self.instante_inicio_execucao)
-        return t_exec
+        return sum([j.tempo_execucao for j in self._jobs])
 
     @property
     def ano(self) -> int:
@@ -155,34 +116,25 @@ class Caso:
         return self._dados.revisao
 
     @property
-    def numero_tentativas(self) -> int:
-        self._verifica_caso_configurado()
-        return self._dados.numero_tentativas
+    def numero_flexibilizacoes(self) -> int:
+        return len(self._jobs) - 1
 
+    @property
+    def estado(self) -> EstadoCaso:
+        return self._estado
+
+    @abstractmethod
     @property
     def numero_processadores(self) -> int:
-        self._verifica_caso_configurado()
-        return self._dados.numero_processadores
-
-    @property
-    def sucesso(self) -> bool:
-        self._verifica_caso_configurado()
-        return self._dados.sucesso
-
-    @property
-    def numero_flexibilizacoes(self) -> int:
-        self._verifica_caso_configurado()
-        return self._dados.numero_flexibilizacoes
-
-    @property
-    def estado(self) -> EstadoJob:
-        return self._dados.estado
+        pass
 
 
 class CasoNEWAVE(Caso):
 
-    def __init__(self) -> None:
-        super().__init__()
+    @staticmethod
+    def from_json(json_dict: Dict[str, Any]):
+        return CasoNEWAVE(DadosCaso.from_json(json_dict["_dados"]),
+                          [Job.from_json(j) for j in json_dict["_jobs"]])
 
     # Override
     def configura_caso(self,
@@ -191,16 +143,17 @@ class CasoNEWAVE(Caso):
                        mes: int,
                        revisao: int):
         nome = self._constroi_nome_caso(ano, mes, revisao)
-        procs = self._obtem_numero_processadores()
-        self._dados = DadosCaso.obtem_dados_do_caso("NEWAVE",
-                                                    caminho,
-                                                    nome,
-                                                    ano,
-                                                    mes,
-                                                    revisao,
-                                                    procs)
+        self._dados = DadosCaso("NEWAVE",
+                                caminho,
+                                nome,
+                                ano,
+                                mes,
+                                revisao,
+                                0)
 
-    def _obtem_numero_processadores(self) -> int:
+    # Override
+    @property
+    def numero_processadores(self) -> int:
         # TODO - Ler o dger.dat e conferir as restrições de número
         # de processadores (séries forward)
         minimo = Configuracoes().processadores_minimos_newave
@@ -211,6 +164,7 @@ class CasoNEWAVE(Caso):
             num_proc = maximo
         return num_proc
 
+    # Override
     def _constroi_nome_caso(self,
                             ano: int,
                             mes: int,
@@ -220,25 +174,29 @@ class CasoNEWAVE(Caso):
 
 class CasoDECOMP(Caso):
 
-    def __init__(self) -> None:
-        super().__init__()
+    @staticmethod
+    def from_json(json_dict: Dict[str, Any]):
+        return CasoDECOMP(DadosCaso.from_json(json_dict["_dados"]),
+                          [Job.from_json(j) for j in json_dict["_jobs"]])
 
+    # Override
     def configura_caso(self,
                        caminho: str,
                        ano: int,
                        mes: int,
                        revisao: int):
         nome = self._constroi_nome_caso(ano, mes, revisao)
-        procs = self._obtem_numero_processadores()
-        self._dados = DadosCaso.obtem_dados_do_caso("DECOMP",
-                                                    caminho,
-                                                    nome,
-                                                    ano,
-                                                    mes,
-                                                    revisao,
-                                                    procs)
+        self._dados = DadosCaso("DECOMP",
+                                caminho,
+                                nome,
+                                ano,
+                                mes,
+                                revisao,
+                                0)
 
-    def _obtem_numero_processadores(self) -> int:
+    # Override
+    @property
+    def numero_processadores(self) -> int:
         # TODO - Ler o dadger.rvX e conferir as restrições de número
         # de processadores (séries do 2º mês)
         minimo = Configuracoes().processadores_minimos_decomp
@@ -249,6 +207,7 @@ class CasoDECOMP(Caso):
             num_proc = maximo
         return num_proc
 
+    # Override
     def _constroi_nome_caso(self,
                             ano: int,
                             mes: int,

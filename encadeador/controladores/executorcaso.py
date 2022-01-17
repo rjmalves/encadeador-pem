@@ -3,14 +3,12 @@ from os import chdir
 from typing import Optional, List
 
 from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
-from encadeador.controladores.avaliadorcaso import AvaliadorCaso
 from encadeador.controladores.flexibilizadorcaso import Flexibilizador
-from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
-from encadeador.controladores.preparadorcaso import PreparadorCaso
 from encadeador.controladores.monitorcaso import MonitorCaso
 from encadeador.controladores.sintetizadorcaso import SintetizadorCaso
 from encadeador.controladores.sintetizadorcaso import SintetizadorNEWAVE
 from encadeador.modelos.configuracoes import Configuracoes
+from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.utils.log import Log
 
 
@@ -19,11 +17,8 @@ class ExecutorCaso:
     def __init__(self,
                  caso: Caso) -> None:
         self._caso = caso
-        self._preparador = PreparadorCaso.factory(caso)
         self._monitor = MonitorCaso.factory(caso)
-        self._armazenador = ArmazenadorCaso(caso)
         self._sintetizador = SintetizadorCaso.factory(caso)
-        self._avaliador = AvaliadorCaso.factory(caso)
 
     @staticmethod
     def factory(caso: Caso) -> 'ExecutorCaso':
@@ -59,26 +54,25 @@ class ExecutorNEWAVE(ExecutorCaso):
             if sint_ultimo.verifica_cortes_extraidos():
                 sint_ultimo.deleta_cortes()
 
-        if not self._preparador.prepara_caso():
-            Log.log().error(f"Erro na preparação do NW {self._caso.nome}")
-            raise RuntimeError()
-        if not self._preparador.encadeia_variaveis(casos_anteriores):
-            Log.log().error(f"Erro no encadeamento do NW {self._caso.nome}")
-            raise RuntimeError()
-        if not self._monitor.executa_caso():
-            Log.log().error(f"Erro na execução do NW {self._caso.nome}")
+        if not self._monitor.inicializa(casos_anteriores):
+            Log.log().error(f"Erro na inicialização do {self._caso.nome}")
             raise RuntimeError()
 
+        if not self._monitor.submete():
+            Log.log().error(f"Erro na submissão do {self._caso.nome}")
+            raise RuntimeError()
+
+        # TODO - TRANSFERIR ESSE PEDAÇO DA LÓGICA PARA A "RAIZ" DO ESTUDO
+        # E IMPLEMENTAR MAIS UMA CAMADA DE OBSERVER/STATE PATTERN
+        # Loop para esperar o caso terminar
+
         # Se o NEWAVE não obteve sucesso, está com erro
-        if not self._caso.sucesso:
-            Log.log().error(f"Erro nas saídas do NW {self._caso.nome}")
+        if not self._caso.estado != EstadoCaso.CONCLUIDO:
+            Log.log().error(f"Erro nas saídas do {self._caso.nome}")
             raise RuntimeError()
 
         if not self._sintetizador.sintetiza_caso():
             Log.log().error(f"Erro ao sintetizar caso: {self._caso.nome}")
-            raise RuntimeError()
-        if not self._armazenador.armazena_caso():
-            Log.log().error(f"Erro ao armazenar caso: {self._caso.nome}")
             raise RuntimeError()
 
 

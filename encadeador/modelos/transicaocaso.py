@@ -2,14 +2,8 @@ from enum import Enum, auto
 
 
 class TransicaoCaso(Enum):
-    NAO_INICIADO = auto()
-    PREPARANDO = auto()
-    ENCADEANDO = auto()
-    ESPERANDO = auto()
-    EXECUTANDO = auto()
-    FLEXIBILIZANDO = auto()
-    RETRY = auto()
+    INICIOU = auto()
     SUCESSO = auto()
+    ERRO = auto()
     ERRO_MAX_FLEX = auto()
     ERRO_DADOS = auto()
-    ERRO_COMUNICACAO = auto()

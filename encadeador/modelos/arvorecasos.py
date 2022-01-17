@@ -5,9 +5,11 @@ from os.path import isdir, join, normpath
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
+from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.utils.log import Log
 
 
+# TODO - renomear para classe Estudo
 class ArvoreCasos:
 
     def __init__(self) -> None:
@@ -56,12 +58,12 @@ class ArvoreCasos:
             diretorio_prog = pastas[-1]
             if Configuracoes()._nome_diretorio_newave == diretorio_prog:
                 caso_nw = CasoNEWAVE()
-                caso_nw.configura_caso(c, ano, mes, rv, Configuracoes())
+                caso_nw.configura_caso(c, ano, mes, rv)
                 self._casos.append(caso_nw)
                 return True
             elif Configuracoes()._nome_diretorio_decomp == diretorio_prog:
                 caso_dcp = CasoDECOMP()
-                caso_dcp.configura_caso(c, ano, mes, rv, Configuracoes())
+                caso_dcp.configura_caso(c, ano, mes, rv)
                 self._casos.append(caso_dcp)
                 return True
             else:
@@ -97,7 +99,7 @@ class ArvoreCasos:
     def proximo_caso(self) -> Optional[Caso]:
         for c in self.casos:
             try:
-                if not c.sucesso:
+                if c.estado != EstadoCaso.CONCLUIDO:
                     return c
             except ValueError:
                 return c
@@ -107,7 +109,8 @@ class ArvoreCasos:
     def proximo_newave(self) -> Optional[CasoNEWAVE]:
         for c in self.casos:
             try:
-                if isinstance(c, CasoNEWAVE) and not c.sucesso:
+                if all([isinstance(c, CasoNEWAVE),
+                        c.estado != EstadoCaso.CONCLUIDO]):
                     return c
             except ValueError:
                 if isinstance(c, CasoNEWAVE):
@@ -118,7 +121,8 @@ class ArvoreCasos:
     def proximo_decomp(self) -> Optional[CasoDECOMP]:
         for c in self.casos:
             try:
-                if isinstance(c, CasoDECOMP) and not c.sucesso:
+                if all([isinstance(c, CasoDECOMP),
+                        c.estado != EstadoCaso.CONCLUIDO]):
                     return c
             except ValueError:
                 if isinstance(c, CasoDECOMP):
@@ -130,7 +134,7 @@ class ArvoreCasos:
         c_convergido = None
         for c in self.casos:
             try:
-                if c.sucesso:
+                if c.estado == EstadoCaso.CONCLUIDO:
                     c_convergido = c
             except ValueError:
                 break
@@ -141,7 +145,8 @@ class ArvoreCasos:
         c_convergido = None
         for c in self.casos:
             try:
-                if isinstance(c, CasoNEWAVE) and c.sucesso:
+                if all([isinstance(c, CasoNEWAVE),
+                        c.estado == EstadoCaso.CONCLUIDO]):
                     c_convergido = c
             except ValueError:
                 break
@@ -152,7 +157,8 @@ class ArvoreCasos:
         c_convergido = None
         for c in self.casos:
             try:
-                if isinstance(c, CasoDECOMP) and c.sucesso:
+                if all([isinstance(c, CasoDECOMP),
+                        c.estado == EstadoCaso.CONCLUIDO]):
                     c_convergido = c
             except ValueError:
                 break
@@ -163,7 +169,7 @@ class ArvoreCasos:
         casos: List[Caso] = []
         for c in self.casos:
             try:
-                if c.sucesso:
+                if c.estado == EstadoCaso.CONCLUIDO:
                     casos.append(c)
             except ValueError:
                 break
@@ -174,7 +180,7 @@ class ArvoreCasos:
         sucesso: List[bool] = []
         try:
             for c in self.casos:
-                sucesso.append(c.sucesso)
+                sucesso.append(c.estado == EstadoCaso.CONCLUIDO)
         except ValueError:
             return False
         return all(sucesso)

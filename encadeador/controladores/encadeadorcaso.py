@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import List
-import pandas as pd
-import numpy as np
+import pandas as pd  # type: ignore
+import numpy as np  # type: ignore
 from idecomp.decomp.relato import Relato
 from idecomp.decomp.relgnl import RelGNL
 from idecomp.decomp.dadger import Dadger
