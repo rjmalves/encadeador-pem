@@ -1,52 +1,73 @@
 from os import listdir, sep
-from typing import List, Optional
+from typing import List, Optional, Dict, Any, Tuple
 from os.path import isdir, join, normpath
 
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
+from encadeador.modelos.dadosestudo import DadosEstudo
+from encadeador.modelos.estadoestudo import EstadoEstudo
 from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.utils.log import Log
 
 
-# TODO - renomear para classe Estudo
-class ArvoreCasos:
+class Estudo:
 
-    def __init__(self) -> None:
-        self._diretorios_revisoes: List[str] = []
-        self._diretorios_casos: List[str] = []
-        self._casos: List[Caso] = []
+    def __init__(self,
+                 dados: DadosEstudo,
+                 casos: List[Caso],
+                 estado: EstadoEstudo = EstadoEstudo.NAO_INICIADO):
+        self._dados = dados
+        self._casos = casos
+        self._estado = estado
+
+    @staticmethod
+    def from_json(json_dict: Dict[str, Any]):
+        dados = DadosEstudo.from_json(json_dict["_dados"])
+        jobs = [Caso.from_json(c) for c in json_dict["_casos"]]
+        estado = EstadoEstudo.factory(json_dict["_estado"])
+        return Estudo(dados, jobs, estado)
+
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "_dados": self._dados.to_json(),
+            "_casos": [c.to_json() for c in self._casos],
+            "_estado": str(self._estado.value)
+        }
 
     def __verifica_inicializacao(self, valor):
         if len(valor) == 0:
-            raise ValueError("ArvoreCasos não inicializada!")
+            raise ValueError("Estudo não inicializado!")
 
-    def le_arquivo_casos(self):
+    @staticmethod
+    def le_arquivo_lista_casos() -> Tuple[List[str], List[str]]:
 
-        def __le_diretorios():
-            for d in self._diretorios_revisoes:
+        def __cria_caminhos_casos(dirs_revisoes: List[str]) -> List[str]:
+            dirs_casos: List[str] = []
+            for d in dirs_revisoes:
                 subd = [a for a in listdir(d) if isdir(join(d, a))]
                 if Configuracoes().nome_diretorio_newave in subd:
                     c = join(Configuracoes().caminho_base_estudo,
                              d,
                              Configuracoes()._nome_diretorio_newave)
-                    self._diretorios_casos.append(c)
+                    dirs_casos.append(c)
                 if Configuracoes()._nome_diretorio_decomp in subd:
                     c = join(Configuracoes().caminho_base_estudo,
                              d,
                              Configuracoes()._nome_diretorio_decomp)
-                    self._diretorios_casos.append(c)
+                    dirs_casos.append(c)
+            return dirs_casos
 
         lista = Configuracoes().arquivo_lista_casos
         with open(lista, "r") as arq:
             dirs = arq.readlines()
         dirs = [c.strip("\n").strip() for c in dirs]
-        self._diretorios_revisoes = dirs
-        __le_diretorios()
+        return dirs, __cria_caminhos_casos(dirs)
 
-    def constroi_casos(self) -> bool:
+    @staticmethod
+    def constroi_casos(dirs: List[str]) -> List[Caso]:
 
-        def __le_caso(c: str) -> bool:
+        def __le_caso(c: str) -> Caso:
             pastas = normpath(c).split(sep)
             # Extrai as características do caso
             diretorio_caso = pastas[-2]
@@ -59,34 +80,46 @@ class ArvoreCasos:
             if Configuracoes()._nome_diretorio_newave == diretorio_prog:
                 caso_nw = CasoNEWAVE()
                 caso_nw.configura_caso(c, ano, mes, rv)
-                self._casos.append(caso_nw)
-                return True
+                return caso_nw
             elif Configuracoes()._nome_diretorio_decomp == diretorio_prog:
                 caso_dcp = CasoDECOMP()
                 caso_dcp.configura_caso(c, ano, mes, rv)
-                self._casos.append(caso_dcp)
-                return True
+                return caso_dcp
             else:
                 Log.log().error(f"Diretório inválido: {diretorio_prog}")
-                return False
+                raise RuntimeError()
 
-        for c in self._diretorios_casos:
+        casos: List[Caso] = []
+        for c in dirs:
             try:
                 caso = ArmazenadorCaso.recupera_caso(c)
                 # TODO - Pensar em como permitir mudanças de diretório
                 # do estudo encadeado, uma vez já concluído.
                 caso.caminho = c
-                self._casos.append(caso)
+                casos.append(caso)
             except FileNotFoundError:
                 ret = __le_caso(c)
-                if not ret:
-                    return False
+                casos.append(ret)
+        return casos
 
-        return True
+    def atualiza(self,
+                 estado: EstadoEstudo,
+                 resume: bool = False):
+        self._estado = estado
+        self._dados.resume_casos(self._casos)
+        if resume:
+            self._dados.resume_dados_casos(self._casos)
+
+    @property
+    def nome(self) -> str:
+        return self._dados._nome
+
+    @property
+    def caminho(self) -> str:
+        return self._dados._caminho
 
     @property
     def casos(self) -> List[Caso]:
-        self.__verifica_inicializacao(self._casos)
         return self._casos
 
     def indice_caso(self, caso: Optional[Caso]) -> int:
@@ -184,3 +217,11 @@ class ArvoreCasos:
         except ValueError:
             return False
         return all(sucesso)
+
+    @property
+    def dados(self) -> DadosEstudo:
+        return self._dados
+
+    @property
+    def estado(self) -> EstadoEstudo:
+        return self._estado

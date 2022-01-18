@@ -5,7 +5,7 @@ from encadeador.modelos.caso import Caso
 from encadeador.utils.log import Log
 from encadeador.utils.io import le_arquivo_json, escreve_arquivo_json
 
-NOME_ARQUIVO_ESTADO = "caso_encadeado.csv"
+NOME_ARQUIVO_ESTADO = "caso_encadeado.json"
 
 
 class ArmazenadorCaso:

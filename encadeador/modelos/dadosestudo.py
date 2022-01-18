@@ -1,13 +1,12 @@
 import pandas as pd  # type: ignore
 import numpy as np  # type: ignore
-from typing import Dict, List
+from typing import Dict, List, Any
 from os.path import join
 
 from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
 from encadeador.modelos.dadoscaso import NOME_ARQUIVO_ESTADO
-from encadeador.modelos.arvorecasos import ArvoreCasos
 from encadeador.controladores.sintetizadorcaso import DIRETORIO_RESUMO_CASO
-
+from encadeador.modelos.estadocaso import EstadoCaso
 
 class DadosEstudo:
     """
@@ -15,21 +14,67 @@ class DadosEstudo:
     estudo encadeado.
     """
     def __init__(self,
-                 resumo_estados: pd.DataFrame,
-                 resumo_newaves: pd.DataFrame,
-                 resumo_decomps: pd.DataFrame,
-                 convergencias_newaves: pd.DataFrame,
-                 convergencias_decomps: pd.DataFrame,
-                 inviabilidades_decomps: pd.DataFrame):
-        self._resumo_estados = resumo_estados
-        self._resumo_newaves = resumo_newaves
-        self._resumo_decomps = resumo_decomps
-        self._convergencias_newaves = convergencias_newaves
-        self._convergencias_decomps = convergencias_decomps
-        self._inviabilidades_decomps = inviabilidades_decomps
+                 nome: str,
+                 caminho: str,
+                 instante_inicio_execucao: float,
+                 diretorios_revisoes: List[str],
+                 diretorios_casos: List[str],
+                 nomes_casos: List[str],
+                 tempos_fila_casos: List[float],
+                 tempos_execucao_casos: List[float],
+                 estados_casos: List[EstadoCaso]
+                 ):
+        self._nome = nome
+        self._caminho = caminho
+        self._instante_inicio_execucao = instante_inicio_execucao
+        self._diretorios_revisoes = diretorios_revisoes
+        self._diretorios_casos = diretorios_casos
+        self._nomes_casos = nomes_casos
+        self._tempos_fila_casos = tempos_fila_casos
+        self._tempos_execucao_casos = tempos_execucao_casos
+        self._estados_casos = estados_casos
+        # DataFrames com dados do estudo
+        self._resumo_estados = pd.DataFrame()
+        self._resumo_newaves = pd.DataFrame()
+        self._resumo_decomps = pd.DataFrame()
+        self._convergencias_newaves = pd.DataFrame()
+        self._convergencias_decomps = pd.DataFrame()
+        self._inviabilidades_decomps = pd.DataFrame()
 
     @staticmethod
-    def resume_arvore(arvore: ArvoreCasos) -> "DadosEstudo":
+    def from_json(json_dict: Dict[str, Any]) -> "DadosEstudo":
+        return DadosEstudo(json_dict["_nome"],
+                           json_dict["_caminho"],
+                           json_dict["_instante_inicio_execucao"],
+                           json_dict["_diretorios_revisoes"],
+                           json_dict["_diretorios_casos"],
+                           json_dict["_nomes_casos"],
+                           json_dict["_tempos_fila_casos"],
+                           json_dict["_tempos_execucao_casos"],
+                           [EstadoCaso.factory(e)
+                            for e in json_dict["_estados_casos"]],
+                           )
+
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "_nome": self._nome,
+            "_caminho": self._caminho,
+            "_instante_inicio_execucao": self._instante_inicio_execucao,
+            "_diretorios_revisoes": self._nomes_casos,
+            "_diretorios_casos": self._nomes_casos,
+            "_nomes_casos": self._nomes_casos,
+            "_tempos_fila_casos": self._tempos_fila_casos,
+            "_tempos_execucao_casos": self._tempos_execucao_casos,
+            "_estados_casos": [str(e.value) for e in self._estados_casos],
+        }
+
+    def resume_casos(self, casos: List[Caso]):
+        self._nomes_casos = [c.nome for c in casos]
+        self._tempos_fila_casos = [c.tempo_fila for c in casos]
+        self._tempos_execucao_casos = [c.tempo_execucao for c in casos]
+        self._estados_casos = [c.estado for c in casos]
+
+    def resume_dados_casos(self, casos: List[Caso]):
 
         def le_resumo_newave(resumo_estados: pd.DataFrame,
                              resumo_newaves: pd.DataFrame,
@@ -435,8 +480,8 @@ class DadosEstudo:
         convergencias_decomps = pd.DataFrame(columns=colunas_convergencia)
         inviabilidades_newaves = pd.DataFrame(columns=colunas_inviabs)
         inviabilidades_decomps = pd.DataFrame(columns=colunas_inviabs)
-        for i, c in enumerate(arvore.casos):
-            if c.sucesso:
+        for i, c in enumerate(casos):
+            if c.estado == EstadoCaso.CONCLUIDO:
                 # Passa i == 1 para significar o primeiro DECOMP (segundo caso)
                 e, n, d = le_resumo(c,
                                     resumo_estados,
@@ -456,12 +501,13 @@ class DadosEstudo:
                                          inviabilidades_decomps)
                 inviabilidades_newaves = n
                 inviabilidades_decomps = d
-        return DadosEstudo(resumo_estados,
-                           resumo_newaves,
-                           resumo_decomps,
-                           convergencias_newaves,
-                           convergencias_decomps,
-                           inviabilidades_decomps)
+
+        self._resumo_estados = resumo_estados
+        self._resumo_newaves = resumo_newaves
+        self._resumo_decomps = resumo_decomps
+        self._convergencias_newaves = convergencias_newaves
+        self._convergencias_decomps = convergencias_decomps
+        self._inviabilidades_decomps = inviabilidades_decomps
 
     @property
     def resumo_estados(self) -> pd.DataFrame:

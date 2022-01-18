@@ -1,16 +1,13 @@
 from os.path import join
 from typing import Optional
-import time
 import pandas as pd  # type: ignore
 
 from encadeador.modelos.caso import Caso
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.dadoscaso import NOME_ARQUIVO_ESTADO
-from encadeador.modelos.arvorecasos import ArvoreCasos
-from encadeador.modelos.dadosestudo import DadosEstudo
-from encadeador.modelos.dadoscaso import INTERVALO_RETRY_ESCRITA
-from encadeador.modelos.dadoscaso import MAX_RETRY_ESCRITA
+from encadeador.modelos.estudo import Estudo
 from encadeador.utils.log import Log
+from encadeador.utils.io import escreve_df_em_csv, escreve_arquivo_json
 
 ARQUIVO_PROXIMO_CASO = "proximo_caso.csv"
 ARQUIVO_RESUMO_ESTADOS = "estudo_encadeado.csv"
@@ -24,8 +21,8 @@ ARQUIVO_INVIABILIDADES_DECOMPS = "inviabilidades_decomps.csv"
 class SintetizadorEstudo:
 
     def __init__(self,
-                 arvore: ArvoreCasos) -> None:
-        self._arvore = arvore
+                 estudo: Estudo) -> None:
+        self._estudo = estudo
 
     @staticmethod
     def sintetiza_proximo_caso(caso: Optional[Caso]):
@@ -33,62 +30,32 @@ class SintetizadorEstudo:
         if caso is not None:
             caminho = join(caso.caminho, NOME_ARQUIVO_ESTADO)
             df_proximo_caso["Caminho"] = [caminho]
-        num_retry = 0
-        while num_retry < MAX_RETRY_ESCRITA:
-            try:
-                caminho = Configuracoes().caminho_base_estudo
-                df_proximo_caso.to_csv(join(caminho,
-                                            ARQUIVO_PROXIMO_CASO))
-                return
-            except OSError:
-                num_retry += 1
-                time.sleep(INTERVALO_RETRY_ESCRITA)
-                continue
-            except BlockingIOError:
-                num_retry += 1
-                time.sleep(INTERVALO_RETRY_ESCRITA)
-                continue
-        raise RuntimeError("Erro na sintese do próximo caso do estudo " +
-                           "encadeado.")
+            arq = join(Configuracoes().caminho_base_estudo,
+                       ARQUIVO_PROXIMO_CASO)
+            escreve_arquivo_json(arq, {"Caminho": caminho})
+        else:
+            raise RuntimeError("Erro na sintese do próximo caso do estudo " +
+                               "encadeado.")
 
     def sintetiza_estudo(self) -> bool:
         Log.log().info("Sintetizando dados do estudo encadeado")
-        num_retry = 0
-        while num_retry < MAX_RETRY_ESCRITA:
-            try:
-                dados = DadosEstudo.resume_arvore(self._arvore)
-                diretorio_estudo = Configuracoes().caminho_base_estudo
-                resumo_estados = join(diretorio_estudo,
-                                      ARQUIVO_RESUMO_ESTADOS)
-                resumo_newaves = join(diretorio_estudo,
-                                      ARQUIVO_RESUMO_NEWAVES)
-                resumo_decomps = join(diretorio_estudo,
-                                      ARQUIVO_RESUMO_DECOMPS)
-                convergencias_newaves = join(diretorio_estudo,
-                                             ARQUIVO_CONVERGENCIA_NEWAVES)
-                convergencias_decomps = join(diretorio_estudo,
-                                             ARQUIVO_CONVERGENCIA_DECOMPS)
-                inviabilidades_decomps = join(diretorio_estudo,
-                                              ARQUIVO_INVIABILIDADES_DECOMPS)
-                dados.resumo_estados.to_csv(resumo_estados)
-                dados.resumo_newaves.to_csv(resumo_newaves)
-                dados.resumo_decomps.to_csv(resumo_decomps)
-                dados.convergencias_newaves.to_csv(convergencias_newaves)
-                dados.convergencias_decomps.to_csv(convergencias_decomps)
-                dados.inviabilidades_decomps.to_csv(inviabilidades_decomps)
-                return True
-            except OSError as e:
-                num_retry += 1
-                time.sleep(INTERVALO_RETRY_ESCRITA)
-                Log.log().warning(f"Retry na síntese do estudo: {e}")
-                continue
-            except BlockingIOError as e:
-                num_retry += 1
-                time.sleep(INTERVALO_RETRY_ESCRITA)
-                Log.log().warning(f"Retry na síntese do estudo: {e}")
-                continue
-            except Exception as e:
-                Log.log().error(f"Erro na síntese do estudo: {e}")
-                break
-        Log.log().info("Erro na síntese do estudo encadeado")
-        return False
+        dados = self._estudo.dados
+        diretorio_estudo = Configuracoes().caminho_base_estudo
+        resumo_estados = join(diretorio_estudo,
+                                ARQUIVO_RESUMO_ESTADOS)
+        resumo_newaves = join(diretorio_estudo,
+                                ARQUIVO_RESUMO_NEWAVES)
+        resumo_decomps = join(diretorio_estudo,
+                                ARQUIVO_RESUMO_DECOMPS)
+        convergencias_newaves = join(diretorio_estudo,
+                                        ARQUIVO_CONVERGENCIA_NEWAVES)
+        convergencias_decomps = join(diretorio_estudo,
+                                        ARQUIVO_CONVERGENCIA_DECOMPS)
+        inviabilidades_decomps = join(diretorio_estudo,
+                                        ARQUIVO_INVIABILIDADES_DECOMPS)
+        escreve_df_em_csv(dados.resumo_estados, resumo_estados)
+        escreve_df_em_csv(dados.resumo_newaves, resumo_newaves)
+        escreve_df_em_csv(dados.resumo_decomps, resumo_decomps)
+        escreve_df_em_csv(dados.convergencias_newaves, convergencias_newaves)
+        escreve_df_em_csv(dados.convergencias_decomps, convergencias_decomps)
+        escreve_df_em_csv(dados.inviabilidades_decomps, inviabilidades_decomps)

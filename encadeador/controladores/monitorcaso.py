@@ -1,8 +1,7 @@
 from abc import abstractmethod
 from typing import Dict, List, Tuple, Callable
 from os.path import join
-from os import listdir
-import time
+from os import chdir, listdir
 from encadeador.controladores.avaliadorcaso import AvaliadorCaso
 from encadeador.controladores.flexibilizadorcaso import Flexibilizador
 from encadeador.controladores.monitorjob import MonitorJob
@@ -10,13 +9,14 @@ from encadeador.controladores.monitorjob import MonitorJob
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.dadosjob import DadosJob
-from encadeador.modelos.estadojob import EstadoJob
 from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.modelos.job import Job
 from encadeador.modelos.transicaocaso import TransicaoCaso
 from encadeador.modelos.transicaojob import TransicaoJob
 from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
 from encadeador.controladores.preparadorcaso import PreparadorCaso
+from encadeador.controladores.sintetizadorcaso import SintetizadorCaso
+from encadeador.controladores.sintetizadorcaso import SintetizadorNEWAVE
 from encadeador.utils.log import Log
 from encadeador.utils.event import Event
 
@@ -92,6 +92,7 @@ class MonitorCaso:
              TransicaoJob.FIM_EXECUCAO): self._trata_erro,
         }
 
+    @abstractmethod
     def inicializa(self,
                    casos_anteriores: List[Caso]) -> bool:
         """
@@ -102,11 +103,7 @@ class MonitorCaso:
         :return: O sucesso ou não da inicialização do caso.
         :rtype: bool
         """
-        self._transicao_caso(TransicaoCaso.INICIOU)
-        preparador = PreparadorCaso.factory(self._caso)
-        sucesso_prepara = preparador.prepara_caso()
-        sucesso_encadeia = preparador.encadeia_variaveis(casos_anteriores)
-        return sucesso_prepara and sucesso_encadeia
+        pass
 
     def submete(self, retry: bool = False) -> bool:
         """
@@ -115,6 +112,7 @@ class MonitorCaso:
         :return: O sucesso ou não da submissão do job.
         :rtype: bool
         """
+        chdir(self._caso.caminho)
         self._job_atual = Job(DadosJob("",
                                        self.nome_job,
                                        self.caminho_job,
@@ -124,16 +122,20 @@ class MonitorCaso:
                                        0))
         self._caso.adiciona_job(self._job_atual, retry)
         self._monitor_job_atual = MonitorJob(self._job_atual)
-        return self._monitor_job_atual.submete(self._caso.numero_processadores)
+        ret = self._monitor_job_atual.submete(self._caso.numero_processadores)
+        chdir(Configuracoes().caminho_base_estudo)
+        return ret
 
     def monitora(self):
         """
         Realiza o monitoramento do estado do caso e também do
         job associado.
         """
+        chdir(self._caso.caminho)
         self._monitor_job_atual.monitora()
         if not self._armazenador.armazena_caso():
             Log.log().error(f"Erro ao armazenar caso {self._caso.nome}")
+        chdir(Configuracoes().caminho_base_estudo)
 
     def observa(self, f: Callable):
         self._transicao_caso.append(f)
@@ -201,6 +203,34 @@ class MonitorNEWAVE(MonitorCaso):
         return f"NW{self.caso.ano}{self.caso.mes}"
 
     # Override
+    def inicializa(self,
+                   casos_anteriores: List[Caso]) -> bool:
+        """
+        Realiza a inicialização do caso, isto é, a preparação dos
+        arquivos para adequação às necessidades do estudo
+        encadeado e o encadeamento das variáveis selecionadas.
+
+        :return: O sucesso ou não da inicialização do caso.
+        :rtype: bool
+        """
+        # Se não é o primeiro NEWAVE, apaga os cortes do último
+        ultimo_nw = None
+        for c in reversed(casos_anteriores):
+            if isinstance(c, CasoNEWAVE):
+                ultimo_nw = c
+                break
+        if ultimo_nw is not None:
+            sint_ultimo = SintetizadorNEWAVE(ultimo_nw)
+            if sint_ultimo.verifica_cortes_extraidos():
+                sint_ultimo.deleta_cortes()
+
+        self._transicao_caso(TransicaoCaso.INICIOU)
+        preparador = PreparadorCaso.factory(self._caso)
+        sucesso_prepara = preparador.prepara_caso()
+        sucesso_encadeia = preparador.encadeia_variaveis(casos_anteriores)
+        return sucesso_prepara and sucesso_encadeia
+
+    # Override
     def _trata_fim_execucao(self) -> EstadoCaso:
         Log.log().info(f"Caso {self._caso.nome}: fim da execução")
         if not self._avaliador.avalia():
@@ -208,6 +238,9 @@ class MonitorNEWAVE(MonitorCaso):
             self._transicao_caso(TransicaoCaso.ERRO_DADOS)
             return EstadoCaso.ERRO_DADOS
         self._transicao_caso(TransicaoCaso.SUCESSO)
+        sintetizador = SintetizadorCaso.factory(self._caso)
+        if not sintetizador.sintetiza_caso():
+            Log.log().error(f"Erro na síntese do caso {self._caso.nome}")
         return EstadoCaso.CONCLUIDO
 
 
@@ -238,6 +271,23 @@ class MonitorDECOMP(MonitorCaso):
         return f"DC{self.caso.ano}{self.caso.mes}{self.caso.revisao}"
 
     # Override
+    def inicializa(self,
+                   casos_anteriores: List[Caso]) -> bool:
+        """
+        Realiza a inicialização do caso, isto é, a preparação dos
+        arquivos para adequação às necessidades do estudo
+        encadeado e o encadeamento das variáveis selecionadas.
+
+        :return: O sucesso ou não da inicialização do caso.
+        :rtype: bool
+        """
+        self._transicao_caso(TransicaoCaso.INICIOU)
+        preparador = PreparadorCaso.factory(self._caso)
+        sucesso_prepara = preparador.prepara_caso()
+        sucesso_encadeia = preparador.encadeia_variaveis(casos_anteriores)
+        return sucesso_prepara and sucesso_encadeia
+
+    # Override
     def _trata_fim_execucao(self) -> EstadoCaso:
         Log.log().info(f"Caso {self._caso.nome}: fim da execução")
         if not self._avaliador.avalia():
@@ -261,4 +311,7 @@ class MonitorDECOMP(MonitorCaso):
                     raise RuntimeError()
                 return EstadoCaso.ESPERANDO_FILA
         self._transicao_caso(TransicaoCaso.SUCESSO)
+        sintetizador = SintetizadorCaso.factory(self._caso)
+        if not sintetizador.sintetiza_caso():
+            Log.log().error(f"Erro na síntese do caso {self._caso.nome}")
         return EstadoCaso.CONCLUIDO
