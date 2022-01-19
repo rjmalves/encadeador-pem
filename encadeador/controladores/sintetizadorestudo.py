@@ -42,20 +42,21 @@ class SintetizadorEstudo:
         dados = self._estudo.dados
         diretorio_estudo = Configuracoes().caminho_base_estudo
         resumo_estados = join(diretorio_estudo,
-                                ARQUIVO_RESUMO_ESTADOS)
+                              ARQUIVO_RESUMO_ESTADOS)
         resumo_newaves = join(diretorio_estudo,
-                                ARQUIVO_RESUMO_NEWAVES)
+                              ARQUIVO_RESUMO_NEWAVES)
         resumo_decomps = join(diretorio_estudo,
-                                ARQUIVO_RESUMO_DECOMPS)
+                              ARQUIVO_RESUMO_DECOMPS)
         convergencias_newaves = join(diretorio_estudo,
-                                        ARQUIVO_CONVERGENCIA_NEWAVES)
+                                     ARQUIVO_CONVERGENCIA_NEWAVES)
         convergencias_decomps = join(diretorio_estudo,
-                                        ARQUIVO_CONVERGENCIA_DECOMPS)
+                                     ARQUIVO_CONVERGENCIA_DECOMPS)
         inviabilidades_decomps = join(diretorio_estudo,
-                                        ARQUIVO_INVIABILIDADES_DECOMPS)
+                                      ARQUIVO_INVIABILIDADES_DECOMPS)
         escreve_df_em_csv(dados.resumo_estados, resumo_estados)
         escreve_df_em_csv(dados.resumo_newaves, resumo_newaves)
         escreve_df_em_csv(dados.resumo_decomps, resumo_decomps)
         escreve_df_em_csv(dados.convergencias_newaves, convergencias_newaves)
         escreve_df_em_csv(dados.convergencias_decomps, convergencias_decomps)
         escreve_df_em_csv(dados.inviabilidades_decomps, inviabilidades_decomps)
+        return True

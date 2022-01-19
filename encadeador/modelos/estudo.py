@@ -33,10 +33,6 @@ class Estudo:
             "_estado": str(self._estado.value)
         }
 
-    def __verifica_inicializacao(self, valor):
-        if len(valor) == 0:
-            raise ValueError("Estudo não inicializado!")
-
     @staticmethod
     def le_arquivo_lista_casos() -> Tuple[List[str], List[str]]:
 
@@ -76,12 +72,12 @@ class Estudo:
             # Identifica o programa
             diretorio_prog = pastas[-1]
             if Configuracoes()._nome_diretorio_newave == diretorio_prog:
-                caso_nw = CasoNEWAVE()
-                caso_nw.configura_caso(c, ano, mes, rv)
+                dados = CasoNEWAVE.gera_dados_caso(c, ano, mes, rv)
+                caso_nw = CasoNEWAVE(dados, [])
                 return caso_nw
             elif Configuracoes()._nome_diretorio_decomp == diretorio_prog:
-                caso_dcp = CasoDECOMP()
-                caso_dcp.configura_caso(c, ano, mes, rv)
+                dados = CasoDECOMP.gera_dados_caso(c, ano, mes, rv)
+                caso_dcp = CasoDECOMP(dados, [])
                 return caso_dcp
             else:
                 Log.log().error(f"Diretório inválido: {diretorio_prog}")
@@ -144,8 +140,8 @@ class Estudo:
     def proximo_newave(self) -> Optional[CasoNEWAVE]:
         for c in self.casos:
             try:
-                if all([isinstance(c, CasoNEWAVE),
-                        c.estado != EstadoCaso.CONCLUIDO]):
+                if (isinstance(c, CasoNEWAVE) and
+                        c.estado != EstadoCaso.CONCLUIDO):
                     return c
             except ValueError:
                 if isinstance(c, CasoNEWAVE):
@@ -156,8 +152,8 @@ class Estudo:
     def proximo_decomp(self) -> Optional[CasoDECOMP]:
         for c in self.casos:
             try:
-                if all([isinstance(c, CasoDECOMP),
-                        c.estado != EstadoCaso.CONCLUIDO]):
+                if (isinstance(c, CasoDECOMP) and
+                        c.estado != EstadoCaso.CONCLUIDO):
                     return c
             except ValueError:
                 if isinstance(c, CasoDECOMP):
@@ -180,8 +176,8 @@ class Estudo:
         c_convergido = None
         for c in self.casos:
             try:
-                if all([isinstance(c, CasoNEWAVE),
-                        c.estado == EstadoCaso.CONCLUIDO]):
+                if (isinstance(c, CasoNEWAVE) and
+                        c.estado == EstadoCaso.CONCLUIDO):
                     c_convergido = c
             except ValueError:
                 break
@@ -192,8 +188,8 @@ class Estudo:
         c_convergido = None
         for c in self.casos:
             try:
-                if all([isinstance(c, CasoDECOMP),
-                        c.estado == EstadoCaso.CONCLUIDO]):
+                if (isinstance(c, CasoDECOMP) and
+                        c.estado == EstadoCaso.CONCLUIDO):
                     c_convergido = c
             except ValueError:
                 break

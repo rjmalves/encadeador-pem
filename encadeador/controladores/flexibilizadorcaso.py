@@ -39,7 +39,6 @@ class FlexibilizadorDECOMP(Flexibilizador):
 
     def flexibiliza(self) -> bool:
         max_flex = Configuracoes().maximo_flexibilizacoes_revisao
-        self._caso.adiciona_flexibilizacao()
         Log.log().info(f"Flexibilizando caso {self._caso.nome}: " +
                        f"{self._caso.numero_flexibilizacoes } de {max_flex}")
         try:

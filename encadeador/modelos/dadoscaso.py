@@ -1,10 +1,6 @@
-import pandas as pd  # type: ignore
-import time
 from typing import Dict, Any
 from os.path import isfile
 from os.path import join
-
-from encadeador.modelos.estadojob import EstadoJob
 
 NOME_ARQUIVO_ESTADO = "caso_encadeado.json"
 INTERVALO_RETRY_ESCRITA = 0.1
@@ -52,7 +48,7 @@ class DadosCaso:
         return self._caminho
 
     @caminho.setter
-    def caminho(self, c: str) -> str:
+    def caminho(self, c: str):
         self._caminho = c
 
     @property

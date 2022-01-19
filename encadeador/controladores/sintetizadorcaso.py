@@ -4,7 +4,7 @@ from abc import abstractmethod
 from typing import List
 from zipfile import ZipFile
 import numpy as np  # type: ignore
-import pandas as pd
+import pandas as pd  # type: ignore
 from encadeador.modelos.estadocaso import EstadoCaso  # type: ignore
 
 from inewave.newave import Arquivos, PMO  # type: ignore
@@ -65,15 +65,15 @@ class SintetizadorNEWAVE(SintetizadorCaso):
                        f" caso {self._caso.nome}")
         pmo = PMO.le_arquivo(self.caso.caminho)
         caminho_saida = join(self.caso.caminho,
-                                DIRETORIO_RESUMO_CASO)
+                             DIRETORIO_RESUMO_CASO)
         # Convergência do pmo.dat
         escreve_df_em_csv(pmo.convergencia,
-                            join(caminho_saida,
-                                "convergencia.csv"))
+                          join(caminho_saida,
+                               "convergencia.csv"))
         # Custos do pmo.dat
         escreve_df_em_csv(pmo.custo_operacao_series_simuladas,
-                            join(caminho_saida,
-                                "custos.csv"))
+                          join(caminho_saida,
+                               "custos.csv"))
         # CMO, EARM, GT, GH do NWLISTOP
         # TODO
         return True
@@ -228,7 +228,7 @@ class SintetizadorDECOMP(SintetizadorCaso):
         arq_relato = f"relato.rv{self._caso.revisao}"
         arq_relgnl = f"relgnl.rv{self._caso.revisao}"
         caminho_saida = join(self.caso.caminho,
-                                DIRETORIO_RESUMO_CASO)
+                             DIRETORIO_RESUMO_CASO)
         relato = Relato.le_arquivo(self.caso.caminho, arq_relato)
         relgnl = RelGNL.le_arquivo(self.caso.caminho, arq_relgnl)
         # Convergência do relato.rvX
@@ -240,7 +240,7 @@ class SintetizadorDECOMP(SintetizadorCaso):
             conv_anterior = le_df_de_csv(join(caminho_saida,
                                               "convergencia.csv"))
             conv = pd.concat([conv_anterior, conv],
-                                ignore_index=True)
+                             ignore_index=True)
         # Inviabilidades e Déficit do inviab_unic.rvX
         arq_inviab = f"inviab_unic.rv{self._caso.revisao}"
         inviab_unic = InviabUnic.le_arquivo(self.caso.caminho,
@@ -253,14 +253,14 @@ class SintetizadorDECOMP(SintetizadorCaso):
             inviab_anterior = le_df_de_csv(join(caminho_saida,
                                                 "inviabilidades.csv"))
             inviab = pd.concat([inviab_anterior, inviab],
-                                ignore_index=True)
+                               ignore_index=True)
         # Escreve em disco
         conv.to_csv(join(caminho_saida, "convergencia.csv"),
                     header=True,
                     encoding="utf-8")
         inviab.to_csv(join(caminho_saida, "inviabilidades.csv"),
-                        header=True,
-                        encoding="utf-8")
+                      header=True,
+                      encoding="utf-8")
         # Se não teve sucesso no caso, só exporta esses dados
         if self.caso.estado != EstadoCaso.CONCLUIDO:
             return True
@@ -269,13 +269,13 @@ class SintetizadorDECOMP(SintetizadorCaso):
         earm_subsis = relato.energia_armazenada_subsistema
         earmax = relato.energia_armazenada_maxima_subsistema
         earm_sin = SintetizadorDECOMP.__processa_earm_sin(earm_subsis,
-                                                            earmax)
+                                                          earmax)
         gt_subsis = relato.geracao_termica_subsistema
         gt_sin = SintetizadorDECOMP.__processa_dado_sin(gt_subsis)
         gt_perc_m = SintetizadorDECOMP.__processa_gt_percentual_max(relato,
                                                                     relgnl)
         gt_perc_f = SintetizadorDECOMP.__processa_gt_percentual_flex(relato,
-                                                                        relgnl)
+                                                                     relgnl)
         balanco = relato.balanco_energetico
         gh_subsis = SintetizadorDECOMP.__processa_gh(balanco)
         gh_sin = SintetizadorDECOMP.__processa_dado_sin(gh_subsis)
@@ -300,6 +300,8 @@ class SintetizadorDECOMP(SintetizadorCaso):
                           join(caminho_saida, "gt_percentual_flex.csv"))
         escreve_df_em_csv(gh_subsis,
                           join(caminho_saida, "gh_subsis.csv"))
+        escreve_df_em_csv(gh_sin,
+                          join(caminho_saida, "gh_sin.csv"))
         escreve_df_em_csv(merc_subsis,
                           join(caminho_saida, "mercado_subsis.csv"))
         escreve_df_em_csv(def_subsis,

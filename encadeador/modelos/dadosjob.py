@@ -35,6 +35,10 @@ class DadosJob:
     def id(self) -> str:
         return self._id
 
+    @id.setter
+    def id(self, i: str):
+        self._id = i
+
     @property
     def nome(self) -> str:
         return self._nome
@@ -44,7 +48,7 @@ class DadosJob:
         self._nome = n
 
     @property
-    def caminho(self, c: str):
+    def caminho(self):
         return self._caminho
 
     @property

@@ -58,21 +58,21 @@ class ProcessadorDecomp:
             for s in subs:
                 fil = term_1s["Subsistema"] == s
                 dp1 = float(merc_1s.loc[merc_1s["Subsistema"] == s,
-                                            "Patamar 1"])
+                                        "Patamar 1"])
                 dp2 = float(merc_1s.loc[merc_1s["Subsistema"] == s,
-                                            "Patamar 2"])
+                                        "Patamar 2"])
                 dp3 = float(merc_1s.loc[merc_1s["Subsistema"] == s,
-                                            "Patamar 3"])
+                                        "Patamar 3"])
                 dur_total = dp1 + dp2 + dp3
                 dp1 /= dur_total
                 dp2 /= dur_total
                 dp3 /= dur_total
                 term_1s.loc[fil, cmi] = (term_1s.loc[fil, "GT Min Pat. 1"] * dp1 +
-                                        term_1s.loc[fil, "GT Min Pat. 2"] * dp2 +
-                                        term_1s.loc[fil, "GT Min Pat. 3"] * dp3)
+                                         term_1s.loc[fil, "GT Min Pat. 2"] * dp2 +
+                                         term_1s.loc[fil, "GT Min Pat. 3"] * dp3)
                 term_1s.loc[fil, cma] = (term_1s.loc[fil, "GT Max Pat. 1"] * dp1 +
-                                        term_1s.loc[fil, "GT Max Pat. 2"] * dp2 +
-                                        term_1s.loc[fil, "GT Max Pat. 3"] * dp3)
+                                         term_1s.loc[fil, "GT Max Pat. 2"] * dp2 +
+                                         term_1s.loc[fil, "GT Max Pat. 3"] * dp3)
 
             # Obtém o GTmin e GTmax por subsistema
             term_grupo = term_1s.groupby("Subsistema").sum()[[cmi, cma]]
@@ -98,12 +98,12 @@ class ProcessadorDecomp:
             df_gt_min_max.loc[4, "GT Max"] = float(soma_gt.loc["GT Max"])
             return df_gt_min_max
 
-        df_completo = None
+        df_completo = pd.DataFrame()
         n_semanas = len(list(relato.volume_util_reservatorios.columns)) - 3
         for i in range(1, n_semanas + 1):
             df = extrai_gt_percentual_semana(relato, relgnl, i)
             df["Estágio"] = i
-            if df_completo is None:
+            if df_completo.empty:
                 df_completo = df
             else:
                 df_completo = pd.concat([df_completo, df],

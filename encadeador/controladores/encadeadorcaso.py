@@ -72,8 +72,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
     def __encadeia_earm(self):
 
         def __numero_uhe_decomp(numero_newave: int) -> int:
-            mapa_ficticias_NW_DC = {
-                                    318: 122,
+            mapa_ficticias_NW_DC = {318: 122,
                                     319: 57,
                                     294: 162,
                                     295: 156,
@@ -82,8 +81,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
                                     292: 252,
                                     302: 261,
                                     303: 257,
-                                    306: 253
-                                   }
+                                    306: 253}
             if numero_newave in mapa_ficticias_NW_DC.keys():
                 return mapa_ficticias_NW_DC[numero_newave]
             else:
@@ -98,14 +96,12 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             # usinas separadas no NEWAVE
             usinas_newave = usinas["Número"].tolist()
             usinas_decomp = volumes["Número"].tolist()
-            return all([
-                        44 not in usinas_newave,
+            return all([44 not in usinas_newave,
                         43 in usinas_newave,
                         34 in usinas_newave,
                         44 in usinas_decomp,
                         43 not in usinas_decomp,
-                        34 not in usinas_decomp
-                       ])
+                        34 not in usinas_decomp])
 
         def __encadeia_ilha_solteira_equiv(volumes: pd.DataFrame,
                                            usinas: pd.DataFrame
@@ -253,7 +249,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         cols_gtmin = [f"GT Min {MESES_DF[i - 1]}"
                       for i in range(self._caso_atual.mes, 13)]
         cols_gtmin += ["GT Min D+ Anos"]
-        
+
         # Lê o AdTerm do último NEWAVE rv0
         adterm_rv0 = AdTerm.le_arquivo(ultimo_rv0.caminho)
         d = adterm.despachos
@@ -298,7 +294,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             filtro_d = (d["Índice UTE"] == u) & (d["Lag"] == 2)
             d.loc[filtro_d,
                   cols_patamares] = np.clip(d_dc, gtmin, None)
-        
+
         # Escreve o arquivo de saída
         adterm.escreve_arquivo(self._caso_atual.caminho)
 
@@ -346,12 +342,10 @@ class EncadeadorDECOMPDECOMP(Encadeador):
             except ValueError:
                 existem_separadas_dadger = False
 
-            return all([
-                        existe_equiv_relato,
+            return all([existe_equiv_relato,
                         not existem_separadas_relato,
                         not existe_equiv_dadger,
-                        existem_separadas_dadger
-                       ])
+                        existem_separadas_dadger])
 
         def __encadeia_ilha_solteira_equiv(volumes: pd.DataFrame,
                                            dadger: Dadger):

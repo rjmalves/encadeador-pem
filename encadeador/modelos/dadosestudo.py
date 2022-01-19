@@ -8,6 +8,7 @@ from encadeador.modelos.dadoscaso import NOME_ARQUIVO_ESTADO
 from encadeador.controladores.sintetizadorcaso import DIRETORIO_RESUMO_CASO
 from encadeador.modelos.estadocaso import EstadoCaso
 
+
 class DadosEstudo:
     """
     Resumo dos dados de execução e agrupamento de casos do
@@ -140,7 +141,7 @@ class DadosEstudo:
                                  index_col=0)
             gt_perc_m = pd.read_csv(join(diretorio_resumo,
                                          "gt_percentual_max.csv"),
-                                     index_col=0)
+                                    index_col=0)
             gt_perc_f = pd.read_csv(join(diretorio_resumo,
                                          "gt_percentual_flex.csv"),
                                     index_col=0)

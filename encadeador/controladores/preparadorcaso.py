@@ -73,7 +73,7 @@ class PreparadorNEWAVE(PreparadorCaso):
                 cvar.escreve_arquivo(self.caso.caminho)
                 # Adequa opção do PAR(p)-A
                 opcao_parpa = Configuracoes().opcao_parpa
-                dger.afluencia_anual_parp = opcao_parpa
+                dger.afluencia_anual_parp = opcao_parpa  # type: ignore
                 Log.log().info(f"Opção do PAR(p)-A alterada: {opcao_parpa}")
             # Salva o dger de entrada
             dger.escreve_arquivo(self.caso.caminho)

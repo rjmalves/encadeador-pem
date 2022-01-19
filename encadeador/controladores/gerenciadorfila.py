@@ -42,7 +42,7 @@ class GerenciadorFila:
         self._mudou_estado.append(f)
 
     @property
-    def id_job(self) -> int:
+    def id_job(self) -> str:
         self.__confere_inicializacao(self._id_job)
         return self._id_job
 
@@ -98,11 +98,11 @@ class GerenciadorFila:
         pass
 
     @abstractmethod
-    def comando_qstat(self) -> str:
+    def comando_qstat(self) -> List[str]:
         pass
 
     @abstractmethod
-    def comando_qdel(self) -> str:
+    def comando_qdel(self) -> List[str]:
         pass
 
     def agenda_job(self,
@@ -163,26 +163,13 @@ class GerenciadorFila:
     def _estado_finalizado(self, e: str) -> bool:
         pass
 
+    @abstractmethod
+    def _extrai_estado_job(self):
+        pass
+
     def monitora_estado_job(self):
 
-        def __procura_codigo_estado() -> str:
-            try:
-                cod, saidas = executa_terminal([self.comando_qstat])
-            except TimeoutError as e:
-                raise e
-            if cod != 0:
-                raise ValueError(f"Erro na execução do qstat: código {cod}")
-            estado = ""
-            for linha in saidas[2:]:
-                lin = linha.strip()
-                if lin.split(" ")[0] == "":
-                    break
-                if int(lin.split(" ")[0]) == self.id_job:
-                    estado = linha[34:38].strip()
-                    break
-            return estado
-
-        estado = __procura_codigo_estado()
+        estado = self._extrai_estado_job()
         if self._estado_timeout(estado):
             self.estado_job = EstadoJob.TIMEOUT
         elif self._estado_erro(estado):
@@ -262,16 +249,34 @@ class GerenciadorFilaSGE(GerenciadorFila):
     def comando_qdel(self) -> List[str]:
         return ["qdel", str(self.id_job)]
 
+    # Override
+    def _extrai_estado_job(self):
+        try:
+            cod, saidas = executa_terminal(self.comando_qstat())
+        except TimeoutError as e:
+            raise e
+        if cod != 0:
+            raise ValueError(f"Erro na execução do qstat: código {cod}")
+        estado = ""
+        for linha in saidas[2:]:
+            lin = linha.strip()
+            if lin.split(" ")[0] == "":
+                break
+            if int(lin.split(" ")[0]) == self.id_job:
+                estado = linha[34:38].strip()
+                break
+        return estado
+
     def _estado_timeout(self, e: str) -> bool:
         return (e == "r" and
-                self.tempo_job_idle >= __class__.TIMEOUT_COMUNICACAO)
+                self.tempo_job_idle >= self.__class__.TIMEOUT_COMUNICACAO)
 
     def _estado_esperando(self, e: str) -> bool:
         return e in ["qw", "t", "q"]
 
     def _estado_executando(self, e: str) -> bool:
         return (e == "r" and
-                self.tempo_job_idle < __class__.TIMEOUT_COMUNICACAO)
+                self.tempo_job_idle < self.__class__.TIMEOUT_COMUNICACAO)
 
     def _estado_deletando(self, e: str) -> bool:
         return e in ["dr", "d"]

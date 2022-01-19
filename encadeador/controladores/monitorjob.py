@@ -64,9 +64,9 @@ class MonitorJob:
 
     def submete(self,
                 numero_processadores: int) -> bool:
-        r =  self._gerenciador.agenda_job(self._job.caminho,
-                                          self._job.nome,
-                                          numero_processadores)
+        r = self._gerenciador.agenda_job(self._job.caminho,
+                                         self._job.nome,
+                                         numero_processadores)
         self._job.id = self._gerenciador.id_job
         self._job.numero_processadores = numero_processadores
         return r

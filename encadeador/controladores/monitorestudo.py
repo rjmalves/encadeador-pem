@@ -1,19 +1,13 @@
 from abc import abstractmethod
 from typing import Dict, Tuple, Callable
-from os.path import join
-from os import listdir
-from encadeador.controladores.avaliadorestudo import AvaliadorEstudo
-from encadeador.controladores.flexibilizadorcaso import Flexibilizador
-from encadeador.controladores.monitorcaso import MonitorCaso
-from encadeador.controladores.sintetizadorestudo import SintetizadorEstudo
 
-from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
+from encadeador.modelos.caso import Caso
 from encadeador.modelos.estadoestudo import EstadoEstudo
 from encadeador.modelos.estudo import Estudo
-from encadeador.modelos.configuracoes import Configuracoes
-from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.modelos.transicaocaso import TransicaoCaso
+from encadeador.controladores.monitorcaso import MonitorCaso
 from encadeador.controladores.armazenadorestudo import ArmazenadorEstudo
+from encadeador.controladores.sintetizadorestudo import SintetizadorEstudo
 from encadeador.utils.log import Log
 
 
@@ -29,9 +23,8 @@ class MonitorEstudo:
                  estudo: Estudo):
         self._estudo = estudo
         self._armazenador = ArmazenadorEstudo(estudo)
-        self._avaliador = AvaliadorEstudo(estudo)
-        self._caso_atual = None
-        self._monitor_atual = None
+        self._caso_atual: Caso = None  # type: ignore
+        self._monitor_atual: MonitorCaso = None  # type: ignore
 
     def callback_evento_caso(self, evento: TransicaoCaso):
         """
@@ -48,7 +41,7 @@ class MonitorEstudo:
         # Atualiza o estado atual
         self._estudo.atualiza(novo_estado, True)
         if not self._armazenador.armazena_estudo():
-            Log.log().error(f"Erro ao armazenar estudo encadeado")
+            Log.log().error("Erro ao armazenar estudo encadeado")
 
     @property
     @abstractmethod
@@ -62,7 +55,7 @@ class MonitorEstudo:
 
     def _regras(self) -> Dict[Tuple[EstadoEstudo,
                                     TransicaoCaso],
-                              Callable]:
+                              Callable[[], EstadoEstudo]]:
         return {
             (EstadoEstudo.EXECUTANDO,
              TransicaoCaso.INICIOU): self._trata_inicio_caso,
@@ -120,6 +113,9 @@ class MonitorEstudo:
         if self._estudo.terminou:
             return EstadoEstudo.CONCLUIDO
         else:
+            if self._estudo.proximo_caso is None:
+                Log.log().error("Não foi encontrado o próximo caso")
+                raise RuntimeError()
             self._caso_atual = self._estudo.proximo_caso
             self._monitor_atual = MonitorCaso.factory(self._caso_atual)
             self._monitor_atual.observa(self.callback_evento_caso)

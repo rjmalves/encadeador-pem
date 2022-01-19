@@ -34,8 +34,8 @@ class MonitorCaso:
         self._caso = caso
         self._armazenador = ArmazenadorCaso(caso)
         self._avaliador = AvaliadorCaso.factory(caso)
-        self._job_atual = None
-        self._monitor_job_atual = None
+        self._job_atual: Job = None  # type: ignore
+        self._monitor_job_atual: MonitorJob = None  # type: ignore
         self._transicao_caso = Event()
 
     @staticmethod
@@ -74,7 +74,7 @@ class MonitorCaso:
 
     def _regras(self) -> Dict[Tuple[EstadoCaso,
                                     TransicaoJob],
-                              Callable[[],EstadoCaso]]:
+                              Callable[[], EstadoCaso]]:
         return {
             (EstadoCaso.INICIADO,
              TransicaoJob.ENTRADA_FILA): self._trata_entrada_fila,
@@ -107,7 +107,7 @@ class MonitorCaso:
 
     def submete(self, retry: bool = False) -> bool:
         """
-        Cria um novo Job para o caso e o submete à fila. 
+        Cria um novo Job para o caso e o submete à fila.
 
         :return: O sucesso ou não da submissão do job.
         :rtype: bool

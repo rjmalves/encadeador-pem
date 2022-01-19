@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import List, Tuple
 import numpy as np  # type: ignore
 from idecomp.decomp.dadger import Dadger
-from idecomp.decomp.modelos.dadger import AC, ACVAZMIN, ACVERTJU, DP, FP, HE, CM
+from idecomp.decomp.modelos.dadger import AC, ACVAZMIN, ACVERTJU, DP, FP, CM
 
 from encadeador.modelos.inviabilidade import Inviabilidade
 from encadeador.modelos.inviabilidade import InviabilidadeEV
@@ -19,8 +19,7 @@ from encadeador.utils.log import Log
 
 class RegraFlexibilizacao:
 
-    tipos_inviabilidades = [
-                            InviabilidadeEV,
+    tipos_inviabilidades = [InviabilidadeEV,
                             InviabilidadeTI,
                             InviabilidadeHV,
                             InviabilidadeHQ,
@@ -28,11 +27,9 @@ class RegraFlexibilizacao:
                             InviabilidadeHE,
                             InviabilidadeDEFMIN,
                             InviabilidadeFP,
-                            InviabilidadeDeficit
-                           ]
+                            InviabilidadeDeficit]
 
-    deltas_inviabilidades = {
-                             InviabilidadeEV: 0,
+    deltas_inviabilidades = {InviabilidadeEV: 0,
                              InviabilidadeTI: 0.2,
                              InviabilidadeHV: 1,
                              InviabilidadeHQ: 5,
@@ -40,8 +37,7 @@ class RegraFlexibilizacao:
                              InviabilidadeHE: 0.1,
                              InviabilidadeDEFMIN: 0.2,
                              InviabilidadeFP: 0,
-                             InviabilidadeDeficit: 2.0
-                            }
+                             InviabilidadeDeficit: 2.0}
 
     def __init__(self) -> None:
         pass
@@ -424,15 +420,15 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                                                           inv)
             # Procura por um registro FP
             try:
-                reg = dadger.fp(max_viol._codigo, 1)
+                dadger.fp(max_viol._codigo, 1)
                 # Procura por um AC VERTJU
                 try:
-                    reg = dadger.ac(max_viol._codigo, "VERTJU")
+                    reg_ac = dadger.ac(max_viol._codigo, "VERTJU")
                     Log.log().info("Flexibilizando FP - " +
                                    "Registro AC VERTJU" +
                                    f" para a usina {max_viol._codigo} " +
                                    f" ({max_viol._usina}) = 0")
-                    reg._modificacao._dados = 0
+                    reg_ac._modificacao._dados = 0
                 except ValueError:
                     Log.log().warning("Flexibilizando FP - " +
                                       "Não foi encontrado registro AC VERTJU" +
@@ -605,7 +601,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
 
         # Estrutura para conter as tuplas
         # (código, estágio, limite) já flexibilizados
-        flexibilizados: List[Tuple[int, int, str]] = []
+        flexibilizados: List[Tuple[int, str]] = []
         for inv in inviabilidades:
             # Ignora os cenários do 2º mês
             if inv._estagio == dadger.lista_registros(DP)[-1].estagio:

@@ -21,6 +21,7 @@ def le_arquivo_json(caminho: str) -> Dict[str, Any]:
             num_retry += 1
             time.sleep(INTERVALO_RETRY)
             continue
+    raise RuntimeError()
 
 
 def escreve_arquivo_json(caminho: str, dados: dict):

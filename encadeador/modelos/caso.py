@@ -57,11 +57,11 @@ class Caso:
             self._jobs.append(job)
 
     @abstractmethod
-    def configura_caso(self,
-                       caminho: str,
-                       ano: int,
-                       mes: int,
-                       revisao: int):
+    @staticmethod
+    def gera_dados_caso(caminho: str,
+                        ano: int,
+                        mes: int,
+                        revisao: int):
         pass
 
     @abstractmethod
@@ -70,7 +70,6 @@ class Caso:
                             mes: int,
                             revisao: int) -> str:
         pass
-
 
     def _verifica_caso_configurado(self):
         if self._dados is None:
@@ -82,7 +81,7 @@ class Caso:
         return self._dados.caminho
 
     @caminho.setter
-    def caminho(self, c: str) -> str:
+    def caminho(self, c: str):
         self._dados.caminho = c
 
     @property
@@ -137,19 +136,18 @@ class CasoNEWAVE(Caso):
                           [Job.from_json(j) for j in json_dict["_jobs"]])
 
     # Override
-    def configura_caso(self,
-                       caminho: str,
-                       ano: int,
-                       mes: int,
-                       revisao: int):
-        nome = self._constroi_nome_caso(ano, mes, revisao)
-        self._dados = DadosCaso("NEWAVE",
-                                caminho,
-                                nome,
-                                ano,
-                                mes,
-                                revisao,
-                                0)
+    @staticmethod
+    def gera_dados_caso(caminho: str,
+                        ano: int,
+                        mes: int,
+                        revisao: int):
+        nome = CasoNEWAVE._constroi_nome_caso(ano, mes, revisao)
+        return DadosCaso("NEWAVE",
+                         caminho,
+                         nome,
+                         ano,
+                         mes,
+                         revisao)
 
     # Override
     @property
@@ -165,8 +163,8 @@ class CasoNEWAVE(Caso):
         return num_proc
 
     # Override
-    def _constroi_nome_caso(self,
-                            ano: int,
+    @staticmethod
+    def _constroi_nome_caso(ano: int,
                             mes: int,
                             revisao: int) -> str:
         return f"{Configuracoes().nome_estudo} - NW {mes}/{ano}"
@@ -180,19 +178,18 @@ class CasoDECOMP(Caso):
                           [Job.from_json(j) for j in json_dict["_jobs"]])
 
     # Override
-    def configura_caso(self,
-                       caminho: str,
-                       ano: int,
-                       mes: int,
-                       revisao: int):
-        nome = self._constroi_nome_caso(ano, mes, revisao)
-        self._dados = DadosCaso("DECOMP",
-                                caminho,
-                                nome,
-                                ano,
-                                mes,
-                                revisao,
-                                0)
+    @staticmethod
+    def gera_dados_caso(caminho: str,
+                        ano: int,
+                        mes: int,
+                        revisao: int):
+        nome = CasoDECOMP._constroi_nome_caso(ano, mes, revisao)
+        return DadosCaso("DECOMP",
+                         caminho,
+                         nome,
+                         ano,
+                         mes,
+                         revisao)
 
     # Override
     @property
@@ -208,8 +205,8 @@ class CasoDECOMP(Caso):
         return num_proc
 
     # Override
-    def _constroi_nome_caso(self,
-                            ano: int,
+    @staticmethod
+    def _constroi_nome_caso(ano: int,
                             mes: int,
                             revisao: int) -> str:
         return (f"{Configuracoes().nome_estudo} - DC" +
