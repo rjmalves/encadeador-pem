@@ -1,7 +1,6 @@
 from os import chdir
 import time
 
-from encadeador.modelos.caso import Caso
 from encadeador.modelos.estadoestudo import EstadoEstudo
 from encadeador.modelos.estudo import Estudo
 from encadeador.modelos.configuracoes import Configuracoes
@@ -18,20 +17,19 @@ class App:
     def __init__(self) -> None:
         self._estudo: Estudo = None  # type: ignore
         self._monitor: MonitorEstudo = None  # type: ignore
-        self._sintetizador: SintetizadorEstudo = None  # type: ignore
 
     def __constroi_estudo_encadeado(self):
-        self._estudo = ArmazenadorEstudo.recupera_estudo()
+        self._estudo = ArmazenadorEstudo.gera_estudo()
         self._monitor = MonitorEstudo(self._estudo)
-        self._sintetizador = SintetizadorEstudo(self._estudo)
+        self._estudo.atualiza(EstadoEstudo.NAO_INICIADO, True)
+        sintetizador = SintetizadorEstudo(self._estudo)
+        if not sintetizador.sintetiza_estudo():
+            raise RuntimeError()
 
     def executa(self) -> bool:
         Log.log().info(f"Iniciando Encadeador - {Configuracoes().nome_estudo}")
         try:
             self.__constroi_estudo_encadeado()
-            self._estudo.atualiza(EstadoEstudo.NAO_INICIADO, True)
-            if not self._sintetizador.sintetiza_estudo():
-                raise RuntimeError()
             # Refaz a síntese como estão as coisas
             if not self._monitor.inicializa():
                 Log.log().error("Erro na inicialização do estudo")

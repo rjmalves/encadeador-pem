@@ -24,14 +24,12 @@ class Estudo:
     @staticmethod
     def from_json(json_dict: Dict[str, Any]):
         dados = DadosEstudo.from_json(json_dict["_dados"])
-        jobs = [Caso.from_json(c) for c in json_dict["_casos"]]
         estado = EstadoEstudo.factory(json_dict["_estado"])
-        return Estudo(dados, jobs, estado)
+        return Estudo(dados, [], estado)
 
     def to_json(self) -> Dict[str, Any]:
         return {
             "_dados": self._dados.to_json(),
-            "_casos": [c.to_json() for c in self._casos],
             "_estado": str(self._estado.value)
         }
 
@@ -121,6 +119,10 @@ class Estudo:
     @property
     def casos(self) -> List[Caso]:
         return self._casos
+
+    @casos.setter
+    def casos(self, c: List[Caso]):
+        self._casos = c
 
     def indice_caso(self, caso: Optional[Caso]) -> int:
         if caso is None:

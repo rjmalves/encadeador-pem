@@ -29,7 +29,7 @@ class ArmazenadorEstudo:
             return False
 
     @staticmethod
-    def recupera_estudo() -> Estudo:
+    def gera_estudo() -> Estudo:
 
         # Se não tem arquivo de resumo, o estudo não começou a ser rodado
         nome = Configuracoes().nome_estudo
@@ -51,5 +51,8 @@ class ArmazenadorEstudo:
             return Estudo(dados,
                           casos)
 
-        # Se tem, então o estudo pelo menos começou
-        return Estudo.from_json(le_arquivo_json(arq))
+        # Se tem, então o estudo pelo menos começou. Então constroi
+        # o estudo a partir dos detalhes nos arquivos de cada caso
+        e = Estudo.from_json(le_arquivo_json(arq))
+        e.casos = Estudo.constroi_casos(e._dados._diretorios_casos)
+        return e
