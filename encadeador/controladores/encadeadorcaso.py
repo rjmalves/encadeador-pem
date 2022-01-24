@@ -228,9 +228,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         # Escreve o Eafpast
         eafpast.escreve_arquivo(self._caso_atual.caminho)
 
-    def __encadeia_gnl(self):
-        Log.log().info("Encadeando GNL")
-
+    def __ultimo_newave_rv0(self) -> CasoNEWAVE:
         ultimo_rv0 = None
         for c in reversed(self._casos_anteriores):
             if isinstance(c, CasoNEWAVE) and c.revisao == 0:
@@ -240,31 +238,9 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             Log.log().error("Último NW rv0 não encontrado para " +
                             "encadeamento de GNL")
             raise RuntimeError()
-        # Lê o AdTerm do caso atual
-        adterm = AdTerm.le_arquivo(self._caso_atual.caminho)
+        return ultimo_rv0
 
-        # Lê o Term do newave atual
-        term = Term.le_arquivo(self._caso_atual.caminho)
-        utes = term.usinas
-        cols_gtmin = [f"GT Min {MESES_DF[i - 1]}"
-                      for i in range(self._caso_atual.mes, 13)]
-        cols_gtmin += ["GT Min D+ Anos"]
-
-        # Lê o AdTerm do último NEWAVE rv0
-        adterm_rv0 = AdTerm.le_arquivo(ultimo_rv0.caminho)
-        d = adterm.despachos
-        d_rv0 = adterm_rv0.despachos
-        indices_usinas = d["Índice UTE"].unique()
-        cols_patamares = [f"Patamar {i}" for i in [1, 2, 3]]
-        for u in indices_usinas:
-            if u not in d_rv0["Índice UTE"].tolist():
-                continue
-            filtro_d = (d["Índice UTE"] == u) & (d["Lag"] == 1)
-            filtro_d_rv0 = (d_rv0["Índice UTE"] == u) & (d_rv0["Lag"] == 2)
-            gtmin = float(utes.loc[utes["Número"] == u, cols_gtmin].max(axis=1))
-            valores = d_rv0.loc[filtro_d_rv0, cols_patamares].to_numpy()
-            d.loc[filtro_d, cols_patamares] = np.clip(valores, gtmin, None)
-        # Lê o RelGNL do último decomp
+    def __ultimo_decomp(self) -> CasoDECOMP:
         ultimo_dc = None
         for c in reversed(self._casos_anteriores):
             if isinstance(c, CasoDECOMP):
@@ -274,6 +250,35 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             Log.log().error("Último DC não encontrado para " +
                             "encadeamento de GNL")
             raise RuntimeError()
+        return ultimo_dc
+
+    def __processa_adterm(self,
+                          adterm_caso_atual: AdTerm,
+                          term: Term
+                          ):
+        ultimo_rv0 = self.__ultimo_newave_rv0()
+        adterm_rv0 = AdTerm.le_arquivo(ultimo_rv0.caminho)
+        d = adterm_caso_atual.despachos
+        d_rv0 = adterm_rv0.despachos
+        indices_usinas = d["Índice UTE"].unique()
+        cols_patamares = [f"Patamar {i}" for i in [1, 2, 3]]
+        utes = term.usinas
+        for u in indices_usinas:
+            if u not in d_rv0["Índice UTE"].tolist():
+                continue
+            filtro_d = (d["Índice UTE"] == u) & (d["Lag"] == 1)
+            filtro_d_rv0 = (d_rv0["Índice UTE"] == u) & (d_rv0["Lag"] == 2)
+            gtmin = float(utes.loc[utes["Número"] == u,
+                                   self.__colunas_gtmin()].max(axis=1))
+            valores = d_rv0.loc[filtro_d_rv0,
+                                cols_patamares].to_numpy()
+            d.loc[filtro_d,
+                  cols_patamares] = np.clip(valores, gtmin, None)
+
+    def __processa_relgnl(self,
+                          adterm_caso_atual: AdTerm,
+                          term: Term):
+        ultimo_dc = self.__ultimo_decomp()
         nome_rel = f"relgnl.rv{ultimo_dc.revisao}"
         rel = RelGNL.le_arquivo(ultimo_dc.caminho, nome_rel)
         codigos = rel.usinas_termicas["Código"].unique()
@@ -281,19 +286,47 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         mapa_codigo_usina = {c: u for c, u in zip(codigos, usinas)}
         cols_despacho = [f"Despacho Pat. {i}" for i in [1, 2, 3]]
         op = rel.relatorio_operacao_termica
+        d = adterm_caso_atual.despachos
+        indices_usinas = d["Índice UTE"].unique()
+        cols_patamares = [f"Patamar {i}" for i in [1, 2, 3]]
+        utes = term.usinas
         # Para cada usina GNL, garante que o despacho está maior ou igual
         # a sua geração mínima
         for u in indices_usinas:
             if u not in mapa_codigo_usina:
                 continue
             nome = mapa_codigo_usina[u]
-            gtmin = float(utes.loc[utes["Número"] == u, cols_gtmin].max(axis=1))
+            gtmin = float(utes.loc[utes["Número"] == u,
+                                   self.__colunas_gtmin()].max(axis=1))
             d_dc = op.loc[(op["Usina"] == nome) &
                           (op["Estágio"] == "MENSAL"),
                           cols_despacho].to_numpy()
             filtro_d = (d["Índice UTE"] == u) & (d["Lag"] == 2)
             d.loc[filtro_d,
                   cols_patamares] = np.clip(d_dc, gtmin, None)
+
+    def __colunas_gtmin(self) -> List[str]:
+        cols_gtmin = [f"GT Min {MESES_DF[i - 1]}"
+                    for i in range(self._caso_atual.mes, 13)]
+        cols_gtmin += ["GT Min D+ Anos"]
+        return cols_gtmin
+
+    def __encadeia_gnl(self):
+        Log.log().info("Encadeando GNL")
+
+        # Lê o AdTerm do caso atual
+        adterm = AdTerm.le_arquivo(self._caso_atual.caminho)
+
+        # Lê o Term do newave atual
+        term = Term.le_arquivo(self._caso_atual.caminho)
+
+        # Lê o AdTerm do último NEWAVE rv0 e faz o encadeamento
+        # com o despacho anterior
+        self.__processa_adterm(adterm)
+
+        # Lê o RelGNL do último decomp e atribui o despacho
+        # determinado pelo decomp
+        self.__processa_relgnl(adterm, term)
 
         # Escreve o arquivo de saída
         adterm.escreve_arquivo(self._caso_atual.caminho)

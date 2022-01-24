@@ -49,6 +49,26 @@ class PreparadorNEWAVE(PreparadorCaso):
                  caso: CasoNEWAVE) -> None:
         super().__init__(caso)
 
+    def __adequa_nome_caso(self, dger: DGer):
+        nome_estudo = Configuracoes().nome_estudo
+        ano = self.caso.ano
+        mes = self.caso.mes
+        dger.nome_caso = f"{nome_estudo} - NW {mes}/{ano}"
+
+    def __adequa_parametros_dger(self, dger: DGer):
+        Log.log().info(f"Adequando caso do NEWAVE: {self.caso.nome}")
+        # Adequa parâmetros de CVAR
+        cvar = CVAR.le_arquivo(self.caso.caminho)
+        Log.log().info("CVAR lido com sucesso")
+        par_cvar = Configuracoes().cvar
+        Log.log().info(f"Valores de CVAR alterados: {par_cvar}")
+        cvar.valores_constantes = par_cvar
+        cvar.escreve_arquivo(self.caso.caminho)
+        # Adequa opção do PAR(p)-A
+        opcao_parpa = Configuracoes().opcao_parpa
+        dger.afluencia_anual_parp = opcao_parpa  # type: ignore
+        Log.log().info(f"Opção do PAR(p)-A alterada: {opcao_parpa}")
+
     def prepara_caso(self,
                      **kwargs) -> bool:
         script = Configuracoes().script_converte_codificacao
@@ -56,25 +76,11 @@ class PreparadorNEWAVE(PreparadorCaso):
         Log.log().info(f"Preparando caso do NEWAVE: {self.caso.nome}")
         try:
             # Adequa o nome do caso
-            nome_estudo = Configuracoes().nome_estudo
-            ano = self.caso.ano
-            mes = self.caso.mes
             dger = DGer.le_arquivo(self.caso.caminho)
             Log.log().info("DGer lido com sucesso")
-            dger.nome_caso = f"{nome_estudo} - NW {mes}/{ano}"
+            self.__adequa_nome_caso(dger)
             if Configuracoes().adequa_decks_newave:
-                Log.log().info(f"Adequando caso do NEWAVE: {self.caso.nome}")
-                # Adequa parâmetros de CVAR
-                cvar = CVAR.le_arquivo(self.caso.caminho)
-                Log.log().info("CVAR lido com sucesso")
-                par_cvar = Configuracoes().cvar
-                Log.log().info(f"Valores de CVAR alterados: {par_cvar}")
-                cvar.valores_constantes = par_cvar
-                cvar.escreve_arquivo(self.caso.caminho)
-                # Adequa opção do PAR(p)-A
-                opcao_parpa = Configuracoes().opcao_parpa
-                dger.afluencia_anual_parp = opcao_parpa  # type: ignore
-                Log.log().info(f"Opção do PAR(p)-A alterada: {opcao_parpa}")
+                self.__adequa_parametros_dger(dger)
             # Salva o dger de entrada
             dger.escreve_arquivo(self.caso.caminho)
             Log.log().info("Adequação do caso concluída com sucesso")
@@ -106,6 +112,58 @@ class PreparadorDECOMP(PreparadorCaso):
                  caso: CasoDECOMP) -> None:
         super().__init__(caso)
 
+    def __adequa_titulo_estudo(self, dadger: Dadger):
+        nome_estudo = Configuracoes().nome_estudo
+        ano = self.caso.ano
+        mes = self.caso.mes
+        rv = self.caso.revisao
+        dadger.te.titulo = f"{nome_estudo} - DC {mes}/{ano} RV{rv}"
+
+    def __adequa_caminho_fcf(self,
+                             dadger: Dadger,
+                             caso_cortes: CasoNEWAVE):
+        if caso_cortes is None or not isinstance(caso_cortes,
+                                                 CasoNEWAVE):
+            Log.log().error("Erro na especificação dos cortes da FCF")
+            raise RuntimeError()
+        caso_cortes: CasoNEWAVE = caso_cortes
+        # Verifica se é necessário e extrai os cortes
+        sintetizador = SintetizadorNEWAVE(caso_cortes)
+        if not sintetizador.verifica_cortes_extraidos():
+            sintetizador.extrai_cortes()
+        # Altera os registros FC
+        arq = Arquivos.le_arquivo(caso_cortes.caminho)
+        dadger.fc("NEWV21").caminho = join(caso_cortes.caminho,
+                                           arq.cortesh)
+        dadger.fc("NEWCUT").caminho = join(caso_cortes.caminho,
+                                           arq.cortes)
+        return True
+
+    def __adequa_decks_decomp(self,
+                              dadger: Dadger):
+        Log.log().info(f"Adequando caso do DECOMP: {self.caso.nome}")
+        # Adequa registro NI
+        n_iter = Configuracoes().maximo_iteracoes_decomp
+        dadger.ni.iteracoes = n_iter
+        # Adequa registro GP
+        # TODO
+        # Prevenção de Gap Negativo
+        if Configuracoes().previne_gap_negativo:
+            # Se não tem RT DESVIO, cria
+            try:
+                dadger.rt("DESVIO")
+            except ValueError:
+                rt = RT()
+                rt.restricao = "DESVIO"
+                dadger.cria_registro(dadger.te, rt)
+            # Se não tem RT CRISTA, cria
+            try:
+                dadger.rt("CRISTA")
+            except ValueError:
+                rt = RT()
+                rt.restricao = "CRISTA"
+                dadger.cria_registro(dadger.te, rt)
+
     def prepara_caso(self,
                      **kwargs) -> bool:
         Log.log().info(f"Preparando caso do DECOMP: {self.caso.nome}")
@@ -116,51 +174,12 @@ class PreparadorDECOMP(PreparadorCaso):
                                        f"dadger.rv{self.caso.revisao}")
             Log.log().info("Dadger lido com sucesso")
             # Adequa registro TE
-            nome_estudo = Configuracoes().nome_estudo
-            ano = self.caso.ano
-            mes = self.caso.mes
-            rv = self.caso.revisao
-            dadger.te.titulo = f"{nome_estudo} - DC {mes}/{ano} RV{rv}"
+            self.__adequa_titulo_estudo(dadger)
             # Adequa os registros FC (cortes e cortesh)
-            caso_entrada = kwargs.get("caso_cortes")
-            if caso_entrada is None or not isinstance(caso_entrada,
-                                                      CasoNEWAVE):
-                Log.log().error("Erro na especificação dos cortes da FCF")
-                return False
-            caso_cortes: CasoNEWAVE = caso_entrada
-            # Verifica se é necessário e extrai os cortes
-            sintetizador = SintetizadorNEWAVE(caso_cortes)
-            if not sintetizador.verifica_cortes_extraidos():
-                sintetizador.extrai_cortes()
-            # Altera os registros FC
-            arq = Arquivos.le_arquivo(caso_cortes.caminho)
-            dadger.fc("NEWV21").caminho = join(caso_cortes.caminho,
-                                               arq.cortesh)
-            dadger.fc("NEWCUT").caminho = join(caso_cortes.caminho,
-                                               arq.cortes)
+            caso_cortes = kwargs.get("caso_cortes")
+            self.__adequa_caminho_fcf(dadger, caso_cortes)
             if Configuracoes().adequa_decks_decomp:
-                Log.log().info(f"Adequando caso do DECOMP: {self.caso.nome}")
-                # Adequa registro NI
-                n_iter = Configuracoes().maximo_iteracoes_decomp
-                dadger.ni.iteracoes = n_iter
-                # Adequa registro GP
-                # TODO
-                # Prevenção de Gap Negativo
-                if Configuracoes().previne_gap_negativo:
-                    # Se não tem RT DESVIO, cria
-                    try:
-                        dadger.rt("DESVIO")
-                    except ValueError:
-                        rt = RT()
-                        rt.restricao = "DESVIO"
-                        dadger.cria_registro(dadger.te, rt)
-                    # Se não tem RT CRISTA, cria
-                    try:
-                        dadger.rt("CRISTA")
-                    except ValueError:
-                        rt = RT()
-                        rt.restricao = "CRISTA"
-                        dadger.cria_registro(dadger.te, rt)
+                self.__adequa_decks_decomp(dadger)
             # Salva o dadger
             dadger.escreve_arquivo(self.caso.caminho,
                                    f"dadger.rv{self.caso.revisao}")
