@@ -64,44 +64,58 @@ class Encadeador:
 
 class EncadeadorDECOMPNEWAVE(Encadeador):
 
+    SERRA_MESA_FICT_DC = 251
+    SERRA_MESA_FICT_NW = 291
+    # TODO : identificar os números das demais usinas
+    # para não ficarem números mágicos no código
+
     def __init__(self,
                  casos_anteriores: List[Caso],
                  caso_atual: Caso):
         super().__init__(casos_anteriores, caso_atual)
 
+    @staticmethod
+    def __correcao_serra_mesa_ficticia(vol: float) -> float:
+        return min([100.0, vol / 0.55])
+
+    @staticmethod
+    def __numero_uhe_decomp(numero_newave: int) -> int:
+        mapa_ficticias_NW_DC = {318: 122,
+                                319: 57,
+                                294: 162,
+                                295: 156,
+                                308: 155,
+                                298: 148,
+                                292: 252,
+                                302: 261,
+                                303: 257,
+                                306: 253}
+        if numero_newave in mapa_ficticias_NW_DC.keys():
+            return mapa_ficticias_NW_DC[numero_newave]
+        else:
+            return numero_newave
+
+    @staticmethod
+    def __separou_ilha_solteira_equiv(volumes: pd.DataFrame,
+                                      usinas: pd.DataFrame) -> bool:
+        # Saber se tem I. Solteira Equiv. no DECOMP mas tem as
+        # usinas separadas no NEWAVE
+        usinas_newave = usinas["Número"].tolist()
+        usinas_decomp = volumes["Número"].tolist()
+        return all([44 not in usinas_newave,
+                    43 in usinas_newave,
+                    34 in usinas_newave,
+                    44 in usinas_decomp,
+                    43 not in usinas_decomp,
+                    34 not in usinas_decomp])
+
     def __encadeia_earm(self):
 
-        def __numero_uhe_decomp(numero_newave: int) -> int:
-            mapa_ficticias_NW_DC = {318: 122,
-                                    319: 57,
-                                    294: 162,
-                                    295: 156,
-                                    308: 155,
-                                    298: 148,
-                                    292: 252,
-                                    302: 261,
-                                    303: 257,
-                                    306: 253}
-            if numero_newave in mapa_ficticias_NW_DC.keys():
-                return mapa_ficticias_NW_DC[numero_newave]
+        def __coluna_para_encadear() -> str:
+            if self._caso_atual.revisao == 0:
+                return "Estágio 1"
             else:
-                return numero_newave
-
-        def __correcao_serra_mesa_ficticia(vol: float) -> float:
-            return min([100.0, vol / 0.55])
-
-        def __separou_ilha_solteira_equiv(volumes: pd.DataFrame,
-                                          usinas: pd.DataFrame) -> bool:
-            # Saber se tem I. Solteira Equiv. no DECOMP mas tem as
-            # usinas separadas no NEWAVE
-            usinas_newave = usinas["Número"].tolist()
-            usinas_decomp = volumes["Número"].tolist()
-            return all([44 not in usinas_newave,
-                        43 in usinas_newave,
-                        34 in usinas_newave,
-                        44 in usinas_decomp,
-                        43 not in usinas_decomp,
-                        34 not in usinas_decomp])
+                return list(volumes.columns)[-2]
 
         def __encadeia_ilha_solteira_equiv(volumes: pd.DataFrame,
                                            usinas: pd.DataFrame
@@ -114,12 +128,6 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             usinas.loc[usinas["Número"] == 43,
                        "Volume Inicial"] = vol
             return usinas
-
-        def __coluna_para_encadear() -> str:
-            if self._caso_atual.revisao == 0:
-                return "Estágio 1"
-            else:
-                return list(volumes.columns)[-2]
 
         def __interpola_volume() -> float:
             # TODO - implementar para maior precisão
@@ -139,23 +147,25 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         # Atualiza cada armazenamento
         for _, linha in usinas.iterrows():
             num = linha["Número"]
-            num_dc = __numero_uhe_decomp(num)
+            num_dc = EncadeadorDECOMPNEWAVE.__numero_uhe_decomp(num)
             # Confere se tem o reservatório
             if num_dc not in set(volumes["Número"]):
                 continue
             vol = float(volumes.loc[volumes["Número"] == num_dc,
                                     __coluna_para_encadear()])
-            if num_dc == 251:
-                vol_fict = __correcao_serra_mesa_ficticia(vol)
+            if num_dc == EncadeadorDECOMPNEWAVE.SERRA_MESA_FICT_DC:
+                vf = EncadeadorDECOMPNEWAVE.__correcao_serra_mesa_ficticia(vol)
                 Log.log().info("Correção de Serra da Mesa fictícia: " +
-                               f"{vol} -> {vol_fict}")
-                usinas.loc[usinas["Número"] == 291,
-                           "Volume Inicial"] = vol_fict
+                               f"{vol} -> {vf}")
+                num_nw = EncadeadorDECOMPNEWAVE.SERRA_MESA_FICT_NW
+                usinas.loc[usinas["Número"] == num_nw,
+                           "Volume Inicial"] = vf
             usinas.loc[usinas["Número"] == num,
                        "Volume Inicial"] = vol
 
         # Trata o caso de I. Solteira Equiv.
-        if __separou_ilha_solteira_equiv(volumes, usinas):
+        if EncadeadorDECOMPNEWAVE.__separou_ilha_solteira_equiv(volumes,
+                                                                usinas):
             usinas = __encadeia_ilha_solteira_equiv(volumes, usinas)
 
         # Escreve o confhd de saída
@@ -307,7 +317,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
 
     def __colunas_gtmin(self) -> List[str]:
         cols_gtmin = [f"GT Min {MESES_DF[i - 1]}"
-                    for i in range(self._caso_atual.mes, 13)]
+                      for i in range(self._caso_atual.mes, 13)]
         cols_gtmin += ["GT Min D+ Anos"]
         return cols_gtmin
 
