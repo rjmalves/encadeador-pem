@@ -122,11 +122,6 @@ class PreparadorDECOMP(PreparadorCaso):
     def __adequa_caminho_fcf(self,
                              dadger: Dadger,
                              caso_cortes: CasoNEWAVE):
-        if caso_cortes is None or not isinstance(caso_cortes,
-                                                 CasoNEWAVE):
-            Log.log().error("Erro na especificação dos cortes da FCF")
-            raise RuntimeError()
-        caso_cortes: CasoNEWAVE = caso_cortes
         # Verifica se é necessário e extrai os cortes
         sintetizador = SintetizadorNEWAVE(caso_cortes)
         if not sintetizador.verifica_cortes_extraidos():
@@ -177,6 +172,10 @@ class PreparadorDECOMP(PreparadorCaso):
             self.__adequa_titulo_estudo(dadger)
             # Adequa os registros FC (cortes e cortesh)
             caso_cortes = kwargs.get("caso_cortes")
+            if caso_cortes is None or not isinstance(caso_cortes,
+                                                     CasoNEWAVE):
+                Log.log().error("Erro na especificação dos cortes da FCF")
+                raise RuntimeError()
             self.__adequa_caminho_fcf(dadger, caso_cortes)
             if Configuracoes().adequa_decks_decomp:
                 self.__adequa_decks_decomp(dadger)

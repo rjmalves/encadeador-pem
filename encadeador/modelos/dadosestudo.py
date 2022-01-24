@@ -346,10 +346,10 @@ class DadosEstudo:
                                              pd.DataFrame]:
 
         if isinstance(caso, CasoNEWAVE):
-            e, n = DadosEstudo.le_resumo_newave(resumo_estados,
-                                                resumo_newaves,
-                                                caso,
-                                                primeiro)
+            e, n = DadosEstudo.__le_resumo_newave(resumo_estados,
+                                                  resumo_newaves,
+                                                  caso,
+                                                  primeiro)
             resumo_estados = e
             resumo_newaves = n
         elif isinstance(caso, CasoDECOMP):
