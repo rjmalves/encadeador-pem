@@ -162,7 +162,7 @@ class SintetizadorDECOMP(SintetizadorCaso):
     def __processa_gh(balanco: pd.DataFrame) -> pd.DataFrame:
         gh = balanco.loc[:, ["Estágio", "Subsistema", "Ghid",
                              "Itaipu50", "Itaipu60"]].copy()
-        gh["Ghid"] = gh["Ghid"] + gh["Itaipu50"] + gh["Itaipu60"]
+        gh["Ghid"] = gh["Ghid"] + gh["Itaipu60"]
         gh = gh.drop(columns=["Itaipu50", "Itaipu60"])
         # Formata da mesma maneira das demais tabelas do relato
         estagios = list(set(gh["Estágio"].tolist()))
