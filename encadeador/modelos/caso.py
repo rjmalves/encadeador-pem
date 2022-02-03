@@ -13,12 +13,15 @@ class Caso:
     associadas ao caso. Não lida com a sua execução, pré ou pós
     processamento dos decks.
     """
-    def __init__(self,) -> None:
+
+    def __init__(
+        self,
+    ) -> None:
         self._dados: DadosCaso = None  # type: ignore
         self._configuracoes: Configuracoes = None  # type: ignore
 
     @staticmethod
-    def factory(prog: str) -> 'Caso':
+    def factory(prog: str) -> "Caso":
         if prog == "NEWAVE":
             return CasoNEWAVE()
         elif prog == "DECOMP":
@@ -27,19 +30,13 @@ class Caso:
             raise ValueError(f"Programa {prog} não suportado")
 
     @abstractmethod
-    def configura_caso(self,
-                       caminho: str,
-                       ano: int,
-                       mes: int,
-                       revisao: int,
-                       cfg: Configuracoes):
+    def configura_caso(
+        self, caminho: str, ano: int, mes: int, revisao: int, cfg: Configuracoes
+    ):
         pass
 
     @abstractmethod
-    def _constroi_nome_caso(self,
-                            ano: int,
-                            mes: int,
-                            revisao: int) -> str:
+    def _constroi_nome_caso(self, ano: int, mes: int, revisao: int) -> str:
         pass
 
     @abstractmethod
@@ -70,9 +67,7 @@ class Caso:
         self._dados.numero_tentativas += 1
         self._dados.estado = EstadoJob.EXECUTANDO
 
-    def finaliza_caso(self,
-                      sucesso: bool,
-                      erro: bool = False):
+    def finaliza_caso(self, sucesso: bool, erro: bool = False):
         self._dados.sucesso = sucesso
         self._dados.instante_fim_execucao = time.time()
         if erro:
@@ -83,9 +78,7 @@ class Caso:
     def adiciona_flexibilizacao(self):
         self._dados.adiciona_flexibilizacao()
 
-    def recupera_caso_dos_dados(self,
-                                dados: DadosCaso,
-                                cfg: Configuracoes):
+    def recupera_caso_dos_dados(self, dados: DadosCaso, cfg: Configuracoes):
         self._dados = dados
         self._configuracoes = cfg
 
@@ -130,24 +123,22 @@ class Caso:
     def tempo_fila(self) -> float:
         Caso._verifica_caso_configurado(self._dados)
         if self.instante_entrada_fila == 0:
-            t_fila = 0.
+            t_fila = 0.0
         elif self.instante_inicio_execucao == 0:
             t_fila = time.time() - self.instante_entrada_fila
         else:
-            t_fila = (self.instante_inicio_execucao -
-                      self.instante_entrada_fila)
+            t_fila = self.instante_inicio_execucao - self.instante_entrada_fila
         return t_fila
 
     @property
     def tempo_execucao(self) -> float:
         Caso._verifica_caso_configurado(self._dados)
         if self.instante_inicio_execucao == 0:
-            t_exec = 0.
+            t_exec = 0.0
         elif self.instante_fim_execucao == 0:
             t_exec = time.time() - self.instante_inicio_execucao
         else:
-            t_exec = (self.instante_fim_execucao -
-                      self.instante_inicio_execucao)
+            t_exec = self.instante_fim_execucao - self.instante_inicio_execucao
         return t_exec
 
     @property
@@ -191,27 +182,19 @@ class Caso:
 
 
 class CasoNEWAVE(Caso):
-
     def __init__(self) -> None:
         super().__init__()
 
     # Override
-    def configura_caso(self,
-                       caminho: str,
-                       ano: int,
-                       mes: int,
-                       revisao: int,
-                       cfg: Configuracoes):
+    def configura_caso(
+        self, caminho: str, ano: int, mes: int, revisao: int, cfg: Configuracoes
+    ):
         self._configuracoes = cfg
         nome = self._constroi_nome_caso(ano, mes, revisao)
         procs = self._obtem_numero_processadores()
-        self._dados = DadosCaso.obtem_dados_do_caso("NEWAVE",
-                                                    caminho,
-                                                    nome,
-                                                    ano,
-                                                    mes,
-                                                    revisao,
-                                                    procs)
+        self._dados = DadosCaso.obtem_dados_do_caso(
+            "NEWAVE", caminho, nome, ano, mes, revisao, procs
+        )
 
     def _obtem_numero_processadores(self) -> int:
         # TODO - Ler o dger.dat e conferir as restrições de número
@@ -224,34 +207,23 @@ class CasoNEWAVE(Caso):
             num_proc = maximo
         return num_proc
 
-    def _constroi_nome_caso(self,
-                            ano: int,
-                            mes: int,
-                            revisao: int) -> str:
+    def _constroi_nome_caso(self, ano: int, mes: int, revisao: int) -> str:
         return f"{self.configuracoes.nome_estudo} - NW {mes}/{ano}"
 
 
 class CasoDECOMP(Caso):
-
     def __init__(self) -> None:
         super().__init__()
 
-    def configura_caso(self,
-                       caminho: str,
-                       ano: int,
-                       mes: int,
-                       revisao: int,
-                       cfg: Configuracoes):
+    def configura_caso(
+        self, caminho: str, ano: int, mes: int, revisao: int, cfg: Configuracoes
+    ):
         self._configuracoes = cfg
         nome = self._constroi_nome_caso(ano, mes, revisao)
         procs = self._obtem_numero_processadores()
-        self._dados = DadosCaso.obtem_dados_do_caso("DECOMP",
-                                                    caminho,
-                                                    nome,
-                                                    ano,
-                                                    mes,
-                                                    revisao,
-                                                    procs)
+        self._dados = DadosCaso.obtem_dados_do_caso(
+            "DECOMP", caminho, nome, ano, mes, revisao, procs
+        )
 
     def _obtem_numero_processadores(self) -> int:
         # TODO - Ler o dadger.rvX e conferir as restrições de número
@@ -264,9 +236,8 @@ class CasoDECOMP(Caso):
             num_proc = maximo
         return num_proc
 
-    def _constroi_nome_caso(self,
-                            ano: int,
-                            mes: int,
-                            revisao: int) -> str:
-        return (f"{self.configuracoes.nome_estudo} - DC" +
-                f" {mes}/{ano} rv{revisao}")
+    def _constroi_nome_caso(self, ano: int, mes: int, revisao: int) -> str:
+        return (
+            f"{self.configuracoes.nome_estudo} - DC"
+            + f" {mes}/{ano} rv{revisao}"
+        )

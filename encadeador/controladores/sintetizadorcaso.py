@@ -11,7 +11,7 @@ import pandas as pd  # type: ignore
 from inewave.newave import Arquivos, PMO  # type: ignore
 from idecomp.decomp.relato import Relato
 from idecomp.decomp.relgnl import RelGNL
-from idecomp.decomp. inviabunic import InviabUnic
+from idecomp.decomp.inviabunic import InviabUnic
 from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 from encadeador.modelos.dadoscaso import INTERVALO_RETRY_ESCRITA
 from encadeador.modelos.dadoscaso import MAX_RETRY_ESCRITA
@@ -24,18 +24,14 @@ PADRAO_ZIP_SAIDAS_NWLISTOP = "_out"
 
 
 class SintetizadorCaso:
-
-    def __init__(self,
-                 caso: Caso,
-                 log: Logger) -> None:
+    def __init__(self, caso: Caso, log: Logger) -> None:
         self._caso = caso
         self._log = log
         # Cria o diretório de resumos se não existir
         self.__cria_diretorio_resumos()
 
     @staticmethod
-    def factory(caso: Caso,
-                log: Logger) -> 'SintetizadorCaso':
+    def factory(caso: Caso, log: Logger) -> "SintetizadorCaso":
         if isinstance(caso, CasoNEWAVE):
             return SintetizadorNEWAVE(caso, log)
         elif isinstance(caso, CasoDECOMP):
@@ -44,8 +40,7 @@ class SintetizadorCaso:
             raise ValueError(f"Caso do tipo {type(caso)} não suportado")
 
     def __cria_diretorio_resumos(self):
-        diretorio = join(self.caso.caminho,
-                         DIRETORIO_RESUMO_CASO)
+        diretorio = join(self.caso.caminho, DIRETORIO_RESUMO_CASO)
         if not isdir(diretorio):
             makedirs(diretorio)
 
@@ -59,31 +54,30 @@ class SintetizadorCaso:
 
 
 class SintetizadorNEWAVE(SintetizadorCaso):
-
-    def __init__(self,
-                 caso: CasoNEWAVE,
-                 log: Logger):
+    def __init__(self, caso: CasoNEWAVE, log: Logger):
         super().__init__(caso, log)
 
     def sintetiza_caso(self) -> bool:
-        self._log.info("Sintetizando informações do" +
-                       f" caso {self._caso.nome}")
+        self._log.info(
+            "Sintetizando informações do" + f" caso {self._caso.nome}"
+        )
         num_retry = 0
         while num_retry < MAX_RETRY_ESCRITA:
             try:
                 pmo = PMO.le_arquivo(self.caso.caminho)
-                caminho_saida = join(self.caso.caminho,
-                                     DIRETORIO_RESUMO_CASO)
+                caminho_saida = join(self.caso.caminho, DIRETORIO_RESUMO_CASO)
                 # Convergência do pmo.dat
-                pmo.convergencia.to_csv(join(caminho_saida,
-                                        "convergencia.csv"),
-                                        header=True,
-                                        encoding="utf-8")
+                pmo.convergencia.to_csv(
+                    join(caminho_saida, "convergencia.csv"),
+                    header=True,
+                    encoding="utf-8",
+                )
                 # Custos do pmo.dat
-                pmo.custo_operacao_series_simuladas.to_csv(join(caminho_saida,
-                                                                "custos.csv"),
-                                                           header=True,
-                                                           encoding="utf-8")
+                pmo.custo_operacao_series_simuladas.to_csv(
+                    join(caminho_saida, "custos.csv"),
+                    header=True,
+                    encoding="utf-8",
+                )
                 # CMO, EARM, GT, GH do NWLISTOP
                 # TODO
                 return True
@@ -142,28 +136,26 @@ class SintetizadorNEWAVE(SintetizadorCaso):
 
     def verifica_cortes_extraidos(self) -> bool:
         arqs_dir = listdir(self.caso.caminho)
-        cortes_extraidos = [c in arqs_dir for c in
-                            self._nomes_arquivos_cortes]
+        cortes_extraidos = [c in arqs_dir for c in self._nomes_arquivos_cortes]
         return all(cortes_extraidos)
 
 
 class SintetizadorDECOMP(SintetizadorCaso):
-
-    def __init__(self,
-                 caso: CasoDECOMP,
-                 log: Logger):
+    def __init__(self, caso: CasoDECOMP, log: Logger):
         super().__init__(caso, log)
 
     @staticmethod
-    def __processa_earm_sin(earm_subsis: pd.DataFrame,
-                            earmax: pd.DataFrame) -> pd.DataFrame:
+    def __processa_earm_sin(
+        earm_subsis: pd.DataFrame, earmax: pd.DataFrame
+    ) -> pd.DataFrame:
         valores_earmax = earmax["Earmax"].to_numpy()
         earmax_sin = np.sum(valores_earmax)
         earms_absolutos = earm_subsis.copy()
-        cols_estagios = ["Inicial"] + [c for c in list(earms_absolutos.columns)
-                                       if "Estágio" in c]
+        cols_estagios = ["Inicial"] + [
+            c for c in list(earms_absolutos.columns) if "Estágio" in c
+        ]
         for c in cols_estagios:
-            earms_absolutos[c] *= (valores_earmax / 100)
+            earms_absolutos[c] *= valores_earmax / 100
         earms_sin = earms_absolutos.loc[:, cols_estagios].sum(axis=0)
         earms_sin /= earmax_sin
         earms_sin *= 100
@@ -173,8 +165,7 @@ class SintetizadorDECOMP(SintetizadorCaso):
 
     @staticmethod
     def __processa_dado_sin(dado_subsis: pd.DataFrame) -> pd.DataFrame:
-        cols_estagios = [c for c in list(dado_subsis.columns)
-                         if "Estágio" in c]
+        cols_estagios = [c for c in list(dado_subsis.columns) if "Estágio" in c]
         dado_sin = dado_subsis.loc[:, cols_estagios].sum(axis=0)
         df = pd.DataFrame(columns=cols_estagios)
         df.loc[0, :] = dado_sin
@@ -182,8 +173,9 @@ class SintetizadorDECOMP(SintetizadorCaso):
 
     @staticmethod
     def __processa_gh(balanco: pd.DataFrame) -> pd.DataFrame:
-        gh = balanco.loc[:, ["Estágio", "Subsistema", "Ghid",
-                             "Itaipu50", "Itaipu60"]].copy()
+        gh = balanco.loc[
+            :, ["Estágio", "Subsistema", "Ghid", "Itaipu50", "Itaipu60"]
+        ].copy()
         gh["Ghid"] = gh["Ghid"] + gh["Itaipu50"] + gh["Itaipu60"]
         gh = gh.drop(columns=["Itaipu50", "Itaipu60"])
         # Formata da mesma maneira das demais tabelas do relato
@@ -192,10 +184,14 @@ class SintetizadorDECOMP(SintetizadorCaso):
         cols_df = [f"Estágio {e}" for e in estagios]
         df = pd.DataFrame(columns=["Subsistema"] + cols_df)
         for i, s in enumerate(subsistemas):
-            valores_sub = [float(gh.loc[(gh["Estágio"] == e) &
-                                        (gh["Subsistema"] == s),
-                                        "Ghid"])
-                           for e in estagios]
+            valores_sub = [
+                float(
+                    gh.loc[
+                        (gh["Estágio"] == e) & (gh["Subsistema"] == s), "Ghid"
+                    ]
+                )
+                for e in estagios
+            ]
             df.loc[i, "Subsistema"] = s
             df.loc[i, cols_df] = valores_sub
         return df
@@ -209,10 +205,15 @@ class SintetizadorDECOMP(SintetizadorCaso):
         cols_df = [f"Estágio {e}" for e in estagios]
         df = pd.DataFrame(columns=["Subsistema"] + cols_df)
         for i, s in enumerate(subsistemas):
-            valores_sub = [float(merc.loc[(merc["Estágio"] == e) &
-                                          (merc["Subsistema"] == s),
-                                          "Mercado"])
-                           for e in estagios]
+            valores_sub = [
+                float(
+                    merc.loc[
+                        (merc["Estágio"] == e) & (merc["Subsistema"] == s),
+                        "Mercado",
+                    ]
+                )
+                for e in estagios
+            ]
             df.loc[i, "Subsistema"] = s
             df.loc[i, cols_df] = valores_sub
         return df
@@ -226,34 +227,41 @@ class SintetizadorDECOMP(SintetizadorCaso):
         cols_df = [f"Estágio {e}" for e in estagios]
         df = pd.DataFrame(columns=["Subsistema"] + cols_df)
         for i, s in enumerate(subsistemas):
-            valores_sub = [float(merc.loc[(merc["Estágio"] == e) &
-                                          (merc["Subsistema"] == s),
-                                          "Deficit"])
-                           for e in estagios]
+            valores_sub = [
+                float(
+                    merc.loc[
+                        (merc["Estágio"] == e) & (merc["Subsistema"] == s),
+                        "Deficit",
+                    ]
+                )
+                for e in estagios
+            ]
             df.loc[i, "Subsistema"] = s
             df.loc[i, cols_df] = valores_sub
         return df
 
     @staticmethod
-    def __processa_gt_percentual_max(relato: Relato,
-                                     relgnl: RelGNL) -> pd.DataFrame:
+    def __processa_gt_percentual_max(
+        relato: Relato, relgnl: RelGNL
+    ) -> pd.DataFrame:
         return ProcessadorDecomp.gt_percentual_maxima(relato, relgnl)
 
     @staticmethod
-    def __processa_gt_percentual_flex(relato: Relato,
-                                      relgnl: RelGNL) -> pd.DataFrame:
+    def __processa_gt_percentual_flex(
+        relato: Relato, relgnl: RelGNL
+    ) -> pd.DataFrame:
         return ProcessadorDecomp.gt_percentual_flexivel(relato, relgnl)
 
     def sintetiza_caso(self) -> bool:
         num_retry = 0
-        self._log.info("Sintetizando informações do" +
-                       f" caso {self._caso.nome}")
+        self._log.info(
+            "Sintetizando informações do" + f" caso {self._caso.nome}"
+        )
         while num_retry < MAX_RETRY_ESCRITA:
             try:
                 arq_relato = f"relato.rv{self._caso.revisao}"
                 arq_relgnl = f"relgnl.rv{self._caso.revisao}"
-                caminho_saida = join(self.caso.caminho,
-                                     DIRETORIO_RESUMO_CASO)
+                caminho_saida = join(self.caso.caminho, DIRETORIO_RESUMO_CASO)
                 relato = Relato.le_arquivo(self.caso.caminho, arq_relato)
                 relgnl = RelGNL.le_arquivo(self.caso.caminho, arq_relgnl)
                 # Convergência do relato.rvX
@@ -262,32 +270,37 @@ class SintetizadorDECOMP(SintetizadorCaso):
                 conv["Flexibilizacao"] = self.caso.numero_flexibilizacoes
                 conv = conv[["Flexibilizacao"] + cols_conv]
                 if isfile(join(caminho_saida, "convergencia.csv")):
-                    conv_anterior = pd.read_csv(join(caminho_saida,
-                                                     "convergencia.csv"),
-                                                index_col=0)
-                    conv = pd.concat([conv_anterior, conv],
-                                     ignore_index=True)
+                    conv_anterior = pd.read_csv(
+                        join(caminho_saida, "convergencia.csv"), index_col=0
+                    )
+                    conv = pd.concat([conv_anterior, conv], ignore_index=True)
                 # Inviabilidades e Déficit do inviab_unic.rvX
                 arq_inviab = f"inviab_unic.rv{self._caso.revisao}"
-                inviab_unic = InviabUnic.le_arquivo(self.caso.caminho,
-                                                    arq_inviab)
+                inviab_unic = InviabUnic.le_arquivo(
+                    self.caso.caminho, arq_inviab
+                )
                 inviab = inviab_unic.inviabilidades_simulacao_final
                 cols_inviab = list(inviab.columns)
                 inviab["Flexibilizacao"] = self.caso.numero_flexibilizacoes
                 inviab = inviab[["Flexibilizacao"] + cols_inviab]
                 if isfile(join(caminho_saida, "inviabilidades.csv")):
-                    inviab_anterior = pd.read_csv(join(caminho_saida,
-                                                       "inviabilidades.csv"),
-                                                  index_col=0)
-                    inviab = pd.concat([inviab_anterior, inviab],
-                                       ignore_index=True)
+                    inviab_anterior = pd.read_csv(
+                        join(caminho_saida, "inviabilidades.csv"), index_col=0
+                    )
+                    inviab = pd.concat(
+                        [inviab_anterior, inviab], ignore_index=True
+                    )
                 # Escreve em disco
-                conv.to_csv(join(caminho_saida, "convergencia.csv"),
-                            header=True,
-                            encoding="utf-8")
-                inviab.to_csv(join(caminho_saida, "inviabilidades.csv"),
-                              header=True,
-                              encoding="utf-8")
+                conv.to_csv(
+                    join(caminho_saida, "convergencia.csv"),
+                    header=True,
+                    encoding="utf-8",
+                )
+                inviab.to_csv(
+                    join(caminho_saida, "inviabilidades.csv"),
+                    header=True,
+                    encoding="utf-8",
+                )
                 # Se não teve sucesso no caso, só exporta esses dados
                 if not self.caso.sucesso:
                     return True
@@ -295,14 +308,17 @@ class SintetizadorDECOMP(SintetizadorCaso):
                 cmo = relato.cmo_medio_subsistema
                 earm_subsis = relato.energia_armazenada_subsistema
                 earmax = relato.energia_armazenada_maxima_subsistema
-                earm_sin = SintetizadorDECOMP.__processa_earm_sin(earm_subsis,
-                                                                  earmax)
+                earm_sin = SintetizadorDECOMP.__processa_earm_sin(
+                    earm_subsis, earmax
+                )
                 gt_subsis = relato.geracao_termica_subsistema
                 gt_sin = SintetizadorDECOMP.__processa_dado_sin(gt_subsis)
-                gt_perc_m = SintetizadorDECOMP.__processa_gt_percentual_max(relato,
-                                                                            relgnl)
-                gt_perc_f = SintetizadorDECOMP.__processa_gt_percentual_flex(relato,
-                                                                             relgnl)
+                gt_perc_m = SintetizadorDECOMP.__processa_gt_percentual_max(
+                    relato, relgnl
+                )
+                gt_perc_f = SintetizadorDECOMP.__processa_gt_percentual_flex(
+                    relato, relgnl
+                )
                 balanco = relato.balanco_energetico
                 gh_subsis = SintetizadorDECOMP.__processa_gh(balanco)
                 gh_sin = SintetizadorDECOMP.__processa_dado_sin(gh_subsis)
@@ -311,45 +327,71 @@ class SintetizadorDECOMP(SintetizadorCaso):
                 merc_sin = SintetizadorDECOMP.__processa_dado_sin(merc_subsis)
                 def_sin = SintetizadorDECOMP.__processa_dado_sin(def_subsis)
                 # Exporta os dados
-                cmo.to_csv(join(caminho_saida, "cmo.csv"),
-                           header=True,
-                           encoding="utf-8")
-                earm_subsis.to_csv(join(caminho_saida, "earm_subsis.csv"),
-                                   header=True,
-                                   encoding="utf-8")
-                earm_sin.to_csv(join(caminho_saida, "earm_sin.csv"),
-                                header=True,
-                                encoding="utf-8")
-                gt_subsis.to_csv(join(caminho_saida, "gt_subsis.csv"),
-                                 header=True,
-                                 encoding="utf-8")
-                gt_sin.to_csv(join(caminho_saida, "gt_sin.csv"),
-                              header=True,
-                              encoding="utf-8")
-                gt_perc_m.to_csv(join(caminho_saida, "gt_percentual_max.csv"),
-                                 header=True,
-                                 encoding="utf-8")
-                gt_perc_f.to_csv(join(caminho_saida, "gt_percentual_flex.csv"),
-                                 header=True,
-                                 encoding="utf-8")
-                gh_subsis.to_csv(join(caminho_saida, "gh_subsis.csv"),
-                                 header=True,
-                                 encoding="utf-8")
-                gh_sin.to_csv(join(caminho_saida, "gh_sin.csv"),
-                              header=True,
-                              encoding="utf-8")
-                merc_subsis.to_csv(join(caminho_saida, "mercado_subsis.csv"),
-                                   header=True,
-                                   encoding="utf-8")
-                def_subsis.to_csv(join(caminho_saida, "deficit_subsis.csv"),
-                                  header=True,
-                                  encoding="utf-8")
-                merc_sin.to_csv(join(caminho_saida, "mercado_sin.csv"),
-                                header=True,
-                                encoding="utf-8")
-                def_sin.to_csv(join(caminho_saida, "deficit_sin.csv"),
-                               header=True,
-                               encoding="utf-8")
+                cmo.to_csv(
+                    join(caminho_saida, "cmo.csv"),
+                    header=True,
+                    encoding="utf-8",
+                )
+                earm_subsis.to_csv(
+                    join(caminho_saida, "earm_subsis.csv"),
+                    header=True,
+                    encoding="utf-8",
+                )
+                earm_sin.to_csv(
+                    join(caminho_saida, "earm_sin.csv"),
+                    header=True,
+                    encoding="utf-8",
+                )
+                gt_subsis.to_csv(
+                    join(caminho_saida, "gt_subsis.csv"),
+                    header=True,
+                    encoding="utf-8",
+                )
+                gt_sin.to_csv(
+                    join(caminho_saida, "gt_sin.csv"),
+                    header=True,
+                    encoding="utf-8",
+                )
+                gt_perc_m.to_csv(
+                    join(caminho_saida, "gt_percentual_max.csv"),
+                    header=True,
+                    encoding="utf-8",
+                )
+                gt_perc_f.to_csv(
+                    join(caminho_saida, "gt_percentual_flex.csv"),
+                    header=True,
+                    encoding="utf-8",
+                )
+                gh_subsis.to_csv(
+                    join(caminho_saida, "gh_subsis.csv"),
+                    header=True,
+                    encoding="utf-8",
+                )
+                gh_sin.to_csv(
+                    join(caminho_saida, "gh_sin.csv"),
+                    header=True,
+                    encoding="utf-8",
+                )
+                merc_subsis.to_csv(
+                    join(caminho_saida, "mercado_subsis.csv"),
+                    header=True,
+                    encoding="utf-8",
+                )
+                def_subsis.to_csv(
+                    join(caminho_saida, "deficit_subsis.csv"),
+                    header=True,
+                    encoding="utf-8",
+                )
+                merc_sin.to_csv(
+                    join(caminho_saida, "mercado_sin.csv"),
+                    header=True,
+                    encoding="utf-8",
+                )
+                def_sin.to_csv(
+                    join(caminho_saida, "deficit_sin.csv"),
+                    header=True,
+                    encoding="utf-8",
+                )
                 return True
             except OSError:
                 num_retry += 1

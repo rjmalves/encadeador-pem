@@ -17,21 +17,23 @@ class DadosCaso:
     de flexibilizações.
     """
 
-    def __init__(self,
-                 programa: str,
-                 caminho: str,
-                 nome: str,
-                 ano: int,
-                 mes: int,
-                 revisao: int,
-                 estados: List[EstadoJob],
-                 instantes_entrada_fila: List[float],
-                 instantes_inicio_execucao: List[float],
-                 instantes_fim_execucao: List[float],
-                 numeros_tentativas: List[int],
-                 numeros_processadores: List[int],
-                 sucessos: List[bool],
-                 numero_flexibilizacoes: int) -> None:
+    def __init__(
+        self,
+        programa: str,
+        caminho: str,
+        nome: str,
+        ano: int,
+        mes: int,
+        revisao: int,
+        estados: List[EstadoJob],
+        instantes_entrada_fila: List[float],
+        instantes_inicio_execucao: List[float],
+        instantes_fim_execucao: List[float],
+        numeros_tentativas: List[int],
+        numeros_processadores: List[int],
+        sucessos: List[bool],
+        numero_flexibilizacoes: int,
+    ) -> None:
         self._programa = programa
         self._caminho = caminho
         self._nome = nome
@@ -53,71 +55,81 @@ class DadosCaso:
         return isfile(arq)
 
     @staticmethod
-    def le_arquivo(caminho: str) -> 'DadosCaso':
-
+    def le_arquivo(caminho: str) -> "DadosCaso":
         def __extrai_coluna_em_lista(df: pd.DataFrame, coluna: str):
             return df.loc[:, coluna].tolist()
 
         # Se não tem arquivo de resumo, o caso não começou a ser rodado
         if not DadosCaso.existem_dados(caminho):
-            raise FileNotFoundError("Não encontrado arquivo de resumo" +
-                                    f" de caso no diretório {caminho}.")
+            raise FileNotFoundError(
+                "Não encontrado arquivo de resumo"
+                + f" de caso no diretório {caminho}."
+            )
 
         arq = join(caminho, NOME_ARQUIVO_ESTADO)
         df = pd.read_csv(arq, index_col=0)
         n_flexibilizacoes, _ = df.shape
-        estados = [EstadoJob.factory(e) for e in
-                   __extrai_coluna_em_lista(df, "Estado")]
-        sucessos = [bool(int(s)) for s in
-                    __extrai_coluna_em_lista(df, "Sucesso")]
-        return DadosCaso(__extrai_coluna_em_lista(df, "Programa")[0],
-                         __extrai_coluna_em_lista(df, "Caminho")[0],
-                         __extrai_coluna_em_lista(df, "Nome")[0],
-                         __extrai_coluna_em_lista(df, "Ano")[0],
-                         __extrai_coluna_em_lista(df, "Mes")[0],
-                         __extrai_coluna_em_lista(df, "Revisao")[0],
-                         estados,
-                         __extrai_coluna_em_lista(df, "Entrada Fila"),
-                         __extrai_coluna_em_lista(df, "Inicio Execucao"),
-                         __extrai_coluna_em_lista(df, "Fim Execucao"),
-                         __extrai_coluna_em_lista(df, "Tentativas"),
-                         __extrai_coluna_em_lista(df, "Processadores"),
-                         sucessos,
-                         n_flexibilizacoes - 1)
+        estados = [
+            EstadoJob.factory(e) for e in __extrai_coluna_em_lista(df, "Estado")
+        ]
+        sucessos = [
+            bool(int(s)) for s in __extrai_coluna_em_lista(df, "Sucesso")
+        ]
+        return DadosCaso(
+            __extrai_coluna_em_lista(df, "Programa")[0],
+            __extrai_coluna_em_lista(df, "Caminho")[0],
+            __extrai_coluna_em_lista(df, "Nome")[0],
+            __extrai_coluna_em_lista(df, "Ano")[0],
+            __extrai_coluna_em_lista(df, "Mes")[0],
+            __extrai_coluna_em_lista(df, "Revisao")[0],
+            estados,
+            __extrai_coluna_em_lista(df, "Entrada Fila"),
+            __extrai_coluna_em_lista(df, "Inicio Execucao"),
+            __extrai_coluna_em_lista(df, "Fim Execucao"),
+            __extrai_coluna_em_lista(df, "Tentativas"),
+            __extrai_coluna_em_lista(df, "Processadores"),
+            sucessos,
+            n_flexibilizacoes - 1,
+        )
 
     @staticmethod
-    def obtem_dados_do_caso(prog: str,
-                            caminho: str,
-                            nome: str,
-                            ano: int,
-                            mes: int,
-                            revisao: int,
-                            numero_processadores: int) -> 'DadosCaso':
+    def obtem_dados_do_caso(
+        prog: str,
+        caminho: str,
+        nome: str,
+        ano: int,
+        mes: int,
+        revisao: int,
+        numero_processadores: int,
+    ) -> "DadosCaso":
         if prog not in ["NEWAVE", "DECOMP"]:
             raise ValueError(f"Caso do tipo {prog} não suportado")
-        return DadosCaso(prog,
-                         caminho,
-                         nome,
-                         ano,
-                         mes,
-                         revisao,
-                         [EstadoJob.NAO_INICIADO],
-                         [0],
-                         [0],
-                         [0],
-                         [0],
-                         [numero_processadores],
-                         [False],
-                         0)
+        return DadosCaso(
+            prog,
+            caminho,
+            nome,
+            ano,
+            mes,
+            revisao,
+            [EstadoJob.NAO_INICIADO],
+            [0],
+            [0],
+            [0],
+            [0],
+            [numero_processadores],
+            [False],
+            0,
+        )
 
     def escreve_arquivo(self):
         num_retry = 0
         while num_retry < MAX_RETRY_ESCRITA:
             try:
-                self.df_dados.to_csv(join(self.caminho, NOME_ARQUIVO_ESTADO),
-                                     header=True,
-                                     encoding="utf-8",
-                                     )
+                self.df_dados.to_csv(
+                    join(self.caminho, NOME_ARQUIVO_ESTADO),
+                    header=True,
+                    encoding="utf-8",
+                )
                 return
             except OSError:
                 num_retry += 1
@@ -130,8 +142,9 @@ class DadosCaso:
 
     def adiciona_flexibilizacao(self):
         if self.df_dados.shape[0] == 0:
-            raise ValueError("Caso não inicializado. " +
-                             "Não é possível flexibilizar")
+            raise ValueError(
+                "Caso não inicializado. " + "Não é possível flexibilizar"
+            )
         # Incrementa o número de flex e inicia com valores default
         # as listas
         self._numero_flexibilizacoes += 1
@@ -147,20 +160,20 @@ class DadosCaso:
     def df_dados(self) -> pd.DataFrame:
         n = self._numero_flexibilizacoes + 1
         dados = {
-                 "Programa": [self._programa] * n,
-                 "Caminho": [self._caminho] * n,
-                 "Nome": [self._nome] * n,
-                 "Ano": [self._ano] * n,
-                 "Mes": [self._mes] * n,
-                 "Revisao": [self._revisao] * n,
-                 "Estado": [str(e.value) for e in self._estados],
-                 "Tentativas": self._numeros_tentativas,
-                 "Processadores": self._numeros_processadores,
-                 "Sucesso": [int(s) for s in self._sucessos],
-                 "Entrada Fila": self._instantes_entrada_fila,
-                 "Inicio Execucao": self._instantes_inicio_execucao,
-                 "Fim Execucao": self._instantes_fim_execucao
-                }
+            "Programa": [self._programa] * n,
+            "Caminho": [self._caminho] * n,
+            "Nome": [self._nome] * n,
+            "Ano": [self._ano] * n,
+            "Mes": [self._mes] * n,
+            "Revisao": [self._revisao] * n,
+            "Estado": [str(e.value) for e in self._estados],
+            "Tentativas": self._numeros_tentativas,
+            "Processadores": self._numeros_processadores,
+            "Sucesso": [int(s) for s in self._sucessos],
+            "Entrada Fila": self._instantes_entrada_fila,
+            "Inicio Execucao": self._instantes_inicio_execucao,
+            "Fim Execucao": self._instantes_fim_execucao,
+        }
         df = pd.DataFrame(data=dados)
         return df
 

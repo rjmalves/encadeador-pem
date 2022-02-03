@@ -12,6 +12,7 @@ class GerenciadorFila:
     Interface base para representação dos gerenciadores de fila
     para execução dos casos no estudo encadeado.
     """
+
     TIMEOUT_DELETE = 120
 
     def __init__(self):
@@ -28,7 +29,7 @@ class GerenciadorFila:
 
     # Factory Method
     @staticmethod
-    def factory(ger: str) -> 'GerenciadorFila':
+    def factory(ger: str) -> "GerenciadorFila":
         if ger == "SGE":
             return GerenciadorFilaSGE()
         else:
@@ -83,11 +84,9 @@ class GerenciadorFila:
         else:
             return time.time() - getmtime(self.arquivo_stdout)
 
-    def agenda_job(self,
-                   caminho_job: str,
-                   nome_job: str,
-                   num_processadores: int
-                   ) -> bool:
+    def agenda_job(
+        self, caminho_job: str, nome_job: str, num_processadores: int
+    ) -> bool:
         """
         Solicita a inclusão de um job no gerenciamento
         de filas.
@@ -95,9 +94,9 @@ class GerenciadorFila:
         :return: Sucesso ou não da inclusão.
         :rtype: bool
         """
-        self._comandos = self.comando_qsub(caminho_job,
-                                           nome_job,
-                                           num_processadores)
+        self._comandos = self.comando_qsub(
+            caminho_job, nome_job, num_processadores
+        )
         try:
             cod, self._respostas = executa_terminal(self._comandos)
         except TimeoutError:
@@ -137,10 +136,9 @@ class GerenciadorFila:
         pass
 
     @abstractmethod
-    def comando_qsub(self,
-                     caminho_job: str,
-                     nome_job: str,
-                     num_processadores: int) -> List[str]:
+    def comando_qsub(
+        self, caminho_job: str, nome_job: str, num_processadores: int
+    ) -> List[str]:
         pass
 
 
@@ -158,18 +156,15 @@ class GerenciadorFilaSGE(GerenciadorFila):
             raise ValueError("Gerenciador de filas não inicializado!")
         resposta = self._respostas[0]
         # id_job
-        self._id_job = (int(resposta.split("Your job")[1]
-                        .split("(")[0].strip()))
+        self._id_job = int(resposta.split("Your job")[1].split("(")[0].strip())
         # nome_job
-        self._nome_job = (resposta.split('(')[1]
-                          .split(')')[0].strip('"'))
+        self._nome_job = resposta.split("(")[1].split(")")[0].strip('"')
         # arquivos stdout e stderr
         self._arquivo_stdout = f"{self.nome_job}.o{self.id_job}"
         self._arquivo_stderr = f"{self.nome_job}.e{self.id_job}"
 
     @property
     def estado_job(self) -> EstadoJob:
-
         def __procura_codigo_estado(saidas: List[str]):
             estado = ""
             for linha in saidas[2:]:
@@ -215,18 +210,18 @@ class GerenciadorFilaSGE(GerenciadorFila):
             time.sleep(5)
         return False
 
-    def comando_qsub(self,
-                     caminho_job: str,
-                     nome_job: str,
-                     num_processadores: int) -> List[str]:
-        return ["qsub",
-                "-cwd",
-                "-V",
-                "-N",
-                nome_job,
-                "-pe",
-                "orte",
-                str(num_processadores),
-                caminho_job,
-                str(num_processadores)
-                ]
+    def comando_qsub(
+        self, caminho_job: str, nome_job: str, num_processadores: int
+    ) -> List[str]:
+        return [
+            "qsub",
+            "-cwd",
+            "-V",
+            "-N",
+            nome_job,
+            "-pe",
+            "orte",
+            str(num_processadores),
+            caminho_job,
+            str(num_processadores),
+        ]

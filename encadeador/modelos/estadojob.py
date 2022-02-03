@@ -10,7 +10,7 @@ class EstadoJob(Enum):
     CONCLUIDO = "CONCLUIDO"
 
     @staticmethod
-    def factory(valor: str) -> 'EstadoJob':
+    def factory(valor: str) -> "EstadoJob":
         for estado in EstadoJob:
             if estado.value == valor:
                 return estado

@@ -22,16 +22,12 @@ ARQUIVO_INVIABILIDADES_DECOMPS = "inviabilidades_decomps.csv"
 
 
 class SintetizadorEstudo:
-
-    def __init__(self,
-                 arvore: ArvoreCasos,
-                 log: Logger) -> None:
+    def __init__(self, arvore: ArvoreCasos, log: Logger) -> None:
         self._arvore = arvore
         self._log = log
 
     @staticmethod
-    def sintetiza_proximo_caso(caso: Optional[Caso],
-                               cfg: Configuracoes):
+    def sintetiza_proximo_caso(caso: Optional[Caso], cfg: Configuracoes):
         # TODO - quando usar o padrão Singleton, não precisa
         # mais passar as Configurações
         df_proximo_caso = pd.DataFrame(columns=["Caminho"])
@@ -41,8 +37,9 @@ class SintetizadorEstudo:
         num_retry = 0
         while num_retry < MAX_RETRY_ESCRITA:
             try:
-                df_proximo_caso.to_csv(join(cfg.caminho_base_estudo,
-                                            ARQUIVO_PROXIMO_CASO))
+                df_proximo_caso.to_csv(
+                    join(cfg.caminho_base_estudo, ARQUIVO_PROXIMO_CASO)
+                )
                 return
             except OSError:
                 num_retry += 1
@@ -52,8 +49,9 @@ class SintetizadorEstudo:
                 num_retry += 1
                 time.sleep(INTERVALO_RETRY_ESCRITA)
                 continue
-        raise RuntimeError("Erro na sintese do próximo caso do estudo " +
-                           "encadeado.")
+        raise RuntimeError(
+            "Erro na sintese do próximo caso do estudo " + "encadeado."
+        )
 
     def sintetiza_estudo(self) -> bool:
         self._log.info("Sintetizando dados do estudo encadeado")
@@ -65,18 +63,18 @@ class SintetizadorEstudo:
                 # configurações, substituir pelo padrão Singleton
                 cfg = self._arvore.casos[0].configuracoes
                 diretorio_estudo = cfg.caminho_base_estudo
-                resumo_estados = join(diretorio_estudo,
-                                      ARQUIVO_RESUMO_ESTADOS)
-                resumo_newaves = join(diretorio_estudo,
-                                      ARQUIVO_RESUMO_NEWAVES)
-                resumo_decomps = join(diretorio_estudo,
-                                      ARQUIVO_RESUMO_DECOMPS)
-                convergencias_newaves = join(diretorio_estudo,
-                                             ARQUIVO_CONVERGENCIA_NEWAVES)
-                convergencias_decomps = join(diretorio_estudo,
-                                             ARQUIVO_CONVERGENCIA_DECOMPS)
-                inviabilidades_decomps = join(diretorio_estudo,
-                                              ARQUIVO_INVIABILIDADES_DECOMPS)
+                resumo_estados = join(diretorio_estudo, ARQUIVO_RESUMO_ESTADOS)
+                resumo_newaves = join(diretorio_estudo, ARQUIVO_RESUMO_NEWAVES)
+                resumo_decomps = join(diretorio_estudo, ARQUIVO_RESUMO_DECOMPS)
+                convergencias_newaves = join(
+                    diretorio_estudo, ARQUIVO_CONVERGENCIA_NEWAVES
+                )
+                convergencias_decomps = join(
+                    diretorio_estudo, ARQUIVO_CONVERGENCIA_DECOMPS
+                )
+                inviabilidades_decomps = join(
+                    diretorio_estudo, ARQUIVO_INVIABILIDADES_DECOMPS
+                )
                 dados.resumo_estados.to_csv(resumo_estados)
                 dados.resumo_newaves.to_csv(resumo_newaves)
                 dados.resumo_decomps.to_csv(resumo_decomps)

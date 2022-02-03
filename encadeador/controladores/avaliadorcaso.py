@@ -8,16 +8,12 @@ from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
 
 
 class AvaliadorCaso:
-
-    def __init__(self,
-                 caso: Caso,
-                 log: Logger) -> None:
+    def __init__(self, caso: Caso, log: Logger) -> None:
         self._caso = caso
         self._log = log
 
     @staticmethod
-    def factory(caso: Caso,
-                log: Logger) -> 'AvaliadorCaso':
+    def factory(caso: Caso, log: Logger) -> "AvaliadorCaso":
         if isinstance(caso, CasoNEWAVE):
             return AvaliadorNEWAVE(caso, log)
         elif isinstance(caso, CasoDECOMP):
@@ -31,12 +27,8 @@ class AvaliadorCaso:
 
 
 class AvaliadorNEWAVE(AvaliadorCaso):
-
-    def __init__(self,
-                 caso: CasoNEWAVE,
-                 log: Logger) -> None:
-        super().__init__(caso,
-                         log)
+    def __init__(self, caso: CasoNEWAVE, log: Logger) -> None:
+        super().__init__(caso, log)
 
     def avalia(self) -> bool:
         try:
@@ -44,28 +36,28 @@ class AvaliadorNEWAVE(AvaliadorCaso):
             pmo = PMO.le_arquivo(self._caso.caminho)
             custos = pmo.custo_operacao_series_simuladas
             if custos.empty:
-                self._log.error("Erro no processamento do " +
-                                f"{self._caso.nome}")
+                self._log.error(
+                    "Erro no processamento do " + f"{self._caso.nome}"
+                )
                 return False
             self._log.info(f"Caso concluído com sucesso: {self._caso.nome}")
             return True
         except FileNotFoundError:
-            self._log.error("Arquivo pmo.dat não encontrado" +
-                            f" no diretório do {self._caso.nome}")
+            self._log.error(
+                "Arquivo pmo.dat não encontrado"
+                + f" no diretório do {self._caso.nome}"
+            )
             raise RuntimeError()
         except Exception as e:
-            self._log.error("Erro na avaliação das saídas" +
-                            f" do {self._caso.nome}: {e}")
+            self._log.error(
+                "Erro na avaliação das saídas" + f" do {self._caso.nome}: {e}"
+            )
             return False
 
 
 class AvaliadorDECOMP(AvaliadorCaso):
-
-    def __init__(self,
-                 caso: CasoDECOMP,
-                 log: Logger) -> None:
-        super().__init__(caso,
-                         log)
+    def __init__(self, caso: CasoDECOMP, log: Logger) -> None:
+        super().__init__(caso, log)
 
     def avalia(self) -> bool:
         try:
@@ -77,23 +69,34 @@ class AvaliadorDECOMP(AvaliadorCaso):
             self._log.info(f"Verificando inviabilidades do {self._caso.nome}")
             inviab = InviabUnic.le_arquivo(self._caso.caminho, arq_inv)
             if not inviab.inviabilidades_simulacao_final.empty:
-                self._log.warning(f"{self._caso.nome} convergiu com" +
-                                  " inviabilidades na simulação final")
+                self._log.warning(
+                    f"{self._caso.nome} convergiu com"
+                    + " inviabilidades na simulação final"
+                )
                 cmo = sumario.cmo_medio_subsistema
-                n_estagios = len([c for c in list(cmo.columns)
-                                  if "Estágio" in c]) + 1
+                n_estagios = (
+                    len([c for c in list(cmo.columns) if "Estágio" in c]) + 1
+                )
                 invs = inviab.inviabilidades_simulacao_final
-                inviabs_primeiro_mes = invs.loc[invs["Estágio"] != n_estagios, :]
-                if (self._caso.configuracoes.flexibiliza_deficit
-                        and not inviabs_primeiro_mes.empty):
+                inviabs_primeiro_mes = invs.loc[
+                    invs["Estágio"] != n_estagios, :
+                ]
+                if (
+                    self._caso.configuracoes.flexibiliza_deficit
+                    and not inviabs_primeiro_mes.empty
+                ):
                     return False
             self._log.info(f"Caso concluído com sucesso: {self._caso.nome}")
             return True
         except FileNotFoundError:
-            self._log.error(f"Arquivo {arq} ou {arq_inv} não encontrados" +
-                            f" no diretório do {self._caso.nome}")
+            self._log.error(
+                f"Arquivo {arq} ou {arq_inv} não encontrados"
+                + f" no diretório do {self._caso.nome}"
+            )
             raise RuntimeError()
         except Exception as e:
-            self._log.warning("Erro na avaliação das saídas" +
-                              f" do {self._caso.nome}: caso não convergiu: {e}")
+            self._log.warning(
+                "Erro na avaliação das saídas"
+                + f" do {self._caso.nome}: caso não convergiu: {e}"
+            )
             return False

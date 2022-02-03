@@ -14,10 +14,7 @@ from encadeador.controladores.sintetizadorcaso import SintetizadorNEWAVE
 
 
 class ExecutorCaso:
-
-    def __init__(self,
-                 caso: Caso,
-                 log: Logger) -> None:
+    def __init__(self, caso: Caso, log: Logger) -> None:
         self._caso = caso
         self._log = log
         self._preparador = PreparadorCaso.factory(caso, log)
@@ -27,8 +24,7 @@ class ExecutorCaso:
         self._avaliador = AvaliadorCaso.factory(caso, log)
 
     @staticmethod
-    def factory(caso: Caso,
-                log: Logger) -> 'ExecutorCaso':
+    def factory(caso: Caso, log: Logger) -> "ExecutorCaso":
         if isinstance(caso, CasoNEWAVE):
             return ExecutorNEWAVE(caso, log)
         elif isinstance(caso, CasoDECOMP):
@@ -37,30 +33,25 @@ class ExecutorCaso:
             raise ValueError(f"Caso do tipo {type(caso)} não suportado")
 
     @abstractmethod
-    def executa_e_monitora_caso(self,
-                                casos_anteriores: List[Caso],
-                                ultimo_newave: Optional[CasoNEWAVE]):
+    def executa_e_monitora_caso(
+        self, casos_anteriores: List[Caso], ultimo_newave: Optional[CasoNEWAVE]
+    ):
         pass
 
 
 class ExecutorNEWAVE(ExecutorCaso):
+    def __init__(self, caso: CasoNEWAVE, log: Logger) -> None:
+        super().__init__(caso, log)
 
-    def __init__(self,
-                 caso: CasoNEWAVE,
-                 log: Logger) -> None:
-        super().__init__(caso,
-                         log)
-
-    def executa_e_monitora_caso(self,
-                                casos_anteriores: List[Caso],
-                                ultimo_newave: Optional[CasoNEWAVE]):
+    def executa_e_monitora_caso(
+        self, casos_anteriores: List[Caso], ultimo_newave: Optional[CasoNEWAVE]
+    ):
 
         chdir(self._caso.caminho)
 
         # Se não é o primeiro NEWAVE, apaga os cortes do último
         if ultimo_newave is not None:
-            sint_ultimo = SintetizadorNEWAVE(ultimo_newave,
-                                             self._log)
+            sint_ultimo = SintetizadorNEWAVE(ultimo_newave, self._log)
             if sint_ultimo.verifica_cortes_extraidos():
                 sint_ultimo.deleta_cortes()
 
@@ -88,16 +79,12 @@ class ExecutorNEWAVE(ExecutorCaso):
 
 
 class ExecutorDECOMP(ExecutorCaso):
+    def __init__(self, caso: CasoDECOMP, log: Logger) -> None:
+        super().__init__(caso, log)
 
-    def __init__(self,
-                 caso: CasoDECOMP,
-                 log: Logger) -> None:
-        super().__init__(caso,
-                         log)
-
-    def executa_e_monitora_caso(self,
-                                casos_anteriores: List[Caso],
-                                ultimo_newave: Optional[CasoNEWAVE]):
+    def executa_e_monitora_caso(
+        self, casos_anteriores: List[Caso], ultimo_newave: Optional[CasoNEWAVE]
+    ):
 
         chdir(self._caso.caminho)
 
@@ -122,14 +109,17 @@ class ExecutorDECOMP(ExecutorCaso):
         while not self._caso.sucesso:
             max_flex = self._caso.configuracoes.maximo_flexibilizacoes_revisao
             if self._caso.numero_flexibilizacoes >= max_flex:
-                self._log.error("Máximo de flexibilizações atingido" +
-                                f" no DC {self._caso.nome}")
+                self._log.error(
+                    "Máximo de flexibilizações atingido"
+                    + f" no DC {self._caso.nome}"
+                )
                 raise RuntimeError()
             # Se ainda pode flexibilizar
             flexibilizador = Flexibilizador.factory(self._caso, self._log)
             if not flexibilizador.flexibiliza():
-                self._log.error("Erro na flexibilização do caso " +
-                                f"{self._caso.nome}")
+                self._log.error(
+                    "Erro na flexibilização do caso " + f"{self._caso.nome}"
+                )
                 raise RuntimeError()
             if not self._monitor.executa_caso():
                 self._log.error(f"Erro na execução do DC {self._caso.nome}")

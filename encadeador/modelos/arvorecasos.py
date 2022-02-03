@@ -9,10 +9,7 @@ from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 
 
 class ArvoreCasos:
-
-    def __init__(self,
-                 cfg: Configuracoes,
-                 log: Logger) -> None:
+    def __init__(self, cfg: Configuracoes, log: Logger) -> None:
         self._log = log
         self._configuracoes = cfg
         self._diretorios_revisoes: List[str] = []
@@ -24,19 +21,22 @@ class ArvoreCasos:
             raise ValueError("ArvoreCasos não inicializada!")
 
     def le_arquivo_casos(self):
-
         def __le_diretorios():
             for d in self._diretorios_revisoes:
                 subd = [a for a in listdir(d) if isdir(join(d, a))]
                 if self._configuracoes._nome_diretorio_newave in subd:
-                    c = join(self._configuracoes.caminho_base_estudo,
-                             d,
-                             self._configuracoes._nome_diretorio_newave)
+                    c = join(
+                        self._configuracoes.caminho_base_estudo,
+                        d,
+                        self._configuracoes._nome_diretorio_newave,
+                    )
                     self._diretorios_casos.append(c)
                 if self._configuracoes._nome_diretorio_decomp in subd:
-                    c = join(self._configuracoes.caminho_base_estudo,
-                             d,
-                             self._configuracoes._nome_diretorio_decomp)
+                    c = join(
+                        self._configuracoes.caminho_base_estudo,
+                        d,
+                        self._configuracoes._nome_diretorio_decomp,
+                    )
                     self._diretorios_casos.append(c)
 
         lista = self._configuracoes.arquivo_lista_casos
@@ -47,7 +47,6 @@ class ArvoreCasos:
         __le_diretorios()
 
     def constroi_casos(self) -> bool:
-
         def __le_caso(c: str) -> bool:
             pastas = normpath(c).split(sep)
             # Extrai as características do caso
@@ -74,8 +73,7 @@ class ArvoreCasos:
 
         for c in self._diretorios_casos:
             try:
-                caso = ArmazenadorCaso.recupera_caso(self._configuracoes,
-                                                     c)
+                caso = ArmazenadorCaso.recupera_caso(self._configuracoes, c)
                 # TODO - Pensar em como permitir mudanças de diretório
                 # do estudo encadeado, uma vez já concluído.
                 caso.caminho = c
