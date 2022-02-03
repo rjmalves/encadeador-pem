@@ -58,9 +58,7 @@ class SintetizadorNEWAVE(SintetizadorCaso):
         super().__init__(caso, log)
 
     def sintetiza_caso(self) -> bool:
-        self._log.info(
-            "Sintetizando informações do" + f" caso {self._caso.nome}"
-        )
+        self._log.info("Sintetizando informações do" + f" caso {self._caso.nome}")
         num_retry = 0
         while num_retry < MAX_RETRY_ESCRITA:
             try:
@@ -172,6 +170,12 @@ class SintetizadorDECOMP(SintetizadorCaso):
         return df
 
     @staticmethod
+    def __processa_reservatorios(reservatorios: pd.DataFrame) -> pd.DataFrame:
+        estagios = [c for c in list(reservatorios.columns) if "Estágio" in c]
+        gh = reservatorios.loc[:, ["Usina", "Inicial"] + estagios].copy()
+        return gh
+
+    @staticmethod
     def __processa_gh(balanco: pd.DataFrame) -> pd.DataFrame:
         gh = balanco.loc[
             :, ["Estágio", "Subsistema", "Ghid", "Itaipu50", "Itaipu60"]
@@ -185,11 +189,7 @@ class SintetizadorDECOMP(SintetizadorCaso):
         df = pd.DataFrame(columns=["Subsistema"] + cols_df)
         for i, s in enumerate(subsistemas):
             valores_sub = [
-                float(
-                    gh.loc[
-                        (gh["Estágio"] == e) & (gh["Subsistema"] == s), "Ghid"
-                    ]
-                )
+                float(gh.loc[(gh["Estágio"] == e) & (gh["Subsistema"] == s), "Ghid"])
                 for e in estagios
             ]
             df.loc[i, "Subsistema"] = s
@@ -241,22 +241,16 @@ class SintetizadorDECOMP(SintetizadorCaso):
         return df
 
     @staticmethod
-    def __processa_gt_percentual_max(
-        relato: Relato, relgnl: RelGNL
-    ) -> pd.DataFrame:
+    def __processa_gt_percentual_max(relato: Relato, relgnl: RelGNL) -> pd.DataFrame:
         return ProcessadorDecomp.gt_percentual_maxima(relato, relgnl)
 
     @staticmethod
-    def __processa_gt_percentual_flex(
-        relato: Relato, relgnl: RelGNL
-    ) -> pd.DataFrame:
+    def __processa_gt_percentual_flex(relato: Relato, relgnl: RelGNL) -> pd.DataFrame:
         return ProcessadorDecomp.gt_percentual_flexivel(relato, relgnl)
 
     def sintetiza_caso(self) -> bool:
         num_retry = 0
-        self._log.info(
-            "Sintetizando informações do" + f" caso {self._caso.nome}"
-        )
+        self._log.info("Sintetizando informações do" + f" caso {self._caso.nome}")
         while num_retry < MAX_RETRY_ESCRITA:
             try:
                 arq_relato = f"relato.rv{self._caso.revisao}"
@@ -276,9 +270,7 @@ class SintetizadorDECOMP(SintetizadorCaso):
                     conv = pd.concat([conv_anterior, conv], ignore_index=True)
                 # Inviabilidades e Déficit do inviab_unic.rvX
                 arq_inviab = f"inviab_unic.rv{self._caso.revisao}"
-                inviab_unic = InviabUnic.le_arquivo(
-                    self.caso.caminho, arq_inviab
-                )
+                inviab_unic = InviabUnic.le_arquivo(self.caso.caminho, arq_inviab)
                 inviab = inviab_unic.inviabilidades_simulacao_final
                 cols_inviab = list(inviab.columns)
                 inviab["Flexibilizacao"] = self.caso.numero_flexibilizacoes
@@ -287,9 +279,7 @@ class SintetizadorDECOMP(SintetizadorCaso):
                     inviab_anterior = pd.read_csv(
                         join(caminho_saida, "inviabilidades.csv"), index_col=0
                     )
-                    inviab = pd.concat(
-                        [inviab_anterior, inviab], ignore_index=True
-                    )
+                    inviab = pd.concat([inviab_anterior, inviab], ignore_index=True)
                 # Escreve em disco
                 conv.to_csv(
                     join(caminho_saida, "convergencia.csv"),
@@ -308,9 +298,7 @@ class SintetizadorDECOMP(SintetizadorCaso):
                 cmo = relato.cmo_medio_subsistema
                 earm_subsis = relato.energia_armazenada_subsistema
                 earmax = relato.energia_armazenada_maxima_subsistema
-                earm_sin = SintetizadorDECOMP.__processa_earm_sin(
-                    earm_subsis, earmax
-                )
+                earm_sin = SintetizadorDECOMP.__processa_earm_sin(earm_subsis, earmax)
                 gt_subsis = relato.geracao_termica_subsistema
                 gt_sin = SintetizadorDECOMP.__processa_dado_sin(gt_subsis)
                 gt_perc_m = SintetizadorDECOMP.__processa_gt_percentual_max(
@@ -320,6 +308,8 @@ class SintetizadorDECOMP(SintetizadorCaso):
                     relato, relgnl
                 )
                 balanco = relato.balanco_energetico
+                reservatorio = relato.volume_util_reservatorios
+                gh_reserv = SintetizadorDECOMP.__processa_reservatorios(reservatorio)
                 gh_subsis = SintetizadorDECOMP.__processa_gh(balanco)
                 gh_sin = SintetizadorDECOMP.__processa_dado_sin(gh_subsis)
                 merc_subsis = SintetizadorDECOMP.__processa_mercado(balanco)
@@ -359,6 +349,11 @@ class SintetizadorDECOMP(SintetizadorCaso):
                 )
                 gt_perc_f.to_csv(
                     join(caminho_saida, "gt_percentual_flex.csv"),
+                    header=True,
+                    encoding="utf-8",
+                )
+                gh_reserv.to_csv(
+                    join(caminho_saida, "gh_reserv.csv"),
                     header=True,
                     encoding="utf-8",
                 )

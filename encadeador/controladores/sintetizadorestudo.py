@@ -16,6 +16,7 @@ ARQUIVO_PROXIMO_CASO = "proximo_caso.csv"
 ARQUIVO_RESUMO_ESTADOS = "estudo_encadeado.csv"
 ARQUIVO_RESUMO_NEWAVES = "newaves_encadeados.csv"
 ARQUIVO_RESUMO_DECOMPS = "decomps_encadeados.csv"
+ARQUIVO_RESUMO_RESERVATORIOS = "resevatorios_encadeados.csv"
 ARQUIVO_CONVERGENCIA_NEWAVES = "convergencia_newaves.csv"
 ARQUIVO_CONVERGENCIA_DECOMPS = "convergencia_decomps.csv"
 ARQUIVO_INVIABILIDADES_DECOMPS = "inviabilidades_decomps.csv"
@@ -49,9 +50,7 @@ class SintetizadorEstudo:
                 num_retry += 1
                 time.sleep(INTERVALO_RETRY_ESCRITA)
                 continue
-        raise RuntimeError(
-            "Erro na sintese do próximo caso do estudo " + "encadeado."
-        )
+        raise RuntimeError("Erro na sintese do próximo caso do estudo " + "encadeado.")
 
     def sintetiza_estudo(self) -> bool:
         self._log.info("Sintetizando dados do estudo encadeado")
@@ -66,6 +65,7 @@ class SintetizadorEstudo:
                 resumo_estados = join(diretorio_estudo, ARQUIVO_RESUMO_ESTADOS)
                 resumo_newaves = join(diretorio_estudo, ARQUIVO_RESUMO_NEWAVES)
                 resumo_decomps = join(diretorio_estudo, ARQUIVO_RESUMO_DECOMPS)
+                resumo_reserv = join(diretorio_estudo, ARQUIVO_RESUMO_RESERVATORIOS)
                 convergencias_newaves = join(
                     diretorio_estudo, ARQUIVO_CONVERGENCIA_NEWAVES
                 )
@@ -78,6 +78,7 @@ class SintetizadorEstudo:
                 dados.resumo_estados.to_csv(resumo_estados)
                 dados.resumo_newaves.to_csv(resumo_newaves)
                 dados.resumo_decomps.to_csv(resumo_decomps)
+                dados.resumo_reservatorios.to_csv(resumo_reserv)
                 dados.convergencias_newaves.to_csv(convergencias_newaves)
                 dados.convergencias_decomps.to_csv(convergencias_decomps)
                 dados.inviabilidades_decomps.to_csv(inviabilidades_decomps)
