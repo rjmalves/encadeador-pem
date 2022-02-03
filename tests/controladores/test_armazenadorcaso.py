@@ -29,21 +29,17 @@ def test_armazenador_caso_nao_inicializado():
 
 def test_armazenador_newave_inicializado():
     c = CasoNEWAVE()
-    c.configura_caso(CAMINHO_TESTE,
-                     ANO_TESTE,
-                     MES_TESTE,
-                     REVISAO_TESTE,
-                     Configuracoes())
+    c.configura_caso(
+        CAMINHO_TESTE, ANO_TESTE, MES_TESTE, REVISAO_TESTE, Configuracoes()
+    )
     a = ArmazenadorCaso(c, log)
     a.armazena_caso()
 
 
 def test_armazenador_newave_valido():
-    a = ArmazenadorCaso.recupera_caso(Configuracoes(),
-                                      CAMINHO_TESTE_VAL)
+    a = ArmazenadorCaso.recupera_caso(Configuracoes(), CAMINHO_TESTE_VAL)
 
 
 def test_armazenador_newave_invalido():
     with pytest.raises(KeyError):
-        a = ArmazenadorCaso.recupera_caso(Configuracoes(),
-                                          CAMINHO_TESTE_INVAL)
+        a = ArmazenadorCaso.recupera_caso(Configuracoes(), CAMINHO_TESTE_INVAL)

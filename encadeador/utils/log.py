@@ -13,13 +13,10 @@ class Log(metaclass=Singleton):
     @classmethod
     def configura_logging(cls, diretorio: str):
         root = logging.getLogger("main")
-        h = logging.handlers.RotatingFileHandler(join(diretorio,
-                                                      cls.ARQUIVO),
-                                                 'a',
-                                                 10000,
-                                                 0,
-                                                 "utf-8")
-        f = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+        h = logging.handlers.RotatingFileHandler(
+            join(diretorio, cls.ARQUIVO), "a", 10000, 0, "utf-8"
+        )
+        f = logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
         h.setFormatter(f)
         # Logger para STDOUT
         std_h = logging.StreamHandler()

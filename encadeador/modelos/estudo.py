@@ -12,11 +12,12 @@ from encadeador.utils.log import Log
 
 
 class Estudo:
-
-    def __init__(self,
-                 dados: DadosEstudo,
-                 casos: List[Caso],
-                 estado: EstadoEstudo = EstadoEstudo.NAO_INICIADO):
+    def __init__(
+        self,
+        dados: DadosEstudo,
+        casos: List[Caso],
+        estado: EstadoEstudo = EstadoEstudo.NAO_INICIADO,
+    ):
         self._dados = dados
         self._casos = casos
         self._estado = estado
@@ -30,25 +31,28 @@ class Estudo:
     def to_json(self) -> Dict[str, Any]:
         return {
             "_dados": self._dados.to_json(),
-            "_estado": str(self._estado.value)
+            "_estado": str(self._estado.value),
         }
 
     @staticmethod
     def le_arquivo_lista_casos() -> Tuple[List[str], List[str]]:
-
         def __cria_caminhos_casos(dirs_revisoes: List[str]) -> List[str]:
             dirs_casos: List[str] = []
             for d in dirs_revisoes:
                 subd = [a for a in listdir(d) if isdir(join(d, a))]
                 if Configuracoes().nome_diretorio_newave in subd:
-                    c = join(Configuracoes().caminho_base_estudo,
-                             d,
-                             Configuracoes()._nome_diretorio_newave)
+                    c = join(
+                        Configuracoes().caminho_base_estudo,
+                        d,
+                        Configuracoes()._nome_diretorio_newave,
+                    )
                     dirs_casos.append(c)
                 if Configuracoes()._nome_diretorio_decomp in subd:
-                    c = join(Configuracoes().caminho_base_estudo,
-                             d,
-                             Configuracoes()._nome_diretorio_decomp)
+                    c = join(
+                        Configuracoes().caminho_base_estudo,
+                        d,
+                        Configuracoes()._nome_diretorio_decomp,
+                    )
                     dirs_casos.append(c)
             return dirs_casos
 
@@ -60,7 +64,6 @@ class Estudo:
 
     @staticmethod
     def constroi_casos(dirs: List[str]) -> List[Caso]:
-
         def __le_caso(c: str) -> Caso:
             pastas = normpath(c).split(sep)
             # Extrai as características do caso
@@ -96,9 +99,7 @@ class Estudo:
                 casos.append(ret)
         return casos
 
-    def atualiza(self,
-                 estado: EstadoEstudo,
-                 resume: bool = False):
+    def atualiza(self, estado: EstadoEstudo, resume: bool = False):
         self._estado = estado
         self._dados.resume_casos(self._casos)
         if resume:
@@ -140,8 +141,10 @@ class Estudo:
     def proximo_newave(self) -> Optional[CasoNEWAVE]:
         for c in self.casos:
             try:
-                if (isinstance(c, CasoNEWAVE) and
-                        c.estado != EstadoCaso.CONCLUIDO):
+                if (
+                    isinstance(c, CasoNEWAVE)
+                    and c.estado != EstadoCaso.CONCLUIDO
+                ):
                     return c
             except ValueError:
                 if isinstance(c, CasoNEWAVE):
@@ -152,8 +155,10 @@ class Estudo:
     def proximo_decomp(self) -> Optional[CasoDECOMP]:
         for c in self.casos:
             try:
-                if (isinstance(c, CasoDECOMP) and
-                        c.estado != EstadoCaso.CONCLUIDO):
+                if (
+                    isinstance(c, CasoDECOMP)
+                    and c.estado != EstadoCaso.CONCLUIDO
+                ):
                     return c
             except ValueError:
                 if isinstance(c, CasoDECOMP):
@@ -176,8 +181,10 @@ class Estudo:
         c_convergido = None
         for c in self.casos:
             try:
-                if (isinstance(c, CasoNEWAVE) and
-                        c.estado == EstadoCaso.CONCLUIDO):
+                if (
+                    isinstance(c, CasoNEWAVE)
+                    and c.estado == EstadoCaso.CONCLUIDO
+                ):
                     c_convergido = c
             except ValueError:
                 break
@@ -188,8 +195,10 @@ class Estudo:
         c_convergido = None
         for c in self.casos:
             try:
-                if (isinstance(c, CasoDECOMP) and
-                        c.estado == EstadoCaso.CONCLUIDO):
+                if (
+                    isinstance(c, CasoDECOMP)
+                    and c.estado == EstadoCaso.CONCLUIDO
+                ):
                     c_convergido = c
             except ValueError:
                 break

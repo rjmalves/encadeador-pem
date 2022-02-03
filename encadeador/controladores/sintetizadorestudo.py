@@ -19,9 +19,7 @@ ARQUIVO_INVIABILIDADES_DECOMPS = "inviabilidades_decomps.csv"
 
 
 class SintetizadorEstudo:
-
-    def __init__(self,
-                 estudo: Estudo) -> None:
+    def __init__(self, estudo: Estudo) -> None:
         self._estudo = estudo
 
     @staticmethod
@@ -30,29 +28,31 @@ class SintetizadorEstudo:
         if caso is not None:
             caminho = join(caso.caminho, NOME_ARQUIVO_ESTADO)
             df_proximo_caso["Caminho"] = [caminho]
-            arq = join(Configuracoes().caminho_base_estudo,
-                       ARQUIVO_PROXIMO_CASO)
+            arq = join(
+                Configuracoes().caminho_base_estudo, ARQUIVO_PROXIMO_CASO
+            )
             escreve_arquivo_json(arq, {"Caminho": caminho})
         else:
-            raise RuntimeError("Erro na sintese do próximo caso do estudo " +
-                               "encadeado.")
+            raise RuntimeError(
+                "Erro na sintese do próximo caso do estudo " + "encadeado."
+            )
 
     def sintetiza_estudo(self) -> bool:
         Log.log().info("Sintetizando dados do estudo encadeado")
         dados = self._estudo.dados
         diretorio_estudo = Configuracoes().caminho_base_estudo
-        resumo_estados = join(diretorio_estudo,
-                              ARQUIVO_RESUMO_ESTADOS)
-        resumo_newaves = join(diretorio_estudo,
-                              ARQUIVO_RESUMO_NEWAVES)
-        resumo_decomps = join(diretorio_estudo,
-                              ARQUIVO_RESUMO_DECOMPS)
-        convergencias_newaves = join(diretorio_estudo,
-                                     ARQUIVO_CONVERGENCIA_NEWAVES)
-        convergencias_decomps = join(diretorio_estudo,
-                                     ARQUIVO_CONVERGENCIA_DECOMPS)
-        inviabilidades_decomps = join(diretorio_estudo,
-                                      ARQUIVO_INVIABILIDADES_DECOMPS)
+        resumo_estados = join(diretorio_estudo, ARQUIVO_RESUMO_ESTADOS)
+        resumo_newaves = join(diretorio_estudo, ARQUIVO_RESUMO_NEWAVES)
+        resumo_decomps = join(diretorio_estudo, ARQUIVO_RESUMO_DECOMPS)
+        convergencias_newaves = join(
+            diretorio_estudo, ARQUIVO_CONVERGENCIA_NEWAVES
+        )
+        convergencias_decomps = join(
+            diretorio_estudo, ARQUIVO_CONVERGENCIA_DECOMPS
+        )
+        inviabilidades_decomps = join(
+            diretorio_estudo, ARQUIVO_INVIABILIDADES_DECOMPS
+        )
         escreve_df_em_csv(dados.resumo_estados, resumo_estados)
         escreve_df_em_csv(dados.resumo_newaves, resumo_newaves)
         escreve_df_em_csv(dados.resumo_decomps, resumo_decomps)

@@ -33,8 +33,7 @@ def test_sintetizador_newave():
     chdir(DIR_TESTE)
     load_dotenv("encadeia.cfg", override=True)
     cfg = Configuracoes.le_variaveis_ambiente()
-    c = ArmazenadorCaso.recupera_caso(cfg,
-                                      CAMINHO_TESTE_NW)
+    c = ArmazenadorCaso.recupera_caso(cfg, CAMINHO_TESTE_NW)
     s = SintetizadorNEWAVE(c, log)
     r = s.sintetiza_caso()
     chdir(DIR_INICIAL)
@@ -45,8 +44,7 @@ def test_sintetizador_decomp():
     chdir(DIR_TESTE)
     load_dotenv("encadeia.cfg", override=True)
     cfg = Configuracoes.le_variaveis_ambiente()
-    c = ArmazenadorCaso.recupera_caso(cfg,
-                                      CAMINHO_TESTE_DCP)
+    c = ArmazenadorCaso.recupera_caso(cfg, CAMINHO_TESTE_DCP)
     s = SintetizadorDECOMP(c, log)
     r = s.sintetiza_caso()
     chdir(DIR_INICIAL)
@@ -57,15 +55,16 @@ def test_sintetizador_extrai_deleta_cortes_sucesso(mocker: MockerFixture):
     chdir(DIR_TESTE)
     load_dotenv("encadeia.cfg", override=True)
     cfg = Configuracoes.le_variaveis_ambiente()
-    c = ArmazenadorCaso.recupera_caso(cfg,
-                                      CAMINHO_TESTE_NW)
+    c = ArmazenadorCaso.recupera_caso(cfg, CAMINHO_TESTE_NW)
     if isinstance(c, CasoNEWAVE):
         s = SintetizadorNEWAVE(c, log)
     else:
         raise TypeError("Somente caso de NEWAVE tem cortes")
-    mocker.patch("encadeador.controladores.sintetizadorcaso" +
-                 ".SintetizadorNEWAVE._nomes_arquivos_cortes",
-                 return_value=["cortes.dat", "cortesh.dat"])
+    mocker.patch(
+        "encadeador.controladores.sintetizadorcaso"
+        + ".SintetizadorNEWAVE._nomes_arquivos_cortes",
+        return_value=["cortes.dat", "cortesh.dat"],
+    )
     if not s.verifica_cortes_extraidos():
         s.extrai_cortes()
     if s.verifica_cortes_extraidos():

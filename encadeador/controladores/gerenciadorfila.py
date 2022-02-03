@@ -13,6 +13,7 @@ class GerenciadorFila:
     Interface base para representação dos gerenciadores de fila
     para execução dos casos no estudo encadeado.
     """
+
     TIMEOUT_COMUNICACAO = 1800
     TIMEOUT_DELETE = 120
 
@@ -32,7 +33,7 @@ class GerenciadorFila:
 
     # Factory Method
     @staticmethod
-    def factory(ger: str) -> 'GerenciadorFila':
+    def factory(ger: str) -> "GerenciadorFila":
         if ger == "SGE":
             return GerenciadorFilaSGE()
         else:
@@ -91,10 +92,9 @@ class GerenciadorFila:
             return time.time() - getmtime(self.arquivo_stdout)
 
     @abstractmethod
-    def comando_qsub(self,
-                     caminho_job: str,
-                     nome_job: str,
-                     num_processadores: int) -> List[str]:
+    def comando_qsub(
+        self, caminho_job: str, nome_job: str, num_processadores: int
+    ) -> List[str]:
         pass
 
     @abstractmethod
@@ -105,11 +105,9 @@ class GerenciadorFila:
     def comando_qdel(self) -> List[str]:
         pass
 
-    def agenda_job(self,
-                   caminho_job: str,
-                   nome_job: str,
-                   num_processadores: int
-                   ) -> bool:
+    def agenda_job(
+        self, caminho_job: str, nome_job: str, num_processadores: int
+    ) -> bool:
         """
         Solicita a inclusão de um job no gerenciamento
         de filas.
@@ -117,9 +115,9 @@ class GerenciadorFila:
         :return: Sucesso ou não da inclusão.
         :rtype: bool
         """
-        self._comandos = self.comando_qsub(caminho_job,
-                                           nome_job,
-                                           num_processadores)
+        self._comandos = self.comando_qsub(
+            caminho_job, nome_job, num_processadores
+        )
         try:
             cod, self._respostas = executa_terminal(self._comandos)
         except TimeoutError:
@@ -218,11 +216,9 @@ class GerenciadorFilaSGE(GerenciadorFila):
             raise ValueError("Gerenciador de filas não inicializado!")
         resposta = self._respostas[0]
         # id_job
-        self._id_job = (int(resposta.split("Your job")[1]
-                        .split("(")[0].strip()))
+        self._id_job = int(resposta.split("Your job")[1].split("(")[0].strip())
         # nome_job
-        self._nome_job = (resposta.split('(')[1]
-                          .split(')')[0].strip('"'))
+        self._nome_job = resposta.split("(")[1].split(")")[0].strip('"')
         # arquivos stdout e stderr
         self._arquivo_stdout = f"{self.nome_job}.o{self.id_job}"
         self._arquivo_stderr = f"{self.nome_job}.e{self.id_job}"
@@ -230,21 +226,21 @@ class GerenciadorFilaSGE(GerenciadorFila):
     def comando_qstat(self) -> List[str]:
         return ["qstat"]
 
-    def comando_qsub(self,
-                     caminho_job: str,
-                     nome_job: str,
-                     num_processadores: int) -> List[str]:
-        return ["qsub",
-                "-cwd",
-                "-V",
-                "-N",
-                nome_job,
-                "-pe",
-                "orte",
-                str(num_processadores),
-                caminho_job,
-                str(num_processadores)
-                ]
+    def comando_qsub(
+        self, caminho_job: str, nome_job: str, num_processadores: int
+    ) -> List[str]:
+        return [
+            "qsub",
+            "-cwd",
+            "-V",
+            "-N",
+            nome_job,
+            "-pe",
+            "orte",
+            str(num_processadores),
+            caminho_job,
+            str(num_processadores),
+        ]
 
     def comando_qdel(self) -> List[str]:
         return ["qdel", str(self.id_job)]
@@ -268,15 +264,19 @@ class GerenciadorFilaSGE(GerenciadorFila):
         return estado
 
     def _estado_timeout(self, e: str) -> bool:
-        return (e == "r" and
-                self.tempo_job_idle >= self.__class__.TIMEOUT_COMUNICACAO)
+        return (
+            e == "r"
+            and self.tempo_job_idle >= self.__class__.TIMEOUT_COMUNICACAO
+        )
 
     def _estado_esperando(self, e: str) -> bool:
         return e in ["qw", "t", "q"]
 
     def _estado_executando(self, e: str) -> bool:
-        return (e == "r" and
-                self.tempo_job_idle < self.__class__.TIMEOUT_COMUNICACAO)
+        return (
+            e == "r"
+            and self.tempo_job_idle < self.__class__.TIMEOUT_COMUNICACAO
+        )
 
     def _estado_deletando(self, e: str) -> bool:
         return e in ["dr", "d"]

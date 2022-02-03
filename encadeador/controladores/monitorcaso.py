@@ -29,8 +29,7 @@ class MonitorCaso:
     adquirindo informações do estado dos jobs por meio do Observer Pattern.
     """
 
-    def __init__(self,
-                 caso: Caso):
+    def __init__(self, caso: Caso):
         self._caso = caso
         self._armazenador = ArmazenadorCaso(caso)
         self._avaliador = AvaliadorCaso.factory(caso)
@@ -39,7 +38,7 @@ class MonitorCaso:
         self._transicao_caso = Event()
 
     @staticmethod
-    def factory(caso: Caso) -> 'MonitorCaso':
+    def factory(caso: Caso) -> "MonitorCaso":
         if isinstance(caso, CasoNEWAVE):
             return MonitorNEWAVE(caso)
         elif isinstance(caso, CasoDECOMP):
@@ -72,29 +71,42 @@ class MonitorCaso:
     def nome_job(self) -> str:
         pass
 
-    def _regras(self) -> Dict[Tuple[EstadoCaso,
-                                    TransicaoJob],
-                              Callable[[], EstadoCaso]]:
+    def _regras(
+        self,
+    ) -> Dict[Tuple[EstadoCaso, TransicaoJob], Callable[[], EstadoCaso]]:
         return {
-            (EstadoCaso.INICIADO,
-             TransicaoJob.ENTRADA_FILA): self._trata_entrada_fila,
-            (EstadoCaso.ESPERANDO_FILA,
-             TransicaoJob.INICIO_EXECUCAO): self._trata_inicio_execucao,
-            (EstadoCaso.ESPERANDO_FILA,
-             TransicaoJob.COMANDO_DELETA_JOB): self._trata_inicio_del_job,
-            (EstadoCaso.EXECUTANDO,
-             TransicaoJob.COMANDO_DELETA_JOB): self._trata_inicio_del_job,
-            (EstadoCaso.EXECUTANDO,
-             TransicaoJob.ERRO_EXECUCAO): self._trata_erro_execucao,
-            (EstadoCaso.EXECUTANDO,
-             TransicaoJob.FIM_EXECUCAO): self._trata_fim_execucao,
-            (EstadoCaso.ESPERANDO_DEL_JOB,
-             TransicaoJob.FIM_EXECUCAO): self._trata_erro,
+            (
+                EstadoCaso.INICIADO,
+                TransicaoJob.ENTRADA_FILA,
+            ): self._trata_entrada_fila,
+            (
+                EstadoCaso.ESPERANDO_FILA,
+                TransicaoJob.INICIO_EXECUCAO,
+            ): self._trata_inicio_execucao,
+            (
+                EstadoCaso.ESPERANDO_FILA,
+                TransicaoJob.COMANDO_DELETA_JOB,
+            ): self._trata_inicio_del_job,
+            (
+                EstadoCaso.EXECUTANDO,
+                TransicaoJob.COMANDO_DELETA_JOB,
+            ): self._trata_inicio_del_job,
+            (
+                EstadoCaso.EXECUTANDO,
+                TransicaoJob.ERRO_EXECUCAO,
+            ): self._trata_erro_execucao,
+            (
+                EstadoCaso.EXECUTANDO,
+                TransicaoJob.FIM_EXECUCAO,
+            ): self._trata_fim_execucao,
+            (
+                EstadoCaso.ESPERANDO_DEL_JOB,
+                TransicaoJob.FIM_EXECUCAO,
+            ): self._trata_erro,
         }
 
     @abstractmethod
-    def inicializa(self,
-                   casos_anteriores: List[Caso]) -> bool:
+    def inicializa(self, casos_anteriores: List[Caso]) -> bool:
         """
         Realiza a inicialização do caso, isto é, a preparação dos
         arquivos para adequação às necessidades do estudo
@@ -113,13 +125,9 @@ class MonitorCaso:
         :rtype: bool
         """
         chdir(self._caso.caminho)
-        self._job_atual = Job(DadosJob("",
-                                       self.nome_job,
-                                       self.caminho_job,
-                                       0.,
-                                       0.,
-                                       0.,
-                                       0))
+        self._job_atual = Job(
+            DadosJob("", self.nome_job, self.caminho_job, 0.0, 0.0, 0.0, 0)
+        )
         self._caso.adiciona_job(self._job_atual, retry)
         self._monitor_job_atual = MonitorJob(self._job_atual)
         ret = self._monitor_job_atual.submete(self._caso.numero_processadores)
@@ -162,8 +170,10 @@ class MonitorCaso:
         pass
 
     def _trata_erro(self) -> EstadoCaso:
-        Log.log().info(f"Caso {self._caso.nome}: erro de comunicação. " +
-                       "Submetendo novamente (retry)...")
+        Log.log().info(
+            f"Caso {self._caso.nome}: erro de comunicação. "
+            + "Submetendo novamente (retry)..."
+        )
         if not self.submete(True):
             Log.log().info(f"Caso {self._caso.nome}: erro durante o retry")
             self._transicao_caso(TransicaoCaso.ERRO)
@@ -176,9 +186,7 @@ class MonitorCaso:
 
 
 class MonitorNEWAVE(MonitorCaso):
-
-    def __init__(self,
-                 caso: CasoNEWAVE):
+    def __init__(self, caso: CasoNEWAVE):
         super().__init__(caso)
 
     @property
@@ -203,8 +211,7 @@ class MonitorNEWAVE(MonitorCaso):
         return f"NW{self.caso.ano}{self.caso.mes}"
 
     # Override
-    def inicializa(self,
-                   casos_anteriores: List[Caso]) -> bool:
+    def inicializa(self, casos_anteriores: List[Caso]) -> bool:
         """
         Realiza a inicialização do caso, isto é, a preparação dos
         arquivos para adequação às necessidades do estudo
@@ -245,7 +252,6 @@ class MonitorNEWAVE(MonitorCaso):
 
 
 class MonitorDECOMP(MonitorCaso):
-
     def __init__(self, caso: CasoDECOMP):
         super().__init__(caso)
 
@@ -271,8 +277,7 @@ class MonitorDECOMP(MonitorCaso):
         return f"DC{self.caso.ano}{self.caso.mes}{self.caso.revisao}"
 
     # Override
-    def inicializa(self,
-                   casos_anteriores: List[Caso]) -> bool:
+    def inicializa(self, casos_anteriores: List[Caso]) -> bool:
         """
         Realiza a inicialização do caso, isto é, a preparação dos
         arquivos para adequação às necessidades do estudo
@@ -293,20 +298,25 @@ class MonitorDECOMP(MonitorCaso):
         if not self._avaliador.avalia():
             n_flex = self._caso.numero_flexibilizacoes
             if n_flex >= Configuracoes().maximo_flexibilizacoes_revisao:
-                Log.log().info(f"Caso {self._caso.nome}: máximo de " +
-                               "flexibilizações atingido")
+                Log.log().info(
+                    f"Caso {self._caso.nome}: máximo de "
+                    + "flexibilizações atingido"
+                )
                 self._transicao_caso(TransicaoCaso.ERRO_MAX_FLEX)
                 return EstadoCaso.ERRO_MAX_FLEX
             else:
                 flexibilizador = Flexibilizador.factory(self._caso)
                 if not flexibilizador.flexibiliza():
-                    Log.log().error(f"Caso {self._caso.nome}: erro " +
-                                    "na flexibilização")
+                    Log.log().error(
+                        f"Caso {self._caso.nome}: erro " + "na flexibilização"
+                    )
                     self._transicao_caso(TransicaoCaso.ERRO)
                     raise RuntimeError()
                 if not self.submete():
-                    Log.log().error(f"Caso {self._caso.nome}: erro " +
-                                    "na submissão do job do caso")
+                    Log.log().error(
+                        f"Caso {self._caso.nome}: erro "
+                        + "na submissão do job do caso"
+                    )
                     self._transicao_caso(TransicaoCaso.ERRO)
                     raise RuntimeError()
                 return EstadoCaso.ESPERANDO_FILA

@@ -14,7 +14,7 @@ class EstadoCaso(Enum):
     ERRO_COMUNICACAO = "ERRO_COMUNICACAO"
 
     @staticmethod
-    def factory(valor: str) -> 'EstadoCaso':
+    def factory(valor: str) -> "EstadoCaso":
         for estado in EstadoCaso:
             if estado.value == valor:
                 return estado

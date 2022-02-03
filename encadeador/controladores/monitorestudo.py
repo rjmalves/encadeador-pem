@@ -19,8 +19,7 @@ class MonitorEstudo:
     adquirindo informações dos casos por meio do Observer Pattern.
     """
 
-    def __init__(self,
-                 estudo: Estudo):
+    def __init__(self, estudo: Estudo):
         self._estudo = estudo
         self._armazenador = ArmazenadorEstudo(estudo)
         self._caso_atual: Caso = None  # type: ignore
@@ -53,20 +52,30 @@ class MonitorEstudo:
     def nome_job(self) -> str:
         pass
 
-    def _regras(self) -> Dict[Tuple[EstadoEstudo,
-                                    TransicaoCaso],
-                              Callable[[], EstadoEstudo]]:
+    def _regras(
+        self,
+    ) -> Dict[Tuple[EstadoEstudo, TransicaoCaso], Callable[[], EstadoEstudo]]:
         return {
-            (EstadoEstudo.EXECUTANDO,
-             TransicaoCaso.INICIOU): self._trata_inicio_caso,
-            (EstadoEstudo.EXECUTANDO,
-             TransicaoCaso.SUCESSO): self._trata_fim_sucesso_caso,
-            (EstadoEstudo.EXECUTANDO,
-             TransicaoCaso.ERRO): self._trata_erro_caso,
-            (EstadoEstudo.EXECUTANDO,
-             TransicaoCaso.ERRO_MAX_FLEX): self._trata_erro_caso,
-            (EstadoEstudo.EXECUTANDO,
-             TransicaoCaso.ERRO_DADOS): self._trata_erro_caso
+            (
+                EstadoEstudo.EXECUTANDO,
+                TransicaoCaso.INICIOU,
+            ): self._trata_inicio_caso,
+            (
+                EstadoEstudo.EXECUTANDO,
+                TransicaoCaso.SUCESSO,
+            ): self._trata_fim_sucesso_caso,
+            (
+                EstadoEstudo.EXECUTANDO,
+                TransicaoCaso.ERRO,
+            ): self._trata_erro_caso,
+            (
+                EstadoEstudo.EXECUTANDO,
+                TransicaoCaso.ERRO_MAX_FLEX,
+            ): self._trata_erro_caso,
+            (
+                EstadoEstudo.EXECUTANDO,
+                TransicaoCaso.ERRO_DADOS,
+            ): self._trata_erro_caso,
         }
 
     def inicializa(self):
@@ -82,12 +91,14 @@ class MonitorEstudo:
         self._monitor_atual = MonitorCaso.factory(self._caso_atual)
         self._monitor_atual.observa(self.callback_evento_caso)
         if not self._monitor_atual.inicializa(self._estudo.casos_concluidos):
-            Log.log().error("Erro de inicialização do caso " +
-                            f"{self._caso_atual.nome}")
+            Log.log().error(
+                "Erro de inicialização do caso " + f"{self._caso_atual.nome}"
+            )
             raise RuntimeError()
         if not self._monitor_atual.submete():
-            Log.log().error("Erro de submissão do caso " +
-                            f"{self._caso_atual.nome}")
+            Log.log().error(
+                "Erro de submissão do caso " + f"{self._caso_atual.nome}"
+            )
             raise RuntimeError()
 
     def monitora(self):
@@ -121,12 +132,15 @@ class MonitorEstudo:
             self._monitor_atual.observa(self.callback_evento_caso)
             concluidos = self._estudo.casos_concluidos
             if not self._monitor_atual.inicializa(concluidos):
-                Log.log().error("Erro de inicialização do caso " +
-                                f"{self._caso_atual.nome}")
+                Log.log().error(
+                    "Erro de inicialização do caso "
+                    + f"{self._caso_atual.nome}"
+                )
                 raise RuntimeError()
             if not self._monitor_atual.submete():
-                Log.log().error("Erro de submissão do caso " +
-                                f"{self._caso_atual.nome}")
+                Log.log().error(
+                    "Erro de submissão do caso " + f"{self._caso_atual.nome}"
+                )
                 raise RuntimeError()
             return EstadoEstudo.EXECUTANDO
 

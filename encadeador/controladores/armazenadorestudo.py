@@ -12,9 +12,7 @@ NOME_ARQUIVO_ESTADO = "estudo_encadeado.json"
 
 
 class ArmazenadorEstudo:
-
-    def __init__(self,
-                 estudo: Estudo) -> None:
+    def __init__(self, estudo: Estudo) -> None:
         self._estudo = estudo
 
     def armazena_estudo(self) -> bool:
@@ -24,8 +22,9 @@ class ArmazenadorEstudo:
             escreve_arquivo_json(caminho, dados)
             return True
         except Exception as e:
-            Log.log().error("Erro no armazenamento do estudo" +
-                            f" {self._estudo.nome}: {e}")
+            Log.log().error(
+                "Erro no armazenamento do estudo" + f" {self._estudo.nome}: {e}"
+            )
             return False
 
     @staticmethod
@@ -39,17 +38,18 @@ class ArmazenadorEstudo:
             # Cria um novo estudo
             dirs_revisoes, dirs_casos = Estudo.le_arquivo_lista_casos()
             casos = Estudo.constroi_casos(dirs_casos)
-            dados = DadosEstudo(nome,
-                                caminho,
-                                time.time(),
-                                dirs_revisoes,
-                                dirs_casos,
-                                [c.nome for c in casos],
-                                [c.tempo_fila for c in casos],
-                                [c.tempo_execucao for c in casos],
-                                [c.estado for c in casos])
-            return Estudo(dados,
-                          casos)
+            dados = DadosEstudo(
+                nome,
+                caminho,
+                time.time(),
+                dirs_revisoes,
+                dirs_casos,
+                [c.nome for c in casos],
+                [c.tempo_fila for c in casos],
+                [c.tempo_execucao for c in casos],
+                [c.estado for c in casos],
+            )
+            return Estudo(dados, casos)
 
         # Se tem, então o estudo pelo menos começou. Então constroi
         # o estudo a partir dos detalhes nos arquivos de cada caso

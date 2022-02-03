@@ -5,9 +5,9 @@ from os.path import isfile
 from typing import List, Tuple
 
 
-def executa_terminal(cmds: List[str],
-                     timeout: float = 10) -> Tuple[int,
-                                                   List[str]]:
+def executa_terminal(
+    cmds: List[str], timeout: float = 10
+) -> Tuple[int, List[str]]:
     """
     Executa um comando no terminal e obtém as saídas e o código
     retornado pelo comando.
@@ -20,10 +20,9 @@ def executa_terminal(cmds: List[str],
     :rtype: Tuple[int, List[str]]
     """
     cmd = " ".join(cmds)
-    processo = subprocess.Popen(cmd,
-                                stdout=subprocess.PIPE,
-                                shell=True,
-                                universal_newlines=True)
+    processo = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, shell=True, universal_newlines=True
+    )
     t_inicio = time.time()
     linhas_saida: List[str] = []
     while True:
@@ -45,16 +44,15 @@ def executa_terminal(cmds: List[str],
     return codigo, linhas_saida
 
 
-def converte_codificacao(caminho: str,
-                         script_converte: str):
-    arqs = [a for a in listdir(caminho)
-            if (".dat" in a or "dadger.rv" in a) and isfile(a)]
+def converte_codificacao(caminho: str, script_converte: str):
+    arqs = [
+        a
+        for a in listdir(caminho)
+        if (".dat" in a or "dadger.rv" in a) and isfile(a)
+    ]
     for a in arqs:
         _, out = executa_terminal([f"file -i {a}"])
         cod = out[0].split("charset=")[1].strip()
-        if all([cod != "utf-8",
-                cod != "us-ascii",
-                cod != "binary"]):
+        if all([cod != "utf-8", cod != "us-ascii", cod != "binary"]):
             cod = cod.upper()
-            c, _ = executa_terminal([f"{script_converte}" +
-                                     f" {a} {cod}"])
+            c, _ = executa_terminal([f"{script_converte}" + f" {a} {cod}"])

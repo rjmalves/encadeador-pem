@@ -16,38 +16,46 @@ class MonitorJob:
     Implementa o State Pattern para coordenar a execução do job,
     adquirindo informações do estado por meio do Observer Pattern.
     """
+
     TIMEOUT_ERRO_COMUNICACAO = 1800
 
-    def __init__(self,
-                 job: Job):
+    def __init__(self, job: Job):
         self._job = job
         g = Configuracoes().gerenciador_fila
         self._gerenciador = GerenciadorFila.factory(g)
         self._gerenciador.observa(self.callback_estado_job)
         self._transicao_job = Event()
 
-    def _regras(self) -> Dict[Tuple[EstadoJob,
-                                    EstadoJob],
-                              Callable]:
+    def _regras(self) -> Dict[Tuple[EstadoJob, EstadoJob], Callable]:
         return {
-            (EstadoJob.NAO_INICIADO,
-             EstadoJob.ESPERANDO): self._trata_entrada_fila,
-            (EstadoJob.ESPERANDO,
-             EstadoJob.DELETANDO): self._trata_comando_deleta_job,
-            (EstadoJob.ESPERANDO,
-             EstadoJob.EXECUTANDO): self._trata_inicio_execucao,
-            (EstadoJob.EXECUTANDO,
-             EstadoJob.DELETANDO): self._trata_comando_deleta_job,
-            (EstadoJob.EXECUTANDO,
-             EstadoJob.FINALIZADO): self._trata_fim_execucao,
-            (EstadoJob.EXECUTANDO,
-             EstadoJob.ERRO): self._trata_erro_execucao,
-            (EstadoJob.DELETANDO,
-             EstadoJob.FINALIZADO): self._trata_job_deletado
+            (
+                EstadoJob.NAO_INICIADO,
+                EstadoJob.ESPERANDO,
+            ): self._trata_entrada_fila,
+            (
+                EstadoJob.ESPERANDO,
+                EstadoJob.DELETANDO,
+            ): self._trata_comando_deleta_job,
+            (
+                EstadoJob.ESPERANDO,
+                EstadoJob.EXECUTANDO,
+            ): self._trata_inicio_execucao,
+            (
+                EstadoJob.EXECUTANDO,
+                EstadoJob.DELETANDO,
+            ): self._trata_comando_deleta_job,
+            (
+                EstadoJob.EXECUTANDO,
+                EstadoJob.FINALIZADO,
+            ): self._trata_fim_execucao,
+            (EstadoJob.EXECUTANDO, EstadoJob.ERRO): self._trata_erro_execucao,
+            (
+                EstadoJob.DELETANDO,
+                EstadoJob.FINALIZADO,
+            ): self._trata_job_deletado,
         }
 
-    def callback_estado_job(self,
-                            novo_estado: EstadoJob):
+    def callback_estado_job(self, novo_estado: EstadoJob):
         """
         Esta função é usada para implementar o Observer Pattern.
         Quando chamada, significa que o estado de um Job foi alterado
@@ -62,23 +70,27 @@ class MonitorJob:
         # Atualiza o estado atual
         self._job.atualiza(novo_estado)
 
-    def submete(self,
-                numero_processadores: int) -> bool:
-        r = self._gerenciador.agenda_job(self._job.caminho,
-                                         self._job.nome,
-                                         numero_processadores)
+    def submete(self, numero_processadores: int) -> bool:
+        r = self._gerenciador.agenda_job(
+            self._job.caminho, self._job.nome, numero_processadores
+        )
         self._job.id = self._gerenciador.id_job
         self._job.numero_processadores = numero_processadores
         return r
 
     def monitora(self):
         self._gerenciador.monitora_estado_job()
-        if all([self._job.estado == EstadoJob.EXECUTANDO,
-                self._job.tempo_execucao >
-                __class__.TIMEOUT_ERRO_COMUNICACAO]):
+        if all(
+            [
+                self._job.estado == EstadoJob.EXECUTANDO,
+                self._job.tempo_execucao > __class__.TIMEOUT_ERRO_COMUNICACAO,
+            ]
+        ):
             if not self._gerenciador.deleta_job():
-                Log.log().error("Erro ao executar comando de deleção " +
-                                f"do job {self._job.id}[{self._job.nome}]")
+                Log.log().error(
+                    "Erro ao executar comando de deleção "
+                    + f"do job {self._job.id}[{self._job.nome}]"
+                )
                 raise RuntimeError()
 
     def observa(self, f: Callable):

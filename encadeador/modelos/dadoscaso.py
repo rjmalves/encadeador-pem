@@ -13,13 +13,15 @@ class DadosCaso:
     de flexibilizações.
     """
 
-    def __init__(self,
-                 programa: str,
-                 caminho: str,
-                 nome: str,
-                 ano: int,
-                 mes: int,
-                 revisao: int) -> None:
+    def __init__(
+        self,
+        programa: str,
+        caminho: str,
+        nome: str,
+        ano: int,
+        mes: int,
+        revisao: int,
+    ) -> None:
         self._programa = programa
         self._caminho = caminho
         self._nome = nome

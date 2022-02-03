@@ -8,14 +8,16 @@ class DadosJob:
     de acesso (protection proxy).
     """
 
-    def __init__(self,
-                 id: str,
-                 nome: str,
-                 caminho: str,
-                 instante_entrada_fila: float,
-                 instante_inicio_execucao: float,
-                 instante_saida_fila: float,
-                 numero_processadores: int) -> None:
+    def __init__(
+        self,
+        id: str,
+        nome: str,
+        caminho: str,
+        instante_entrada_fila: float,
+        instante_inicio_execucao: float,
+        instante_saida_fila: float,
+        numero_processadores: int,
+    ) -> None:
         self._id = id
         self._nome = nome
         self._caminho = caminho
@@ -25,7 +27,7 @@ class DadosJob:
         self._numero_processadores = numero_processadores
 
     @staticmethod
-    def from_json(json_dict: Dict[str, Any]) -> 'DadosJob':
+    def from_json(json_dict: Dict[str, Any]) -> "DadosJob":
         return DadosJob(**json_dict)
 
     def to_json(self) -> Dict[str, Any]:

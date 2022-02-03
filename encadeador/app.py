@@ -13,7 +13,6 @@ INTERVALO_POLL = 5.0
 
 
 class App:
-
     def __init__(self) -> None:
         self._estudo: Estudo = None  # type: ignore
         self._monitor: MonitorEstudo = None  # type: ignore

@@ -8,7 +8,7 @@ class EstadoEstudo(Enum):
     ERRO = "ERRO"
 
     @staticmethod
-    def factory(valor: str) -> 'EstadoEstudo':
+    def factory(valor: str) -> "EstadoEstudo":
         for estado in EstadoEstudo:
             if estado.value == valor:
                 return estado

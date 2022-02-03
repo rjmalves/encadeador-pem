@@ -13,6 +13,7 @@ class Configuracoes(metaclass=Singleton):
     Configurações gerais para execução de um estudo
     encadeado NEWAVE/DECOMP.
     """
+
     def __init__(self):
         self._caminho_base_estudo = None
         self._nome_estudo = None
@@ -50,38 +51,40 @@ class Configuracoes(metaclass=Singleton):
     def le_variaveis_ambiente(cls) -> "Configuracoes":
         cb = BuilderConfiguracoesENV()
         var_ult_iter = "ULTIMAS_ITERACOES_PARA_FLEXIBILIZACAO"
-        c = cb.caminho_base_estudo()\
-            .nome_estudo("NOME_ESTUDO")\
-            .arquivo_lista_casos("ARQUIVO_LISTA_CASOS")\
-            .nome_diretorio_newave("NOME_DIRETORIO_NEWAVE")\
-            .nome_diretorio_decomp("NOME_DIRETORIO_DECOMP")\
-            .diretorio_instalacao_newaves("DIRETORIO_INSTALACAO_NEWAVES")\
-            .diretorio_instalacao_decomps("DIRETORIO_INSTALACAO_DECOMPS")\
-            .gerenciador_fila("GERENCIADOR_DE_FILA")\
-            .versao_newave("VERSAO_NEWAVE")\
-            .versao_decomp("VERSAO_DECOMP")\
-            .processadores_no("PROCESSADORES_POR_NO")\
-            .processadores_minimos_newave("PROCESSADORES_MINIMOS_NEWAVE")\
-            .processadores_maximos_newave("PROCESSADORES_MAXIMOS_NEWAVE")\
-            .processadores_minimos_decomp("PROCESSADORES_MINIMOS_DECOMP")\
-            .processadores_maximos_decomp("PROCESSADORES_MAXIMOS_DECOMP")\
-            .ajuste_processadores_newave("AJUSTE_PROCESSADORES_NEWAVE")\
-            .ajuste_processadores_decomp("AJUSTE_PROCESSADORES_DECOMP")\
-            .variaveis_encadeadas("VARIAVEIS_ENCADEADAS")\
-            .flexibiliza_deficit("FLEXIBILIZA_DEFICIT")\
-            .maximo_flexibilizacoes_revisao("MAXIMO_FLEXIBILIZACOES_REVISAO")\
-            .ultimas_iteracoes_flexibilizacao(var_ult_iter)\
-            .metodo_flexibilizacao("METODO_FLEXIBILIZACAO")\
-            .adequa_decks_newave("ADEQUA_DECKS_NEWAVE")\
-            .cvar("CVAR")\
-            .opcao_parpa("OPCAO_PARPA")\
-            .adequa_decks_decomp("ADEQUA_DECKS_DECOMP")\
-            .previne_gap_negativo("PREVINE_GAP_NEGATIVO")\
-            .maximo_iteracoes_decomp("MAXIMO_ITERACOES_DECOMP")\
-            .fator_aumento_gap_decomp("FATOR_AUMENTO_GAP_DECOMP")\
-            .gap_maximo_decomp("GAP_MAXIMO_DECOMP")\
-            .script_converte_codificacao("SCRIPT_CONVERTE_CODIFICACAO")\
+        c = (
+            cb.caminho_base_estudo()
+            .nome_estudo("NOME_ESTUDO")
+            .arquivo_lista_casos("ARQUIVO_LISTA_CASOS")
+            .nome_diretorio_newave("NOME_DIRETORIO_NEWAVE")
+            .nome_diretorio_decomp("NOME_DIRETORIO_DECOMP")
+            .diretorio_instalacao_newaves("DIRETORIO_INSTALACAO_NEWAVES")
+            .diretorio_instalacao_decomps("DIRETORIO_INSTALACAO_DECOMPS")
+            .gerenciador_fila("GERENCIADOR_DE_FILA")
+            .versao_newave("VERSAO_NEWAVE")
+            .versao_decomp("VERSAO_DECOMP")
+            .processadores_no("PROCESSADORES_POR_NO")
+            .processadores_minimos_newave("PROCESSADORES_MINIMOS_NEWAVE")
+            .processadores_maximos_newave("PROCESSADORES_MAXIMOS_NEWAVE")
+            .processadores_minimos_decomp("PROCESSADORES_MINIMOS_DECOMP")
+            .processadores_maximos_decomp("PROCESSADORES_MAXIMOS_DECOMP")
+            .ajuste_processadores_newave("AJUSTE_PROCESSADORES_NEWAVE")
+            .ajuste_processadores_decomp("AJUSTE_PROCESSADORES_DECOMP")
+            .variaveis_encadeadas("VARIAVEIS_ENCADEADAS")
+            .flexibiliza_deficit("FLEXIBILIZA_DEFICIT")
+            .maximo_flexibilizacoes_revisao("MAXIMO_FLEXIBILIZACOES_REVISAO")
+            .ultimas_iteracoes_flexibilizacao(var_ult_iter)
+            .metodo_flexibilizacao("METODO_FLEXIBILIZACAO")
+            .adequa_decks_newave("ADEQUA_DECKS_NEWAVE")
+            .cvar("CVAR")
+            .opcao_parpa("OPCAO_PARPA")
+            .adequa_decks_decomp("ADEQUA_DECKS_DECOMP")
+            .previne_gap_negativo("PREVINE_GAP_NEGATIVO")
+            .maximo_iteracoes_decomp("MAXIMO_ITERACOES_DECOMP")
+            .fator_aumento_gap_decomp("FATOR_AUMENTO_GAP_DECOMP")
+            .gap_maximo_decomp("GAP_MAXIMO_DECOMP")
+            .script_converte_codificacao("SCRIPT_CONVERTE_CODIFICACAO")
             .build()
+        )
         return c
 
     @property
@@ -340,10 +343,9 @@ class Configuracoes(metaclass=Singleton):
 
 
 class BuilderConfiguracoes:
-    """
-    """
-    def __init__(self,
-                 configuracoes: Configuracoes = Configuracoes()):
+    """ """
+
+    def __init__(self, configuracoes: Configuracoes = Configuracoes()):
         self._configuracoes = configuracoes
 
     def build(self) -> Configuracoes:
@@ -475,8 +477,8 @@ class BuilderConfiguracoes:
 
 
 class BuilderConfiguracoesENV(BuilderConfiguracoes):
-    """
-    """
+    """ """
+
     regex_alfanum = r"^([\w\/\\:.\-])+$"
 
     def __init__(self, configuracoes=Configuracoes()) -> None:
@@ -534,8 +536,9 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
         # Confere se existe o arquivo no diretorio raiz de encadeamento
         if not isfile(join(curdir, valor)):
-            raise FileNotFoundError("Arquivo com os casos não " +
-                                    f"encontrado: {valor}")
+            raise FileNotFoundError(
+                "Arquivo com os casos não " + f"encontrado: {valor}"
+            )
         self._configuracoes._arquivo_lista_casos = valor
         # Fluent method
         return self
@@ -581,8 +584,10 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         # Confere se é uma das possibilidades: PBS, SGE ou OGS
         gerenciadores_validos = ["PBS", "SGE", "OGS"]
         if valor not in gerenciadores_validos:
-            raise ValueError(f"Nome do gerenciador de filas {valor} " +
-                             "inválido. Válidos: PBS, SGE ou OGS.")
+            raise ValueError(
+                f"Nome do gerenciador de filas {valor} "
+                + "inválido. Válidos: PBS, SGE ou OGS."
+            )
         self._configuracoes._gerenciador_fila = valor
         # Fluent method
         return self
@@ -609,9 +614,11 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
         valor = BuilderConfiguracoesENV.__valida_int(valor)
         # Conferir se é >= 0
-        if (valor <= 0):
-            raise ValueError(f"Valor da variável {variavel} informada" +
-                             " deve ser inteiro maior ou igual a 1.")
+        if valor <= 0:
+            raise ValueError(
+                f"Valor da variável {variavel} informada"
+                + " deve ser inteiro maior ou igual a 1."
+            )
         self._configuracoes._processadores_no = valor
         # Fluent method
         return self
@@ -620,9 +627,11 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
         valor = BuilderConfiguracoesENV.__valida_int(valor)
         # Conferir se é >= 0
-        if (valor <= 0):
-            raise ValueError(f"Valor da variável {variavel} informada" +
-                             " deve ser inteiro maior ou igual a 1.")
+        if valor <= 0:
+            raise ValueError(
+                f"Valor da variável {variavel} informada"
+                + " deve ser inteiro maior ou igual a 1."
+            )
         self._configuracoes._processadores_minimos_newave = valor
         # Fluent method
         return self
@@ -631,9 +640,11 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
         valor = BuilderConfiguracoesENV.__valida_int(valor)
         # Conferir se é >= 0
-        if (valor <= 0):
-            raise ValueError(f"Valor da variável {variavel} informada" +
-                             " deve ser inteiro maior ou igual a 1.")
+        if valor <= 0:
+            raise ValueError(
+                f"Valor da variável {variavel} informada"
+                + " deve ser inteiro maior ou igual a 1."
+            )
         self._configuracoes._processadores_maximos_newave = valor
         # Fluent method
         return self
@@ -642,9 +653,11 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
         valor = BuilderConfiguracoesENV.__valida_int(valor)
         # Conferir se é >= 0
-        if (valor <= 0):
-            raise ValueError(f"Valor da variável {variavel} informada" +
-                             " deve ser inteiro maior ou igual a 1.")
+        if valor <= 0:
+            raise ValueError(
+                f"Valor da variável {variavel} informada"
+                + " deve ser inteiro maior ou igual a 1."
+            )
         self._configuracoes._processadores_minimos_decomp = valor
         # Fluent method
         return self
@@ -653,9 +666,11 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
         valor = BuilderConfiguracoesENV.__valida_int(valor)
         # Conferir se é >= 0
-        if (valor <= 0):
-            raise ValueError(f"Valor da variável {variavel} informada" +
-                             " deve ser inteiro maior ou igual a 1.")
+        if valor <= 0:
+            raise ValueError(
+                f"Valor da variável {variavel} informada"
+                + " deve ser inteiro maior ou igual a 1."
+            )
         self._configuracoes._processadores_maximos_decomp = valor
         # Fluent method
         return self
@@ -677,12 +692,14 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
     def variaveis_encadeadas(self, variavel: str):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
         # Confere se as variáveis está dentro das: GNL, TVIAGEM, EARM, ENA
-        valor = valor.split(',')
+        valor = valor.split(",")
         variaveis_validas = set(["", "GNL", "TVIAGEM", "EARM", "ENA"])
         if not set(valor).issubset(variaveis_validas):
-            raise ValueError(f"Variáveis encadeadas informadas {valor}" +
-                             " são inválidas. " +
-                             " Válidas: EARM, TVIAGEM, GNL, ENA")
+            raise ValueError(
+                f"Variáveis encadeadas informadas {valor}"
+                + " são inválidas. "
+                + " Válidas: EARM, TVIAGEM, GNL, ENA"
+            )
         self._configuracoes._variaveis_encadeadas = valor
         # Fluent method
         return self
@@ -699,8 +716,10 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         valor = BuilderConfiguracoesENV.__valida_int(valor)
         # Conferir se é >= 0
         if valor < 0:
-            raise ValueError(f"Valor da variável {variavel} informada" +
-                             " deve ser inteiro maior ou igual a 0.")
+            raise ValueError(
+                f"Valor da variável {variavel} informada"
+                + " deve ser inteiro maior ou igual a 0."
+            )
         self._configuracoes._maximo_flexibilizacoes_revisao = valor
         # Fluent method
         return self
@@ -710,8 +729,10 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         valor = BuilderConfiguracoesENV.__valida_int(valor)
         # Conferir se é >= 0
         if valor < 0:
-            raise ValueError(f"Valor da variável {variavel} informada" +
-                             " deve ser inteiro maior ou igual a 0.")
+            raise ValueError(
+                f"Valor da variável {variavel} informada"
+                + " deve ser inteiro maior ou igual a 0."
+            )
         self._configuracoes._ultimas_iteracoes_flexibilizacao = valor
         # Fluent method
         return self
@@ -721,8 +742,10 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         # Confere se é uma das possibilidades: absoluta ou percentual
         metodos_validos = ["absoluto", "percentual"]
         if valor not in metodos_validos:
-            raise ValueError(f"Método de flexibilização {valor} inválido" +
-                             ". Métodos válidos: absoluto ou percentual.")
+            raise ValueError(
+                f"Método de flexibilização {valor} inválido"
+                + ". Métodos válidos: absoluto ou percentual."
+            )
         self._configuracoes._metodo_flexibilizacao = valor
         # Fluent method
         return self
@@ -736,28 +759,36 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
 
     def cvar(self, variavel: str):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
-        valor = valor.split(',')
+        valor = valor.split(",")
         # Verifica se todos os valores são numéricos
         if len(valor) != 2:
-            raise ValueError("Devem ser informados apenas 2 valores " +
-                             f" como parâmetros de CVAR, não {len(valor)}.")
+            raise ValueError(
+                "Devem ser informados apenas 2 valores "
+                + f" como parâmetros de CVAR, não {len(valor)}."
+            )
         if not all([v.replace(".", "0").isnumeric() for v in valor]):
-            raise ValueError("Devem ser informados parâmetros numéricos" +
-                             f" para o CVAR, não {valor}.")
+            raise ValueError(
+                "Devem ser informados parâmetros numéricos"
+                + f" para o CVAR, não {valor}."
+            )
         self._configuracoes._cvar = [float(v) for v in valor]
         # Fluent method
         return self
 
     def opcao_parpa(self, variavel: str):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
-        valor = valor.split(',')
+        valor = valor.split(",")
         # Verifica se todos os valores são inteiros
         if len(valor) != 2:
-            raise ValueError("Devem ser informados apenas 2 valores " +
-                             f" como opção de PAR(p)-A, não {len(valor)}.")
+            raise ValueError(
+                "Devem ser informados apenas 2 valores "
+                + f" como opção de PAR(p)-A, não {len(valor)}."
+            )
         if not all([v.isnumeric() for v in valor]):
-            raise ValueError("Devem ser informados parâmetros inteiros" +
-                             f" para o PAR(p)-A, não {valor}.")
+            raise ValueError(
+                "Devem ser informados parâmetros inteiros"
+                + f" para o PAR(p)-A, não {valor}."
+            )
         self._configuracoes._opcao_parpa = [int(v) for v in valor]
         # Fluent method
         return self
@@ -781,8 +812,10 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         valor = BuilderConfiguracoesENV.__valida_int(valor)
         # Conferir se é >= 0 e inferior a 999 (máximo da versão 30.16)
         if (valor < 0) or (valor > 999):
-            raise ValueError(f"Valor da variável {variavel} informada" +
-                             " deve ser inteiro entre 1 e 999.")
+            raise ValueError(
+                f"Valor da variável {variavel} informada"
+                + " deve ser inteiro entre 1 e 999."
+            )
         self._configuracoes._maximo_iteracoes_decomp = valor
         # Fluent method
         return self
@@ -791,8 +824,10 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
         valor = BuilderConfiguracoesENV.__valida_float(valor)
         if valor < 0:
-            raise ValueError(f"Valor da variável {variavel} informada" +
-                             " deve ser do tipo float maior ou igual a 0.")
+            raise ValueError(
+                f"Valor da variável {variavel} informada"
+                + " deve ser do tipo float maior ou igual a 0."
+            )
         self._configuracoes._fator_aumento_gap_decomp = valor
         # Fluent method
         return self
@@ -802,8 +837,10 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         valor = BuilderConfiguracoesENV.__valida_float(valor)
         # Conferir se é >= 0 e inferior a 500 (máximo da versão 30.13)
         if valor < 0:
-            raise ValueError(f"Valor da variável {variavel} informada" +
-                             " deve ser do tipo float maior ou igual a 0.")
+            raise ValueError(
+                f"Valor da variável {variavel} informada"
+                + " deve ser do tipo float maior ou igual a 0."
+            )
         self._configuracoes._gap_maximo_decomp = valor
         # Fluent method
         return self

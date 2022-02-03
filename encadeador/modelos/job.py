@@ -15,9 +15,9 @@ class Job:
     proteção de acesso (protection proxy).
     """
 
-    def __init__(self,
-                 dados: DadosJob,
-                 estado: EstadoJob = EstadoJob.NAO_INICIADO):
+    def __init__(
+        self, dados: DadosJob, estado: EstadoJob = EstadoJob.NAO_INICIADO
+    ):
         self._dados = dados
         self._estado = estado
 
@@ -31,11 +31,10 @@ class Job:
     def to_json(self) -> Dict[str, Any]:
         return {
             "_dados": self._dados.to_json(),
-            "_estado": str(self._estado.value)
+            "_estado": str(self._estado.value),
         }
 
-    def atualiza(self,
-                 estado: EstadoJob):
+    def atualiza(self, estado: EstadoJob):
         self.estado = estado
         t = time()
         if self.estado == EstadoJob.ESPERANDO:
@@ -80,21 +79,23 @@ class Job:
     @property
     def tempo_fila(self) -> float:
         if self.estado == EstadoJob.NAO_INICIADO:
-            return 0.
+            return 0.0
         elif self.estado == EstadoJob.ESPERANDO:
             return time() - self._dados.instante_entrada_fila
         else:
-            return (self._dados.instante_inicio_execucao -
-                    self._dados.instante_entrada_fila)
+            return (
+                self._dados.instante_inicio_execucao
+                - self._dados.instante_entrada_fila
+            )
 
     @property
     def tempo_execucao(self) -> float:
-        if self.estado in [EstadoJob.NAO_INICIADO,
-                           EstadoJob.ESPERANDO]:
-            return 0.
-        elif self.estado in [EstadoJob.EXECUTANDO,
-                             EstadoJob.ERRO]:
+        if self.estado in [EstadoJob.NAO_INICIADO, EstadoJob.ESPERANDO]:
+            return 0.0
+        elif self.estado in [EstadoJob.EXECUTANDO, EstadoJob.ERRO]:
             return time() - self._dados.instante_entrada_fila
         else:
-            return (self._dados.instante_saida_fila -
-                    self._dados.instante_inicio_execucao)
+            return (
+                self._dados.instante_saida_fila
+                - self._dados.instante_inicio_execucao
+            )

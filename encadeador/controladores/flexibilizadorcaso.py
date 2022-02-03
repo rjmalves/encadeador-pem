@@ -13,18 +13,18 @@ from encadeador.utils.log import Log
 
 
 class Flexibilizador:
-
-    def __init__(self,
-                 caso: Caso):
+    def __init__(self, caso: Caso):
         self._caso = caso
 
     @staticmethod
-    def factory(caso: Caso) -> 'Flexibilizador':
+    def factory(caso: Caso) -> "Flexibilizador":
         if isinstance(caso, CasoDECOMP):
             return FlexibilizadorDECOMP(caso)
         else:
-            raise TypeError(f"Caso do tipo {type(caso)} " +
-                            "não suportado para encadeamento")
+            raise TypeError(
+                f"Caso do tipo {type(caso)} "
+                + "não suportado para encadeamento"
+            )
 
     @abstractmethod
     def flexibiliza(self) -> bool:
@@ -32,15 +32,15 @@ class Flexibilizador:
 
 
 class FlexibilizadorDECOMP(Flexibilizador):
-
-    def __init__(self,
-                 caso: Caso):
+    def __init__(self, caso: Caso):
         super().__init__(caso)
 
     def flexibiliza(self) -> bool:
         max_flex = Configuracoes().maximo_flexibilizacoes_revisao
-        Log.log().info(f"Flexibilizando caso {self._caso.nome}: " +
-                       f"{self._caso.numero_flexibilizacoes } de {max_flex}")
+        Log.log().info(
+            f"Flexibilizando caso {self._caso.nome}: "
+            + f"{self._caso.numero_flexibilizacoes } de {max_flex}"
+        )
         try:
             # Lê o inviab_unic.rvX
             arq_inviab = f"inviab_unic.rv{self._caso.revisao}"

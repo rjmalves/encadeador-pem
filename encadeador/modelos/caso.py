@@ -14,18 +14,23 @@ class Caso:
     associadas ao caso. Não lida com a sua execução, pré ou pós
     processamento dos decks.
     """
-    def __init__(self,
-                 dados: DadosCaso,
-                 jobs: List[Job],
-                 estado: EstadoCaso = EstadoCaso.NAO_INICIADO) -> None:
+
+    def __init__(
+        self,
+        dados: DadosCaso,
+        jobs: List[Job],
+        estado: EstadoCaso = EstadoCaso.NAO_INICIADO,
+    ) -> None:
         self._dados = dados
         self._jobs = jobs
         self._estado = estado
 
     @staticmethod
-    def factory(dados: DadosCaso,
-                jobs: List[Job],
-                estado: EstadoCaso = EstadoCaso.NAO_INICIADO) -> 'Caso':
+    def factory(
+        dados: DadosCaso,
+        jobs: List[Job],
+        estado: EstadoCaso = EstadoCaso.NAO_INICIADO,
+    ) -> "Caso":
         if dados.programa == "NEWAVE":
             return CasoNEWAVE(dados, jobs, estado)
         elif dados.programa == "DECOMP":
@@ -44,7 +49,7 @@ class Caso:
         return {
             "_dados": self._dados.to_json(),
             "_jobs": [j.to_json() for j in self._jobs],
-            "_estado": str(self._estado.value)
+            "_estado": str(self._estado.value),
         }
 
     def atualiza(self, estado: EstadoCaso):
@@ -58,17 +63,11 @@ class Caso:
 
     @abstractmethod
     @staticmethod
-    def gera_dados_caso(caminho: str,
-                        ano: int,
-                        mes: int,
-                        revisao: int):
+    def gera_dados_caso(caminho: str, ano: int, mes: int, revisao: int):
         pass
 
     @abstractmethod
-    def _constroi_nome_caso(self,
-                            ano: int,
-                            mes: int,
-                            revisao: int) -> str:
+    def _constroi_nome_caso(self, ano: int, mes: int, revisao: int) -> str:
         pass
 
     def _verifica_caso_configurado(self):
@@ -129,25 +128,18 @@ class Caso:
 
 
 class CasoNEWAVE(Caso):
-
     @staticmethod
     def from_json(json_dict: Dict[str, Any]):
-        return CasoNEWAVE(DadosCaso.from_json(json_dict["_dados"]),
-                          [Job.from_json(j) for j in json_dict["_jobs"]])
+        return CasoNEWAVE(
+            DadosCaso.from_json(json_dict["_dados"]),
+            [Job.from_json(j) for j in json_dict["_jobs"]],
+        )
 
     # Override
     @staticmethod
-    def gera_dados_caso(caminho: str,
-                        ano: int,
-                        mes: int,
-                        revisao: int):
+    def gera_dados_caso(caminho: str, ano: int, mes: int, revisao: int):
         nome = CasoNEWAVE._constroi_nome_caso(ano, mes, revisao)
-        return DadosCaso("NEWAVE",
-                         caminho,
-                         nome,
-                         ano,
-                         mes,
-                         revisao)
+        return DadosCaso("NEWAVE", caminho, nome, ano, mes, revisao)
 
     # Override
     @property
@@ -164,32 +156,23 @@ class CasoNEWAVE(Caso):
 
     # Override
     @staticmethod
-    def _constroi_nome_caso(ano: int,
-                            mes: int,
-                            revisao: int) -> str:
+    def _constroi_nome_caso(ano: int, mes: int, revisao: int) -> str:
         return f"{Configuracoes().nome_estudo} - NW {mes}/{ano}"
 
 
 class CasoDECOMP(Caso):
-
     @staticmethod
     def from_json(json_dict: Dict[str, Any]):
-        return CasoDECOMP(DadosCaso.from_json(json_dict["_dados"]),
-                          [Job.from_json(j) for j in json_dict["_jobs"]])
+        return CasoDECOMP(
+            DadosCaso.from_json(json_dict["_dados"]),
+            [Job.from_json(j) for j in json_dict["_jobs"]],
+        )
 
     # Override
     @staticmethod
-    def gera_dados_caso(caminho: str,
-                        ano: int,
-                        mes: int,
-                        revisao: int):
+    def gera_dados_caso(caminho: str, ano: int, mes: int, revisao: int):
         nome = CasoDECOMP._constroi_nome_caso(ano, mes, revisao)
-        return DadosCaso("DECOMP",
-                         caminho,
-                         nome,
-                         ano,
-                         mes,
-                         revisao)
+        return DadosCaso("DECOMP", caminho, nome, ano, mes, revisao)
 
     # Override
     @property
@@ -206,8 +189,7 @@ class CasoDECOMP(Caso):
 
     # Override
     @staticmethod
-    def _constroi_nome_caso(ano: int,
-                            mes: int,
-                            revisao: int) -> str:
-        return (f"{Configuracoes().nome_estudo} - DC" +
-                f" {mes}/{ano} rv{revisao}")
+    def _constroi_nome_caso(ano: int, mes: int, revisao: int) -> str:
+        return (
+            f"{Configuracoes().nome_estudo} - DC" + f" {mes}/{ano} rv{revisao}"
+        )
