@@ -51,7 +51,9 @@ class DadosEstudo:
                 )
             # Faz o resumo dos custos
             diretorio_resumo = join(caso.caminho, DIRETORIO_RESUMO_CASO)
-            custos = pd.read_csv(join(diretorio_resumo, "custos.csv"), index_col=0)
+            custos = pd.read_csv(
+                join(diretorio_resumo, "custos.csv"), index_col=0
+            )
             dados_variaveis: Dict[str, list] = {c: [] for c in colunas_custos}
             nome = f"{caso.ano}_{str(caso.mes).zfill(2)}_rv{caso.revisao}"
             dados_variaveis["Caso"] = [nome]
@@ -93,11 +95,15 @@ class DadosEstudo:
             earm_subsis = pd.read_csv(
                 join(diretorio_resumo, "earm_subsis.csv"), index_col=0
             )
-            earm_sin = pd.read_csv(join(diretorio_resumo, "earm_sin.csv"), index_col=0)
+            earm_sin = pd.read_csv(
+                join(diretorio_resumo, "earm_sin.csv"), index_col=0
+            )
             gt_subsis = pd.read_csv(
                 join(diretorio_resumo, "gt_subsis.csv"), index_col=0
             )
-            gt_sin = pd.read_csv(join(diretorio_resumo, "gt_sin.csv"), index_col=0)
+            gt_sin = pd.read_csv(
+                join(diretorio_resumo, "gt_sin.csv"), index_col=0
+            )
             gt_perc_m = pd.read_csv(
                 join(diretorio_resumo, "gt_percentual_max.csv"), index_col=0
             )
@@ -110,7 +116,9 @@ class DadosEstudo:
             gh_subsis = pd.read_csv(
                 join(diretorio_resumo, "gh_subsis.csv"), index_col=0
             )
-            gh_sin = pd.read_csv(join(diretorio_resumo, "gh_sin.csv"), index_col=0)
+            gh_sin = pd.read_csv(
+                join(diretorio_resumo, "gh_sin.csv"), index_col=0
+            )
             merc_subsis = pd.read_csv(
                 join(diretorio_resumo, "mercado_subsis.csv"), index_col=0
             )
@@ -124,8 +132,12 @@ class DadosEstudo:
             cmos: Dict[str, List[float]] = {s: [] for s in subsistemas}
             earms_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
             gts_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
-            gts_perc_m_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
-            gts_perc_f_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
+            gts_perc_m_sub: Dict[str, List[float]] = {
+                s: [] for s in subsistemas
+            }
+            gts_perc_f_sub: Dict[str, List[float]] = {
+                s: [] for s in subsistemas
+            }
             ghs_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
             mercs_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
             defs_sub: Dict[str, List[float]] = {s: [] for s in subsistemas}
@@ -140,7 +152,9 @@ class DadosEstudo:
                 nomes.append("Inicial")
                 for s in subsistemas:
                     cmos[s].append(np.nan)
-                    eas = earm_subsis.loc[earm_subsis["Subsistema"] == s, "Inicial"]
+                    eas = earm_subsis.loc[
+                        earm_subsis["Subsistema"] == s, "Inicial"
+                    ]
                     earms_sub[s].append(float(eas))
                     gts_sub[s].append(np.nan)
                     gts_perc_m_sub[s].append(np.nan)
@@ -160,7 +174,8 @@ class DadosEstudo:
                 cmos[s].append(
                     float(
                         cmo.loc[
-                            (cmo["Subsistema"] == s) & (cmo["Patamar"] == "Médio"),
+                            (cmo["Subsistema"] == s)
+                            & (cmo["Patamar"] == "Médio"),
                             "Estágio 1",
                         ]
                     )
@@ -169,7 +184,9 @@ class DadosEstudo:
                     earm_subsis.loc[earm_subsis["Subsistema"] == s, "Estágio 1"]
                 )
                 earms_sub[s].append(eas)
-                gts = float(gt_subsis.loc[gt_subsis["Subsistema"] == s, "Estágio 1"])
+                gts = float(
+                    gt_subsis.loc[gt_subsis["Subsistema"] == s, "Estágio 1"]
+                )
                 gts_sub[s].append(gts)
                 gts_p_m = float(
                     gt_perc_m.loc[gt_perc_m["Subsistema"] == s, "Estágio 1"]
@@ -179,7 +196,9 @@ class DadosEstudo:
                     gt_perc_f.loc[gt_perc_f["Subsistema"] == s, "Estágio 1"]
                 )
                 gts_perc_f_sub[s].append(gts_p_f)
-                ghs = float(gh_subsis.loc[gh_subsis["Subsistema"] == s, "Estágio 1"])
+                ghs = float(
+                    gh_subsis.loc[gh_subsis["Subsistema"] == s, "Estágio 1"]
+                )
                 ghs_sub[s].append(ghs)
                 mrs = float(
                     merc_subsis.loc[merc_subsis["Subsistema"] == s, "Estágio 1"]
@@ -187,7 +206,9 @@ class DadosEstudo:
                 mercs_sub[s].append(mrs)
                 cols = [c for c in list(def_subsis.columns) if "Estágio" in c]
                 dfs = float(
-                    def_subsis.loc[def_subsis["Subsistema"] == s, cols].sum(axis=1)
+                    def_subsis.loc[def_subsis["Subsistema"] == s, cols].sum(
+                        axis=1
+                    )
                 )
                 defs_sub[s].append(dfs)
 
@@ -233,11 +254,13 @@ class DadosEstudo:
 
             # Organiza os dados dos reservatórios
             reservatorios: pd.DataFrame = gh_reserv.transpose()
-            reservatorios["Estagio"] = reservatorios.index
-            reservatorios.reset_index(inplace=True)
+            reservatorios.columns = reservatorios.loc["Usina"]
+            reservatorios = reservatorios.drop(index="Usina")
             cols = list(reservatorios.columns)
+            reservatorios["Estagio"] = reservatorios.index
             reservatorios["Caso"] = nome
-            reservatorios = reservatorios[["Caso"] + cols]
+            reservatorios = reservatorios[["Caso", "Estagio"] + cols]
+            reservatorios.reset_index(inplace=True)
             if resumo_reservatorios.empty:
                 resumo_reservatorios = reservatorios
             else:
@@ -256,27 +279,41 @@ class DadosEstudo:
             primeiro: bool,
         ):
             if isinstance(caso, CasoNEWAVE):
-                e, n = le_resumo_newave(resumo_estados, resumo_newaves, caso, primeiro)
+                e, n = le_resumo_newave(
+                    resumo_estados, resumo_newaves, caso, primeiro
+                )
                 resumo_estados = e
                 resumo_newaves = n
             elif isinstance(caso, CasoDECOMP):
                 e, d, r = le_resumo_decomp(
-                    resumo_estados, resumo_decomps, resumo_reservatorios, caso, primeiro
+                    resumo_estados,
+                    resumo_decomps,
+                    resumo_reservatorios,
+                    caso,
+                    primeiro,
                 )
                 resumo_estados = e
                 resumo_decomps = d
                 resumo_reservatorios = r
             else:
                 raise ValueError(
-                    f"Caso do tipo {type(caso)} não suportado" + "na síntese do estudo"
+                    f"Caso do tipo {type(caso)} não suportado"
+                    + "na síntese do estudo"
                 )
-            return resumo_estados, resumo_newaves, resumo_decomps, resumo_reservatorios
+            return (
+                resumo_estados,
+                resumo_newaves,
+                resumo_decomps,
+                resumo_reservatorios,
+            )
 
         def le_convergencia_newaves(
             convergencia_newaves: pd.DataFrame, caso: CasoNEWAVE
         ):
             diretorio_resumo = join(caso.caminho, DIRETORIO_RESUMO_CASO)
-            conv = pd.read_csv(join(diretorio_resumo, "convergencia.csv"), index_col=0)
+            conv = pd.read_csv(
+                join(diretorio_resumo, "convergencia.csv"), index_col=0
+            )
             dados_conv: Dict[str, list] = {c: [] for c in colunas_convergencia}
 
             iteracoes = conv["Iteração"][2::3].to_numpy()
@@ -305,7 +342,9 @@ class DadosEstudo:
             convergencia_decomps: pd.DataFrame, caso: CasoDECOMP
         ):
             diretorio_resumo = join(caso.caminho, DIRETORIO_RESUMO_CASO)
-            conv = pd.read_csv(join(diretorio_resumo, "convergencia.csv"), index_col=0)
+            conv = pd.read_csv(
+                join(diretorio_resumo, "convergencia.csv"), index_col=0
+            )
             dados_conv: Dict[str, list] = {c: [] for c in colunas_convergencia}
 
             iteracoes = conv["Iteração"].tolist()
@@ -344,7 +383,8 @@ class DadosEstudo:
                 convergencia_decomps = d
             else:
                 raise ValueError(
-                    f"Caso do tipo {type(caso)} não suportado" + "na síntese do estudo"
+                    f"Caso do tipo {type(caso)} não suportado"
+                    + "na síntese do estudo"
                 )
             return convergencia_newaves, convergencia_decomps
 
@@ -392,7 +432,8 @@ class DadosEstudo:
                 inviabilidades_decomps = d
             else:
                 raise ValueError(
-                    f"Caso do tipo {type(caso)} não suportado" + "na síntese do estudo"
+                    f"Caso do tipo {type(caso)} não suportado"
+                    + "na síntese do estudo"
                 )
             return inviabilidades_newaves, inviabilidades_decomps
 
@@ -497,7 +538,9 @@ class DadosEstudo:
                 resumo_newaves = n
                 resumo_decomps = d
                 resumo_reservatorios = r
-                n, d = le_convergencia(c, convergencias_newaves, convergencias_decomps)
+                n, d = le_convergencia(
+                    c, convergencias_newaves, convergencias_decomps
+                )
                 convergencias_newaves = n
                 convergencias_decomps = d
                 n, d = le_inviabilidades(
