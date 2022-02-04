@@ -260,7 +260,6 @@ class DadosEstudo:
             reservatorios["Estagio"] = reservatorios.index
             reservatorios["Caso"] = nome
             reservatorios = reservatorios[["Caso", "Estagio"] + cols]
-            reservatorios.reset_index(inplace=True)
             if resumo_reservatorios.empty:
                 resumo_reservatorios = reservatorios
             else:
