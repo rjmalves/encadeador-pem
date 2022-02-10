@@ -241,11 +241,10 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                     max_viol = i
             return max_viol
 
-        def __assegura_existencia_registros():
-            # "Cria" todas as LVs até o último estágio do modelo, começando do
-            # estágio da violação
-            n_estagios = len(dadger.lista_registros(DP))
-            for e in range(max_viol._estagio, n_estagios + 1):
+        def __assegura_existencia_registros(inv: InviabilidadeHV):
+            # "Cria" todas as LVs até o último estágio da restrição HV
+            ef = dadger.hv(inv._codigo).estagio_final
+            for e in range(max_viol._estagio, ef + 1):
                 dadger.lv(max_viol._codigo, e)
 
         # Estrutura para conter as tuplas
@@ -259,7 +258,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             # Senão, procura dentre todas as outras pela maior violação
             flexibilizados.append(identificacao)
             max_viol = __inv_maxima_violacao_identificada(inviabilidades, inv)
-            __assegura_existencia_registros()
+            __assegura_existencia_registros(max_viol)
             # Flexibiliza
             reg = dadger.lv(max_viol._codigo, max_viol._estagio)
             deltas = RegraFlexibilizacao.deltas_inviabilidades
@@ -303,11 +302,10 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                     max_viol = i
             return max_viol
 
-        def __assegura_existencia_registros():
-            # "Cria" todas as LQs até o último estágio do modelo, começando do
-            # estágio da violação
-            n_estagios = len(dadger.lista_registros(DP))
-            for e in range(max_viol._estagio, n_estagios + 1):
+        def __assegura_existencia_registros(inv: InviabilidadeHQ):
+            # "Cria" todas as LQs até o último estágio da restrição HQ
+            ef = dadger.hq(inv._codigo).estagio_final
+            for e in range(max_viol._estagio, ef + 1):
                 dadger.lq(max_viol._codigo, e)
 
         # Estrutura para conter as tuplas
@@ -321,7 +319,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             # Senão, procura dentre todas as outras pela maior violação
             flexibilizados.append(identificacao)
             max_viol = __inv_maxima_violacao_identificada(inviabilidades, inv)
-            __assegura_existencia_registros()
+            __assegura_existencia_registros(max_viol)
             # Flexibiliza
             reg = dadger.lq(max_viol._codigo, max_viol._estagio)
             deltas = RegraFlexibilizacao.deltas_inviabilidades
@@ -371,11 +369,10 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                     max_viol = i
             return max_viol
 
-        def __assegura_existencia_registros():
-            # "Cria" todas as LUs até o último estágio do modelo, começando do
-            # estágio da violação
-            n_estagios = len(dadger.lista_registros(DP))
-            for e in range(max_viol._estagio, n_estagios + 1):
+        def __assegura_existencia_registros(inv: InviabilidadeRE):
+            # "Cria" todas as LUs até o último estágio da restrição RE
+            ef = dadger.re(inv._codigo).estagio_final
+            for e in range(max_viol._estagio, ef + 1):
                 dadger.lu(max_viol._codigo, e)
 
         # Estrutura para conter as tuplas
@@ -389,7 +386,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             # Senão, procura dentre todas as outras pela maior violação
             flexibilizados.append(identificacao)
             max_viol = __inv_maxima_violacao_identificada(inviabilidades, inv)
-            __assegura_existencia_registros()
+            __assegura_existencia_registros(max_viol)
             # Flexibiliza
             reg = dadger.lu(max_viol._codigo, max_viol._estagio)
             deltas = RegraFlexibilizacao.deltas_inviabilidades
