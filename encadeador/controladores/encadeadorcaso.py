@@ -401,6 +401,11 @@ class EncadeadorDECOMPDECOMP(Encadeador):
         arq_relato = f"relato.rv{self._caso_anterior.revisao}"
         relato = Relato.le_arquivo(self._caso_anterior.caminho, arq_relato)
         relatorio = relato.relatorio_operacao_uhe
+        # Lê o dadger do DC anterior
+        arq_dadger_ant = f"dadger.rv{self._caso_anterior.revisao}"
+        dadger_ant = Dadger.le_arquivo(
+            self._caso_anterior.caminho, arq_dadger_ant
+        )
         # Lê o dadger do DC atual
         conv = self._caso_atual.configuracoes.script_converte_codificacao
         converte_codificacao(self._caso_atual.caminho, conv)
@@ -417,8 +422,8 @@ class EncadeadorDECOMPDECOMP(Encadeador):
                 ]
             )
             # Atualiza os tempos de viagem no dadger
-            vi = dadger.vi(codigo)
-            vi.vazoes = [qdef] + vi.vazoes[:-1]
+            vi = dadger_ant.vi(codigo)
+            dadger.vi(codigo).vazoes = [qdef] + vi.vazoes[:-1]
 
         # Escreve o dadger de saída
         dadger.escreve_arquivo(self._caso_atual.caminho, arq_dadger)
