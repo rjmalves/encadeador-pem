@@ -121,8 +121,8 @@ class Caso:
     def estado(self) -> EstadoCaso:
         return self._estado
 
-    @abstractmethod
     @property
+    @abstractmethod
     def numero_processadores(self) -> int:
         pass
 
