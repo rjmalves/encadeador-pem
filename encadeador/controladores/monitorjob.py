@@ -97,29 +97,29 @@ class MonitorJob:
         self._transicao_job.append(f)
 
     def _trata_entrada_fila(self):
-        Log.log(f"Job {self._job.id}[{self._job.nome}] inserido na fila")
+        Log.log().info(f"Job {self._job.id}[{self._job.nome}] inserido na fila")
         self._transicao_job(TransicaoJob.ENTRADA_FILA)
 
     def _trata_comando_deleta_job(self):
-        Log.log(f"Job {self._job.id}[{self._job.nome}] - solicitada deleção")
+        Log.log().info(f"Job {self._job.id}[{self._job.nome}] - solicitada deleção")
         self._transicao_job(TransicaoJob.COMANDO_DELETA_JOB)
 
     def _trata_job_deletado(self):
-        Log.log(f"Job {self._job.id}[{self._job.nome}] - deletado")
+        Log.log().info(f"Job {self._job.id}[{self._job.nome}] - deletado")
         self._transicao_job(TransicaoJob.JOB_DELETADO)
 
     def _trata_inicio_execucao(self):
-        Log.log(f"Job {self._job.id}[{self._job.nome}] - início da execução")
+        Log.log().info(f"Job {self._job.id}[{self._job.nome}] - início da execução")
         self._transicao_job(TransicaoJob.INICIO_EXECUCAO)
 
     def _trata_fim_execucao(self):
-        Log.log(f"Job {self._job.id}[{self._job.nome}] - finalizado")
+        Log.log().info(f"Job {self._job.id}[{self._job.nome}] - finalizado")
         self._transicao_job(TransicaoJob.FIM_EXECUCAO)
 
     def _trata_erro_delecao(self):
-        Log.log(f"Job {self._job.id}[{self._job.nome}] - erro de deleção")
+        Log.log().info(f"Job {self._job.id}[{self._job.nome}] - erro de deleção")
         self._transicao_job(TransicaoJob.ERRO_DELECAO)
 
     def _trata_erro_execucao(self):
-        Log.log(f"Job {self._job.id}[{self._job.nome}] - erro de execução")
+        Log.log().info(f"Job {self._job.id}[{self._job.nome}] - erro de execução")
         self._transicao_job(TransicaoJob.ERRO_EXECUCAO)
