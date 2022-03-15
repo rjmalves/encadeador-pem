@@ -231,7 +231,7 @@ class MonitorNEWAVE(MonitorCaso):
             if sint_ultimo.verifica_cortes_extraidos():
                 sint_ultimo.deleta_cortes()
 
-        self._caso.estado = EstadoCaso.INICIADO
+        self._caso.atualiza(EstadoCaso.INICIADO)
         self._transicao_caso(TransicaoCaso.INICIOU)
         preparador = PreparadorCaso.factory(self._caso)
         sucesso_prepara = preparador.prepara_caso()
@@ -287,7 +287,7 @@ class MonitorDECOMP(MonitorCaso):
         :return: O sucesso ou não da inicialização do caso.
         :rtype: bool
         """
-        self._caso.estado = EstadoCaso.INICIADO
+        self._caso.atualiza(EstadoCaso.INICIADO)
         self._transicao_caso(TransicaoCaso.INICIOU)
         preparador = PreparadorCaso.factory(self._caso)
         sucesso_prepara = preparador.prepara_caso()
