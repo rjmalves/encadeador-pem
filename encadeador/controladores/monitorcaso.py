@@ -130,6 +130,7 @@ class MonitorCaso:
         )
         self._caso.adiciona_job(self._job_atual, retry)
         self._monitor_job_atual = MonitorJob(self._job_atual)
+        self._monitor_job_atual.observa(self.callback_evento_job)
         ret = self._monitor_job_atual.submete(self._caso.numero_processadores)
         chdir(Configuracoes().caminho_base_estudo)
         return ret
@@ -232,6 +233,7 @@ class MonitorNEWAVE(MonitorCaso):
                 sint_ultimo.deleta_cortes()
 
         self._caso.atualiza(EstadoCaso.INICIADO)
+        self._
         self._transicao_caso(TransicaoCaso.INICIOU)
         preparador = PreparadorCaso.factory(self._caso)
         sucesso_prepara = preparador.prepara_caso()
