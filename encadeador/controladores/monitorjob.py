@@ -83,7 +83,8 @@ class MonitorJob:
         if all(
             [
                 self._job.estado == EstadoJob.EXECUTANDO,
-                self._job.tempo_execucao > __class__.TIMEOUT_ERRO_COMUNICACAO,
+                self._gerenciador.tempo_job_idle
+                > __class__.TIMEOUT_ERRO_COMUNICACAO,
             ]
         ):
             if not self._gerenciador.deleta_job():
@@ -101,7 +102,9 @@ class MonitorJob:
         self._transicao_job(TransicaoJob.ENTRADA_FILA)
 
     def _trata_comando_deleta_job(self):
-        Log.log().info(f"Job {self._job.id}[{self._job.nome}] - solicitada deleção")
+        Log.log().info(
+            f"Job {self._job.id}[{self._job.nome}] - solicitada deleção"
+        )
         self._transicao_job(TransicaoJob.COMANDO_DELETA_JOB)
 
     def _trata_job_deletado(self):
@@ -109,7 +112,9 @@ class MonitorJob:
         self._transicao_job(TransicaoJob.JOB_DELETADO)
 
     def _trata_inicio_execucao(self):
-        Log.log().info(f"Job {self._job.id}[{self._job.nome}] - início da execução")
+        Log.log().info(
+            f"Job {self._job.id}[{self._job.nome}] - início da execução"
+        )
         self._transicao_job(TransicaoJob.INICIO_EXECUCAO)
 
     def _trata_fim_execucao(self):
@@ -117,9 +122,13 @@ class MonitorJob:
         self._transicao_job(TransicaoJob.FIM_EXECUCAO)
 
     def _trata_erro_delecao(self):
-        Log.log().info(f"Job {self._job.id}[{self._job.nome}] - erro de deleção")
+        Log.log().info(
+            f"Job {self._job.id}[{self._job.nome}] - erro de deleção"
+        )
         self._transicao_job(TransicaoJob.ERRO_DELECAO)
 
     def _trata_erro_execucao(self):
-        Log.log().info(f"Job {self._job.id}[{self._job.nome}] - erro de execução")
+        Log.log().info(
+            f"Job {self._job.id}[{self._job.nome}] - erro de execução"
+        )
         self._transicao_job(TransicaoJob.ERRO_EXECUCAO)
