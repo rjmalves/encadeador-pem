@@ -233,7 +233,6 @@ class MonitorNEWAVE(MonitorCaso):
                 sint_ultimo.deleta_cortes()
 
         self._caso.atualiza(EstadoCaso.INICIADO)
-        self._
         self._transicao_caso(TransicaoCaso.INICIOU)
         preparador = PreparadorCaso.factory(self._caso)
         sucesso_prepara = preparador.prepara_caso()
