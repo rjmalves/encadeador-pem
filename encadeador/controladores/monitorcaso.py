@@ -249,6 +249,7 @@ class MonitorNEWAVE(MonitorCaso):
         sintetizador = SintetizadorCaso.factory(self._caso)
         if not sintetizador.sintetiza_caso():
             Log.log().error(f"Erro na síntese do caso {self._caso.nome}")
+        self._caso.atualiza(EstadoCaso.CONCLUIDO)
         self._transicao_caso(TransicaoCaso.SUCESSO)
         return EstadoCaso.CONCLUIDO
 
@@ -326,5 +327,6 @@ class MonitorDECOMP(MonitorCaso):
         sintetizador = SintetizadorCaso.factory(self._caso)
         if not sintetizador.sintetiza_caso():
             Log.log().error(f"Erro na síntese do caso {self._caso.nome}")
+        self._caso.atualiza(EstadoCaso.CONCLUIDO)
         self._transicao_caso(TransicaoCaso.SUCESSO)
         return EstadoCaso.CONCLUIDO
