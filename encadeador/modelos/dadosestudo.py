@@ -118,6 +118,7 @@ class DadosEstudo:
         self._resumo_estados = pd.DataFrame()
         self._resumo_newaves = pd.DataFrame()
         self._resumo_decomps = pd.DataFrame()
+        self._resumo_reservatorios = pd.DataFrame()
         self._convergencias_newaves = pd.DataFrame()
         self._convergencias_decomps = pd.DataFrame()
         self._inviabilidades_decomps = pd.DataFrame()
@@ -196,6 +197,7 @@ class DadosEstudo:
     def __le_resumo_decomp(
         resumo_estados: pd.DataFrame,
         resumo_decomps: pd.DataFrame,
+        resumo_reservatorios: pd.DataFrame,
         caso: CasoDECOMP,
         primeiro: bool,
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -213,6 +215,9 @@ class DadosEstudo:
         subsistemas = ["SE", "S", "NE", "N"]
         nome = f"{caso.ano}_{str(caso.mes).zfill(2)}_rv{caso.revisao}"
         cmo = pd.read_csv(join(diretorio_resumo, "cmo.csv"), index_col=0)
+        earm_reserv = pd.read_csv(
+            join(diretorio_resumo, "earm_reserv.csv"), index_col=0
+        )
         earm_subsis = pd.read_csv(
             join(diretorio_resumo, "earm_subsis.csv"), index_col=0
         )
@@ -358,7 +363,21 @@ class DadosEstudo:
             resumo_decomps = pd.concat(
                 [resumo_decomps, df_variaveis], ignore_index=True
             )
-        return resumo_estados, resumo_decomps
+
+        # Organiza os dados dos reservatórios
+        reservatorios: pd.DataFrame = earm_reserv.transpose()
+        reservatorios["Estagio"] = reservatorios.index
+        reservatorios.reset_index(inplace=True)
+        cols = list(reservatorios.columns)
+        reservatorios["Caso"] = nome
+        reservatorios = reservatorios[["Caso"] + cols]
+        if resumo_reservatorios.empty:
+            resumo_reservatorios = reservatorios
+        else:
+            resumo_reservatorios = pd.concat(
+                [resumo_reservatorios, reservatorios], ignore_index=True
+            )
+        return resumo_estados, resumo_decomps, resumo_reservatorios
 
     @staticmethod
     def __le_resumo(
@@ -366,6 +385,7 @@ class DadosEstudo:
         resumo_estados: pd.DataFrame,
         resumo_newaves: pd.DataFrame,
         resumo_decomps: pd.DataFrame,
+        resumo_reservatorios: pd.DataFrame,
         primeiro: bool,
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
@@ -376,17 +396,23 @@ class DadosEstudo:
             resumo_estados = e
             resumo_newaves = n
         elif isinstance(caso, CasoDECOMP):
-            e, d = DadosEstudo.__le_resumo_decomp(
+            e, d, r = DadosEstudo.__le_resumo_decomp(
                 resumo_estados, resumo_decomps, caso, primeiro
             )
             resumo_estados = e
             resumo_decomps = d
+            resumo_reservatorios = r
         else:
             raise ValueError(
                 f"Caso do tipo {type(caso)} não suportado"
                 + "na síntese do estudo"
             )
-        return resumo_estados, resumo_newaves, resumo_decomps
+        return (
+            resumo_estados,
+            resumo_newaves,
+            resumo_decomps,
+            resumo_reservatorios,
+        )
 
     @staticmethod
     def __le_convergencia(
@@ -531,6 +557,7 @@ class DadosEstudo:
         resumo_estados = pd.DataFrame(columns=DadosEstudo.COLUNAS_ESTADO)
         resumo_newaves = pd.DataFrame(columns=DadosEstudo.COLUNAS_CUSTOS)
         resumo_decomps = pd.DataFrame(columns=DadosEstudo.COLUNAS_RESUMO)
+        resumo_reservatorios = pd.DataFrame()
         cols_conv = DadosEstudo.COLUNAS_CONVERGENCIA
         cols_inviab = DadosEstudo.COLUNAS_INVIABS
         convergencias_newaves = pd.DataFrame(columns=cols_conv)
@@ -540,12 +567,18 @@ class DadosEstudo:
         for i, c in enumerate(casos):
             if c.estado == EstadoCaso.CONCLUIDO:
                 # Passa i == 1 para significar o primeiro DECOMP (segundo caso)
-                e, n, d = DadosEstudo.__le_resumo(
-                    c, resumo_estados, resumo_newaves, resumo_decomps, i == 1
+                e, n, d, r = DadosEstudo.__le_resumo(
+                    c,
+                    resumo_estados,
+                    resumo_newaves,
+                    resumo_decomps,
+                    resumo_reservatorios,
+                    i == 1,
                 )
                 resumo_estados = e
                 resumo_newaves = n
                 resumo_decomps = d
+                resumo_reservatorios = r
                 n, d = DadosEstudo.__le_convergencia(
                     c, convergencias_newaves, convergencias_decomps
                 )
@@ -560,6 +593,7 @@ class DadosEstudo:
         self._resumo_estados = resumo_estados
         self._resumo_newaves = resumo_newaves
         self._resumo_decomps = resumo_decomps
+        self._resumo_reservatorios = resumo_reservatorios
         self._convergencias_newaves = convergencias_newaves
         self._convergencias_decomps = convergencias_decomps
         self._inviabilidades_decomps = inviabilidades_decomps
@@ -575,6 +609,10 @@ class DadosEstudo:
     @property
     def resumo_decomps(self) -> pd.DataFrame:
         return self._resumo_decomps
+
+    @property
+    def resumo_reservatorios(self) -> pd.DataFrame:
+        return self._resumo_reservatorios
 
     @property
     def convergencias_newaves(self) -> pd.DataFrame:
