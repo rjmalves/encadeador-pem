@@ -15,19 +15,19 @@ class DadosCaso:
 
     def __init__(
         self,
-        programa: str,
-        caminho: str,
-        nome: str,
-        ano: int,
-        mes: int,
-        revisao: int,
+        _programa: str,
+        _caminho: str,
+        _nome: str,
+        _ano: int,
+        _mes: int,
+        _revisao: int,
     ) -> None:
-        self._programa = programa
-        self._caminho = str(caminho)
-        self._nome = nome
-        self._ano = ano
-        self._mes = mes
-        self._revisao = revisao
+        self._programa = _programa
+        self._caminho = str(_caminho)
+        self._nome = _nome
+        self._ano = _ano
+        self._mes = _mes
+        self._revisao = _revisao
 
     @staticmethod
     def existem_dados(caminho: str) -> bool:

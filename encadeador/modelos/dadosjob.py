@@ -10,21 +10,21 @@ class DadosJob:
 
     def __init__(
         self,
-        id: str,
-        nome: str,
-        caminho: str,
-        instante_entrada_fila: float,
-        instante_inicio_execucao: float,
-        instante_saida_fila: float,
-        numero_processadores: int,
+        _id: str,
+        _nome: str,
+        _caminho: str,
+        _instante_entrada_fila: float,
+        _instante_inicio_execucao: float,
+        _instante_saida_fila: float,
+        _numero_processadores: int,
     ) -> None:
-        self._id = id
-        self._nome = nome
-        self._caminho = str(caminho)
-        self._instante_entrada_fila = instante_entrada_fila
-        self._instante_inicio_execucao = instante_inicio_execucao
-        self._instante_saida_fila = instante_saida_fila
-        self._numero_processadores = numero_processadores
+        self._id = _id
+        self._nome = _nome
+        self._caminho = str(_caminho)
+        self._instante_entrada_fila = _instante_entrada_fila
+        self._instante_inicio_execucao = _instante_inicio_execucao
+        self._instante_saida_fila = _instante_saida_fila
+        self._numero_processadores = _numero_processadores
 
     @staticmethod
     def from_json(json_dict: Dict[str, Any]) -> "DadosJob":
