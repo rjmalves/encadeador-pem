@@ -115,7 +115,7 @@ class MonitorCaso:
         :return: O sucesso ou não da inicialização do caso.
         :rtype: bool
         """
-        pass
+        raise NotImplementedError()
 
     def submete(self, retry: bool = False) -> bool:
         """

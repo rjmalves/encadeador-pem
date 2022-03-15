@@ -31,7 +31,8 @@ class App:
             self.__constroi_estudo_encadeado()
             # Refaz a síntese como estão as coisas
             if not self._monitor.inicializa():
-                Log.log().error("Erro na inicialização do estudo")
+                raise RuntimeError()
+            # O programa fica nesse loop até acabar o estudo, ou ocorrer erro
             while not self._estudo.terminou:
                 chdir(Configuracoes().caminho_base_estudo)
                 self._monitor.monitora()

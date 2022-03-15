@@ -78,7 +78,7 @@ class MonitorEstudo:
             ): self._trata_erro_caso,
         }
 
-    def inicializa(self):
+    def inicializa(self) -> bool:
         """
         Realiza a inicialização do caso, isto é, a preparação dos
         arquivos para adequação às necessidades do estudo
@@ -94,12 +94,13 @@ class MonitorEstudo:
             Log.log().error(
                 "Erro de inicialização do caso " + f"{self._caso_atual.nome}"
             )
-            raise RuntimeError()
+            return False
         if not self._monitor_atual.submete():
             Log.log().error(
                 "Erro de submissão do caso " + f"{self._caso_atual.nome}"
             )
-            raise RuntimeError()
+            return False
+        return True
 
     def monitora(self):
         """

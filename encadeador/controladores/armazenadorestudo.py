@@ -8,7 +8,7 @@ from encadeador.modelos.estudo import Estudo
 from encadeador.utils.log import Log
 from encadeador.utils.io import le_arquivo_json, escreve_arquivo_json
 
-NOME_ARQUIVO_ESTADO = "estudo_encadeado.json"
+NOME_ARQUIVO_ESTUDO = "estudo_encadeado.json"
 
 
 class ArmazenadorEstudo:
@@ -17,7 +17,7 @@ class ArmazenadorEstudo:
 
     def armazena_estudo(self) -> bool:
         try:
-            caminho = join(self._estudo.caminho, NOME_ARQUIVO_ESTADO)
+            caminho = join(self._estudo.caminho, NOME_ARQUIVO_ESTUDO)
             dados = self._estudo.to_json()
             escreve_arquivo_json(caminho, dados)
             return True
@@ -33,7 +33,7 @@ class ArmazenadorEstudo:
         # Se não tem arquivo de resumo, o estudo não começou a ser rodado
         nome = Configuracoes().nome_estudo
         caminho = Configuracoes().caminho_base_estudo
-        arq = join(caminho, NOME_ARQUIVO_ESTADO)
+        arq = join(caminho, NOME_ARQUIVO_ESTUDO)
         if not isfile(arq):
             # Cria um novo estudo
             dirs_revisoes, dirs_casos = Estudo.le_arquivo_lista_casos()
