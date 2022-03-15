@@ -61,8 +61,8 @@ class Caso:
         else:
             self._jobs.append(job)
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def gera_dados_caso(caminho: str, ano: int, mes: int, revisao: int):
         pass
 
