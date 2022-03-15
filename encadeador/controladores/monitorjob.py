@@ -78,6 +78,14 @@ class MonitorJob:
         self._job.numero_processadores = numero_processadores
         return r
 
+    def deleta(self):
+        if not self._gerenciador.deleta_job():
+            Log.log().error(
+                "Erro ao executar comando de deleção "
+                + f"do job {self._job.id}[{self._job.nome}]"
+            )
+            raise RuntimeError()
+
     def monitora(self):
         self._gerenciador.monitora_estado_job()
         if all(
@@ -87,12 +95,7 @@ class MonitorJob:
                 > __class__.TIMEOUT_ERRO_COMUNICACAO,
             ]
         ):
-            if not self._gerenciador.deleta_job():
-                Log.log().error(
-                    "Erro ao executar comando de deleção "
-                    + f"do job {self._job.id}[{self._job.nome}]"
-                )
-                raise RuntimeError()
+            self.deleta()
 
     def observa(self, f: Callable):
         self._transicao_job.append(f)
