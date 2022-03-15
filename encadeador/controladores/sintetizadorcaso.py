@@ -288,6 +288,7 @@ class SintetizadorDECOMP(SintetizadorCaso):
         cmo = relato.cmo_medio_subsistema
         earm_subsis = relato.energia_armazenada_subsistema
         earmax = relato.energia_armazenada_maxima_subsistema
+        reservatorio = relato.volume_util_reservatorios
         earm_reserv = SintetizadorDECOMP.__processa_reservatorios(reservatorio)
         earm_sin = SintetizadorDECOMP.__processa_earm_sin(earm_subsis, earmax)
         gt_subsis = relato.geracao_termica_subsistema
@@ -299,7 +300,6 @@ class SintetizadorDECOMP(SintetizadorCaso):
             relato, relgnl
         )
         balanco = relato.balanco_energetico
-        reservatorio = relato.volume_util_reservatorios
         gh_subsis = SintetizadorDECOMP.__processa_gh(balanco)
         gh_sin = SintetizadorDECOMP.__processa_dado_sin(gh_subsis)
         merc_subsis = SintetizadorDECOMP.__processa_mercado(balanco)

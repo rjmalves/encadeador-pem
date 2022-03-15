@@ -200,7 +200,7 @@ class DadosEstudo:
         resumo_reservatorios: pd.DataFrame,
         caso: CasoDECOMP,
         primeiro: bool,
-    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         # Faz o resumo do estado dos casos
         arq_resumo = join(caso.caminho, NOME_ARQUIVO_ESTADO)
         df_resumo = pd.read_csv(arq_resumo, index_col=0)
@@ -387,7 +387,7 @@ class DadosEstudo:
         resumo_decomps: pd.DataFrame,
         resumo_reservatorios: pd.DataFrame,
         primeiro: bool,
-    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
         if isinstance(caso, CasoNEWAVE):
             e, n = DadosEstudo.__le_resumo_newave(
@@ -397,7 +397,11 @@ class DadosEstudo:
             resumo_newaves = n
         elif isinstance(caso, CasoDECOMP):
             e, d, r = DadosEstudo.__le_resumo_decomp(
-                resumo_estados, resumo_decomps, caso, primeiro
+                resumo_estados,
+                resumo_decomps,
+                resumo_reservatorios,
+                caso,
+                primeiro,
             )
             resumo_estados = e
             resumo_decomps = d
