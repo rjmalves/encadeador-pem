@@ -35,7 +35,6 @@ class MonitorEstudo:
         :param evento: O evento ocorrido com o caso
         :type evento: TransicaoCaso
         """
-        Log.log().info(f"Chamou callback evento Caso: {evento}")
         # Executa a ação da transição de estado
         novo_estado = self._regras()[self._estudo.estado, evento]()
         # Atualiza o estado atual
