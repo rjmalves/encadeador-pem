@@ -140,7 +140,7 @@ class DadosEstudo:
     def to_json(self) -> Dict[str, Any]:
         return {
             "_nome": self._nome,
-            "_caminho": self._caminho,
+            "_caminho": str(self._caminho),
             "_instante_inicio_execucao": self._instante_inicio_execucao,
             "_diretorios_revisoes": self._nomes_casos,
             "_diretorios_casos": self._nomes_casos,

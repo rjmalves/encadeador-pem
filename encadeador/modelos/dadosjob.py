@@ -20,7 +20,7 @@ class DadosJob:
     ) -> None:
         self._id = id
         self._nome = nome
-        self._caminho = caminho
+        self._caminho = str(caminho)
         self._instante_entrada_fila = instante_entrada_fila
         self._instante_inicio_execucao = instante_inicio_execucao
         self._instante_saida_fila = instante_saida_fila

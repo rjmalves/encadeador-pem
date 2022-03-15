@@ -23,7 +23,7 @@ class DadosCaso:
         revisao: int,
     ) -> None:
         self._programa = programa
-        self._caminho = caminho
+        self._caminho = str(caminho)
         self._nome = nome
         self._ano = ano
         self._mes = mes
