@@ -231,6 +231,7 @@ class MonitorNEWAVE(MonitorCaso):
             if sint_ultimo.verifica_cortes_extraidos():
                 sint_ultimo.deleta_cortes()
 
+        Log.log().info(f"Na função de inicializar caso NEWAVE: {self._caso.estado}")
         self._transicao_caso(TransicaoCaso.INICIOU)
         preparador = PreparadorCaso.factory(self._caso)
         sucesso_prepara = preparador.prepara_caso()

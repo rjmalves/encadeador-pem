@@ -35,6 +35,7 @@ class MonitorEstudo:
         :param evento: O evento ocorrido com o caso
         :type evento: TransicaoCaso
         """
+        Log.log().info(f"Chamou callback evento Caso: {evento}")
         # Executa a ação da transição de estado
         novo_estado = self._regras()[self._estudo.estado, evento]()
         # Atualiza o estado atual
@@ -128,20 +129,7 @@ class MonitorEstudo:
             if self._estudo.proximo_caso is None:
                 Log.log().error("Não foi encontrado o próximo caso")
                 raise RuntimeError()
-            self._caso_atual = self._estudo.proximo_caso
-            self._monitor_atual = MonitorCaso.factory(self._caso_atual)
-            self._monitor_atual.observa(self.callback_evento_caso)
-            concluidos = self._estudo.casos_concluidos
-            if not self._monitor_atual.inicializa(concluidos):
-                Log.log().error(
-                    "Erro de inicialização do caso "
-                    + f"{self._caso_atual.nome}"
-                )
-                raise RuntimeError()
-            if not self._monitor_atual.submete():
-                Log.log().error(
-                    "Erro de submissão do caso " + f"{self._caso_atual.nome}"
-                )
+            if not self.inicializa():
                 raise RuntimeError()
             return EstadoEstudo.EXECUTANDO
 
