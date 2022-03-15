@@ -87,7 +87,11 @@ class MonitorEstudo:
         :return: O sucesso ou não da inicialização do caso.
         :rtype: bool
         """
-        self._caso_atual = self._estudo.proximo_caso
+        caso = self._estudo.proximo_caso
+        if caso is None:
+            Log.log().error("Não foi encontrado o próximo caso")
+            raise RuntimeError()
+        self._caso_atual = caso
         self._monitor_atual = MonitorCaso.factory(self._caso_atual)
         self._monitor_atual.observa(self.callback_evento_caso)
         if not self._monitor_atual.inicializa(self._estudo.casos_concluidos):
