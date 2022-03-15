@@ -20,7 +20,7 @@ class App:
     def __constroi_estudo_encadeado(self):
         self._estudo = ArmazenadorEstudo.gera_estudo()
         self._monitor = MonitorEstudo(self._estudo)
-        self._estudo.atualiza(EstadoEstudo.NAO_INICIADO, True)
+        self._estudo.atualiza(EstadoEstudo.EXECUTANDO, True)
         sintetizador = SintetizadorEstudo(self._estudo)
         if not sintetizador.sintetiza_estudo():
             raise RuntimeError()
