@@ -116,7 +116,7 @@ class MonitorEstudo:
     def _trata_inicio_caso(self) -> EstadoEstudo:
         sintetizador = SintetizadorEstudo(self._estudo)
         sintetizador.sintetiza_proximo_caso(self._estudo.proximo_caso)
-        Log.log().info(f"Estudo: {self._estudo.nome} - Iniciando novo caso")
+        Log.log().info(f"Estudo {self._estudo.nome} - Iniciando novo caso")
         return EstadoEstudo.EXECUTANDO
 
     def _trata_fim_sucesso_caso(self) -> EstadoEstudo:

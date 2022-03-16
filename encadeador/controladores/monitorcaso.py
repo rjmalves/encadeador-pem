@@ -132,7 +132,7 @@ class MonitorCaso:
         self._monitor_job_atual = MonitorJob(self._job_atual)
         self._monitor_job_atual.observa(self.callback_evento_job)
         ret = self._monitor_job_atual.submete(self._caso.numero_processadores)
-        Log.log().info(f"Caso {self._caso.nome}: Submetido.")
+        Log.log().info(f"Caso {self._caso.nome}: submetido")
         chdir(Configuracoes().caminho_base_estudo)
         return ret
 

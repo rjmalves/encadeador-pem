@@ -5,6 +5,7 @@ from encadeador.modelos.dadoscaso import DadosCaso
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.job import Job
 from encadeador.modelos.estadocaso import EstadoCaso
+from encadeador.utils.log import Log
 
 
 class Caso:
@@ -53,6 +54,7 @@ class Caso:
         }
 
     def atualiza(self, estado: EstadoCaso):
+        Log.log().info(f"Caso: {self._dados.nome} - estado -> {estado.value}")
         self._estado = estado
 
     def adiciona_job(self, job: Job, retry: bool):

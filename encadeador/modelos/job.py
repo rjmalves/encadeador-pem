@@ -3,6 +3,7 @@ from typing import Dict, Any
 
 from encadeador.modelos.dadosjob import DadosJob
 from encadeador.modelos.estadojob import EstadoJob
+from encadeador.utils.log import Log
 
 
 class Job:
@@ -35,6 +36,7 @@ class Job:
         }
 
     def atualiza(self, estado: EstadoJob):
+        Log.log().info(f"Job: {self._dados.nome} - estado -> {estado.value}")
         self.estado = estado
         t = time()
         if self.estado == EstadoJob.ESPERANDO:

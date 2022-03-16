@@ -100,6 +100,7 @@ class Estudo:
         return casos
 
     def atualiza(self, estado: EstadoEstudo, resume: bool = False):
+        Log.log().info(f"Estudo: {self._estado} - estado -> {estado.value}")
         self._estado = estado
         self._dados.resume_casos(self._casos)
         if resume:
