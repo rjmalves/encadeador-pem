@@ -41,6 +41,10 @@ class MonitorEstudo:
         self._estudo.atualiza(novo_estado, True)
         if not self._armazenador.armazena_estudo():
             Log.log().error("Erro ao armazenar estudo encadeado")
+        sintetizador = SintetizadorEstudo(self._estudo)
+        if not sintetizador.sintetiza_estudo():
+            Log.log().error("Erro na síntese do estudo encadeado")
+            raise RuntimeError()
 
     def _regras(
         self,
@@ -116,10 +120,6 @@ class MonitorEstudo:
         return EstadoEstudo.EXECUTANDO
 
     def _trata_fim_sucesso_caso(self) -> EstadoEstudo:
-        sintetizador = SintetizadorEstudo(self._estudo)
-        if not sintetizador.sintetiza_estudo():
-            Log.log().error("Erro na síntese do estudo encadeado")
-            raise RuntimeError()
         if self._estudo.terminou:
             Log.log().info(f"Estudo: {self._estudo.nome} - Estudo concluído")
             return EstadoEstudo.CONCLUIDO
@@ -135,11 +135,7 @@ class MonitorEstudo:
             return EstadoEstudo.EXECUTANDO
 
     def _trata_erro_caso(self) -> EstadoEstudo:
-        sintetizador = SintetizadorEstudo(self._estudo)
         Log.log().error(
             f"Estudo: {self._estudo.nome} - Erro na execução de caso"
         )
-        if not sintetizador.sintetiza_estudo():
-            Log.log().error("Erro na síntese do estudo encadeado")
-            raise RuntimeError()
         return EstadoEstudo.ERRO
