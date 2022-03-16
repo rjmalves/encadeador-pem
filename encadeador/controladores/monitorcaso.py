@@ -57,9 +57,7 @@ class MonitorCaso:
         :type evento: TransicaoJob
         """
         # Executa a ação da transição de estado
-        novo_estado = self._regras()[self._caso.estado, evento]()
-        # Atualiza o estado atual
-        self._caso.atualiza(novo_estado)
+        self._regras()[self._caso.estado, evento]()
 
     @property
     @abstractmethod
