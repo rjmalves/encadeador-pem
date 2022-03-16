@@ -128,7 +128,6 @@ class MonitorCaso:
         self._job_atual = Job(
             DadosJob("", self.nome_job, self.caminho_job, 0.0, 0.0, 0.0, 0)
         )
-        self._caso.atualiza(EstadoCaso.INICIADO)
         self._caso.adiciona_job(self._job_atual, retry)
         self._monitor_job_atual = MonitorJob(self._job_atual)
         self._monitor_job_atual.observa(self.callback_evento_job)
@@ -143,6 +142,12 @@ class MonitorCaso:
         job associado.
         """
         chdir(self._caso.caminho)
+        # Trata os casos onde não existe job: inviável e flexibilizando
+        if self._caso.estado == EstadoCaso.INVIAVEL:
+            self._trata_caso_inviavel()
+        elif self._caso.estado == EstadoCaso.FLEXIBILIZANDO:
+            self._trata_caso_flexibilizando()
+        # Trata os casos com job
         self._monitor_job_atual.monitora()
         if not self._armazenador.armazena_caso():
             Log.log().error(f"Erro ao armazenar caso {self._caso.nome}")
@@ -170,7 +175,15 @@ class MonitorCaso:
 
     @abstractmethod
     def _trata_fim_execucao(self) -> EstadoCaso:
-        pass
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _trata_caso_inviavel(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _trata_caso_flexibilizando(self):
+        raise NotImplementedError()
 
     def _trata_erro(self) -> EstadoCaso:
         Log.log().info(
@@ -255,6 +268,14 @@ class MonitorNEWAVE(MonitorCaso):
         self._transicao_caso(TransicaoCaso.SUCESSO)
         return EstadoCaso.CONCLUIDO
 
+    # Override
+    def _trata_caso_inviavel(self):
+        raise NotImplementedError()
+
+    # Override
+    def _trata_caso_flexibilizando(self):
+        raise NotImplementedError()
+
 
 class MonitorDECOMP(MonitorCaso):
     def __init__(self, caso: CasoDECOMP):
@@ -307,33 +328,40 @@ class MonitorDECOMP(MonitorCaso):
     def _trata_fim_execucao(self) -> EstadoCaso:
         Log.log().info(f"Caso {self._caso.nome}: fim da execução")
         if not self._avaliador.avalia():
-            n_flex = self._caso.numero_flexibilizacoes
-            if n_flex >= Configuracoes().maximo_flexibilizacoes_revisao:
-                Log.log().info(
-                    f"Caso {self._caso.nome}: máximo de "
-                    + "flexibilizações atingido"
-                )
-                self._transicao_caso(TransicaoCaso.ERRO_MAX_FLEX)
-                return EstadoCaso.ERRO_MAX_FLEX
-            else:
-                flexibilizador = Flexibilizador.factory(self._caso)
-                if not flexibilizador.flexibiliza():
-                    Log.log().error(
-                        f"Caso {self._caso.nome}: erro na flexibilização"
-                    )
-                    self._transicao_caso(TransicaoCaso.ERRO)
-                    raise RuntimeError()
-                if not self.submete():
-                    Log.log().error(
-                        f"Caso {self._caso.nome}: erro "
-                        + "na submissão do job do caso"
-                    )
-                    self._transicao_caso(TransicaoCaso.ERRO)
-                    raise RuntimeError()
-                return EstadoCaso.ESPERANDO_FILA
+            return EstadoCaso.INVIAVEL
+
         sintetizador = SintetizadorCaso.factory(self._caso)
         if not sintetizador.sintetiza_caso():
             Log.log().error(f"Erro na síntese do caso {self._caso.nome}")
         self._caso.atualiza(EstadoCaso.CONCLUIDO)
         self._transicao_caso(TransicaoCaso.SUCESSO)
         return EstadoCaso.CONCLUIDO
+
+    # Override
+    def _trata_caso_inviavel(self):
+        n_flex = self._caso.numero_flexibilizacoes
+        if n_flex >= Configuracoes().maximo_flexibilizacoes_revisao:
+            Log.log().info(
+                f"Caso {self._caso.nome}: máximo de "
+                + "flexibilizações atingido"
+            )
+            self._transicao_caso(TransicaoCaso.ERRO_MAX_FLEX)
+            self._caso.atualiza(EstadoCaso.ERRO_MAX_FLEX)
+        else:
+            self._caso.atualiza(EstadoCaso.FLEXIBILIZANDO)
+
+    # Override
+    def _trata_caso_flexibilizando(self):
+        flexibilizador = Flexibilizador.factory(self._caso)
+        if not flexibilizador.flexibiliza():
+            Log.log().error(f"Caso {self._caso.nome}: erro na flexibilização")
+            self._caso.atualiza(EstadoCaso.ERRO)
+            self._transicao_caso(TransicaoCaso.ERRO)
+            raise RuntimeError()
+        if not self.submete():
+            Log.log().error(
+                f"Caso {self._caso.nome}: erro " + "na submissão do job do caso"
+            )
+            self._caso.atualiza(EstadoCaso.ERRO)
+            self._transicao_caso(TransicaoCaso.ERRO)
+            raise RuntimeError()

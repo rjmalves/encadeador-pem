@@ -9,9 +9,12 @@ class EstadoCaso(Enum):
     EXECUTANDO = "EXECUTANDO"
     RETRY = "RETRY"
     CONCLUIDO = "CONCLUIDO"
+    INVIAVEL = "INVIAVEL"
+    FLEXIBILIZANDO = "FLEXIBILIZANDO"
     ERRO_MAX_FLEX = "ERRO_MAX_FLEX"
     ERRO_DADOS = "ERRO_DADOS"
     ERRO_COMUNICACAO = "ERRO_COMUNICACAO"
+    ERRO = "ERRO"
 
     @staticmethod
     def factory(valor: str) -> "EstadoCaso":
