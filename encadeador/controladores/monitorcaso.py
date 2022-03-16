@@ -261,10 +261,10 @@ class MonitorNEWAVE(MonitorCaso):
             Log.log().info(f"Caso {self._caso.nome}: erro de dados")
             self._transicao_caso(TransicaoCaso.ERRO_DADOS)
             return EstadoCaso.ERRO_DADOS
+        self._caso.atualiza(EstadoCaso.CONCLUIDO)
         sintetizador = SintetizadorCaso.factory(self._caso)
         if not sintetizador.sintetiza_caso():
             Log.log().error(f"Erro na síntese do caso {self._caso.nome}")
-        self._caso.atualiza(EstadoCaso.CONCLUIDO)
         self._transicao_caso(TransicaoCaso.SUCESSO)
         return EstadoCaso.CONCLUIDO
 
@@ -330,10 +330,10 @@ class MonitorDECOMP(MonitorCaso):
         if not self._avaliador.avalia():
             return EstadoCaso.INVIAVEL
 
+        self._caso.atualiza(EstadoCaso.CONCLUIDO)
         sintetizador = SintetizadorCaso.factory(self._caso)
         if not sintetizador.sintetiza_caso():
             Log.log().error(f"Erro na síntese do caso {self._caso.nome}")
-        self._caso.atualiza(EstadoCaso.CONCLUIDO)
         self._transicao_caso(TransicaoCaso.SUCESSO)
         return EstadoCaso.CONCLUIDO
 
