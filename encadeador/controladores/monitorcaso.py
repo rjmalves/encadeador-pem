@@ -353,6 +353,7 @@ class MonitorDECOMP(MonitorCaso):
     # Override
     def _trata_caso_flexibilizando(self):
         flexibilizador = Flexibilizador.factory(self._caso)
+        self._caso.atualiza(EstadoCaso.INICIADO)
         if not flexibilizador.flexibiliza():
             Log.log().error(f"Caso {self._caso.nome}: erro na flexibilização")
             self._caso.atualiza(EstadoCaso.ERRO)
