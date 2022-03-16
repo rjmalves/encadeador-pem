@@ -99,12 +99,11 @@ class Estudo:
                 casos.append(ret)
         return casos
 
-    def atualiza(self, estado: EstadoEstudo, resume: bool = False):
-        Log.log().info(f"Estudo: {self._estado} - estado -> {estado.value}")
+    def atualiza(self, estado: EstadoEstudo):
+        Log.log().info(f"Estudo: {self._estado} -> {estado.value}")
         self._estado = estado
         self._dados.resume_casos(self._casos)
-        if resume:
-            self._dados.resume_dados_casos(self._casos)
+        self._dados.resume_dados_casos(self._casos)
 
     @property
     def nome(self) -> str:

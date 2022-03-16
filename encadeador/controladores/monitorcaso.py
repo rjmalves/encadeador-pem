@@ -73,7 +73,7 @@ class MonitorCaso:
 
     def _regras(
         self,
-    ) -> Dict[Tuple[EstadoCaso, TransicaoJob], Callable[[], EstadoCaso]]:
+    ) -> Dict[Tuple[EstadoCaso, TransicaoJob], None]:
         return {
             (
                 EstadoCaso.INICIADO,
@@ -156,25 +156,25 @@ class MonitorCaso:
     def observa(self, f: Callable):
         self._transicao_caso.append(f)
 
-    def _trata_entrada_fila(self) -> EstadoCaso:
+    def _trata_entrada_fila(self):
         Log.log().info(f"Caso {self._caso.nome}: esperando na fila")
-        return EstadoCaso.ESPERANDO_FILA
+        self._caso.atualiza(EstadoCaso.ESPERANDO_FILA)
 
-    def _trata_inicio_execucao(self) -> EstadoCaso:
+    def _trata_inicio_execucao(self):
         Log.log().info(f"Caso {self._caso.nome}: iniciou execução")
-        return EstadoCaso.EXECUTANDO
+        self._caso.atualiza(EstadoCaso.EXECUTANDO)
 
-    def _trata_inicio_del_job(self) -> EstadoCaso:
+    def _trata_inicio_del_job(self):
         # Aguarda o job ser deletado completamente
         Log.log().info(f"Caso {self._caso.nome}: deleção solicitada")
-        return EstadoCaso.ESPERANDO_DEL_JOB
+        self._caso.atualiza(EstadoCaso.ESPERANDO_DEL_JOB)
 
-    def _trata_erro_execucao(self) -> EstadoCaso:
+    def _trata_erro_execucao(self):
         Log.log().info(f"Caso {self._caso.nome}: erro durante a execução")
-        return EstadoCaso.ESPERANDO_DEL_JOB
+        self._caso.atualiza(EstadoCaso.ESPERANDO_DEL_JOB)
 
     @abstractmethod
-    def _trata_fim_execucao(self) -> EstadoCaso:
+    def _trata_fim_execucao(self):
         raise NotImplementedError()
 
     @abstractmethod
@@ -185,7 +185,7 @@ class MonitorCaso:
     def _trata_caso_flexibilizando(self):
         raise NotImplementedError()
 
-    def _trata_erro(self) -> EstadoCaso:
+    def _trata_erro(self):
         Log.log().info(
             f"Caso {self._caso.nome}: erro de comunicação. "
             + "Submetendo novamente (retry)..."
@@ -193,8 +193,9 @@ class MonitorCaso:
         if not self.submete(True):
             Log.log().info(f"Caso {self._caso.nome}: erro durante o retry")
             self._transicao_caso(TransicaoCaso.ERRO)
+            self._caso.atualiza(EstadoCaso.ERRO)
             raise RuntimeError()
-        return EstadoCaso.ESPERANDO_FILA
+        self._caso.atualiza(EstadoCaso.ESPERANDO_FILA)
 
     @property
     def caso(self) -> Caso:
@@ -255,18 +256,18 @@ class MonitorNEWAVE(MonitorCaso):
         return sucesso_prepara and sucesso_encadeia
 
     # Override
-    def _trata_fim_execucao(self) -> EstadoCaso:
+    def _trata_fim_execucao(self):
         Log.log().info(f"Caso {self._caso.nome}: fim da execução")
         if not self._avaliador.avalia():
             Log.log().info(f"Caso {self._caso.nome}: erro de dados")
             self._transicao_caso(TransicaoCaso.ERRO_DADOS)
-            return EstadoCaso.ERRO_DADOS
+            self._caso.atualiza(EstadoCaso.ERRO_DADOS)
+            return
         self._caso.atualiza(EstadoCaso.CONCLUIDO)
         sintetizador = SintetizadorCaso.factory(self._caso)
         if not sintetizador.sintetiza_caso():
             Log.log().error(f"Erro na síntese do caso {self._caso.nome}")
         self._transicao_caso(TransicaoCaso.SUCESSO)
-        return EstadoCaso.CONCLUIDO
 
     # Override
     def _trata_caso_inviavel(self):
@@ -325,17 +326,17 @@ class MonitorDECOMP(MonitorCaso):
         return sucesso_prepara and sucesso_encadeia
 
     # Override
-    def _trata_fim_execucao(self) -> EstadoCaso:
+    def _trata_fim_execucao(self):
         Log.log().info(f"Caso {self._caso.nome}: fim da execução")
         if not self._avaliador.avalia():
-            return EstadoCaso.INVIAVEL
+            self._caso.atualiza(EstadoCaso.INVIAVEL)
+            return
 
         self._caso.atualiza(EstadoCaso.CONCLUIDO)
         sintetizador = SintetizadorCaso.factory(self._caso)
         if not sintetizador.sintetiza_caso():
             Log.log().error(f"Erro na síntese do caso {self._caso.nome}")
         self._transicao_caso(TransicaoCaso.SUCESSO)
-        return EstadoCaso.CONCLUIDO
 
     # Override
     def _trata_caso_inviavel(self):

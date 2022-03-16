@@ -65,10 +65,11 @@ class MonitorJob:
         :param novo_estado: O estado para o qual o job foi alterado.
         :type novo_estado: EstadoJob
         """
-        # Executa a ação da transição de estado
-        self._regras()[self._job.estado, novo_estado]()
+        estado_atual = self._job.estado
         # Atualiza o estado atual
         self._job.atualiza(novo_estado)
+        # Executa a ação da transição de estado
+        self._regras()[estado_atual, novo_estado]()
 
     def submete(self, numero_processadores: int) -> bool:
         r = self._gerenciador.agenda_job(

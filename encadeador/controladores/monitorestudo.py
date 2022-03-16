@@ -36,9 +36,8 @@ class MonitorEstudo:
         :type evento: TransicaoCaso
         """
         # Executa a ação da transição de estado
-        novo_estado = self._regras()[self._estudo.estado, evento]()
-        # Atualiza o estado atual
-        self._estudo.atualiza(novo_estado, True)
+        self._regras()[self._estudo.estado, evento]()
+
         if not self._armazenador.armazena_estudo():
             Log.log().error("Erro ao armazenar estudo encadeado")
         sintetizador = SintetizadorEstudo(self._estudo)
@@ -113,29 +112,31 @@ class MonitorEstudo:
             Log.log().error("Erro no armazenamento do estudo")
             raise RuntimeError()
 
-    def _trata_inicio_caso(self) -> EstadoEstudo:
+    def _trata_inicio_caso(self):
         sintetizador = SintetizadorEstudo(self._estudo)
         sintetizador.sintetiza_proximo_caso(self._estudo.proximo_caso)
         Log.log().info(f"Estudo {self._estudo.nome} - Iniciando novo caso")
-        return EstadoEstudo.EXECUTANDO
+        self._estudo.atualiza(EstadoEstudo.EXECUTANDO)
 
-    def _trata_fim_sucesso_caso(self) -> EstadoEstudo:
+    def _trata_fim_sucesso_caso(self):
         if self._estudo.terminou:
             Log.log().info(f"Estudo: {self._estudo.nome} - Estudo concluído")
-            return EstadoEstudo.CONCLUIDO
+            self._estudo.atualiza(EstadoEstudo.CONCLUIDO)
         else:
             if self._estudo.proximo_caso is None:
                 Log.log().error("Não foi encontrado o próximo caso")
+                self._estudo.atualiza(EstadoEstudo.ERRO)
                 raise RuntimeError()
             if not self.inicializa():
+                self._estudo.atualiza(EstadoEstudo.ERRO)
                 raise RuntimeError()
             Log.log().info(
                 f"Estudo: {self._estudo.nome} - Caso concluído com sucesso"
             )
-            return EstadoEstudo.EXECUTANDO
+            self._estudo.atualiza(EstadoEstudo.EXECUTANDO)
 
-    def _trata_erro_caso(self) -> EstadoEstudo:
+    def _trata_erro_caso(self):
         Log.log().error(
             f"Estudo: {self._estudo.nome} - Erro na execução de caso"
         )
-        return EstadoEstudo.ERRO
+        self._estudo.atualiza(EstadoEstudo.ERRO)
