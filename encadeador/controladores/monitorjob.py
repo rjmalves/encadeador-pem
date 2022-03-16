@@ -37,6 +37,10 @@ class MonitorJob:
                 EstadoJob.DELETANDO,
             ): self._trata_comando_deleta_job,
             (
+                EstadoJob.NAO_INICIADO,
+                EstadoJob.EXECUTANDO,
+            ): self._trata_inicio_execucao_direto,
+            (
                 EstadoJob.ESPERANDO,
                 EstadoJob.EXECUTANDO,
             ): self._trata_inicio_execucao,
@@ -120,6 +124,10 @@ class MonitorJob:
             f"Job {self._job.id}[{self._job.nome}] - início da execução"
         )
         self._transicao_job(TransicaoJob.INICIO_EXECUCAO)
+
+    def _trata_inicio_execucao_direto(self):
+        self._trata_entrada_fila()
+        self._trata_inicio_execucao()
 
     def _trata_fim_execucao(self):
         Log.log().info(f"Job {self._job.id}[{self._job.nome}] - finalizado")
