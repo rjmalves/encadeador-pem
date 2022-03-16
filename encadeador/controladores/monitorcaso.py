@@ -292,7 +292,12 @@ class MonitorDECOMP(MonitorCaso):
         self._caso.atualiza(EstadoCaso.INICIADO)
         self._transicao_caso(TransicaoCaso.INICIOU)
         preparador = PreparadorCaso.factory(self._caso)
-        sucesso_prepara = preparador.prepara_caso()
+        ultimo_newave = next(
+            c
+            for c in reversed(casos_anteriores)
+            if (isinstance(c, CasoNEWAVE) and c.estado == EstadoCaso.CONCLUIDO)
+        )
+        sucesso_prepara = preparador.prepara_caso(caso_cortes=ultimo_newave)
         sucesso_encadeia = preparador.encadeia_variaveis(casos_anteriores)
         return sucesso_prepara and sucesso_encadeia
 
