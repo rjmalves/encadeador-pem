@@ -1,4 +1,3 @@
-from abc import abstractmethod
 from typing import Dict, Tuple, Callable
 
 from encadeador.modelos.caso import Caso
@@ -47,7 +46,7 @@ class MonitorEstudo:
 
     def _regras(
         self,
-    ) -> Dict[Tuple[EstadoEstudo, TransicaoCaso], Callable[[], EstadoEstudo]]:
+    ) -> Dict[Tuple[EstadoEstudo, TransicaoCaso], Callable]:
         return {
             (
                 EstadoEstudo.EXECUTANDO,

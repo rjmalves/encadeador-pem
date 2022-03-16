@@ -71,7 +71,7 @@ class MonitorCaso:
 
     def _regras(
         self,
-    ) -> Dict[Tuple[EstadoCaso, TransicaoJob], None]:
+    ) -> Dict[Tuple[EstadoCaso, TransicaoJob], Callable]:
         return {
             (
                 EstadoCaso.INICIADO,
