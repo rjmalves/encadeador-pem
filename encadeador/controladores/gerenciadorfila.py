@@ -4,6 +4,7 @@ from typing import Callable, List
 import time
 
 from encadeador.modelos.estadojob import EstadoJob
+from encadeador.utils.log import Log
 from encadeador.utils.terminal import executa_terminal
 from encadeador.utils.event import Event
 
@@ -199,6 +200,7 @@ class GerenciadorFila:
         if self._estado_job == e:
             return
         self._estado_job = e
+        Log.log().info(f"GerenciadorFila: Job {self.id_job} - Novo estado: {e}")
         self._mudou_estado(e)
 
 
