@@ -128,10 +128,12 @@ class MonitorCaso:
         self._job_atual = Job(
             DadosJob("", self.nome_job, self.caminho_job, 0.0, 0.0, 0.0, 0)
         )
+        self._caso.atualiza(EstadoCaso.INICIADO)
         self._caso.adiciona_job(self._job_atual, retry)
         self._monitor_job_atual = MonitorJob(self._job_atual)
         self._monitor_job_atual.observa(self.callback_evento_job)
         ret = self._monitor_job_atual.submete(self._caso.numero_processadores)
+        Log.log().info(f"Caso {self._caso.nome}: Submetido.")
         chdir(Configuracoes().caminho_base_estudo)
         return ret
 
@@ -317,7 +319,7 @@ class MonitorDECOMP(MonitorCaso):
                 flexibilizador = Flexibilizador.factory(self._caso)
                 if not flexibilizador.flexibiliza():
                     Log.log().error(
-                        f"Caso {self._caso.nome}: erro " + "na flexibilização"
+                        f"Caso {self._caso.nome}: erro na flexibilização"
                     )
                     self._transicao_caso(TransicaoCaso.ERRO)
                     raise RuntimeError()
