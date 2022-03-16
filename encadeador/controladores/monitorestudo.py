@@ -42,16 +42,6 @@ class MonitorEstudo:
         if not self._armazenador.armazena_estudo():
             Log.log().error("Erro ao armazenar estudo encadeado")
 
-    @property
-    @abstractmethod
-    def caminho_job(self) -> str:
-        pass
-
-    @property
-    @abstractmethod
-    def nome_job(self) -> str:
-        pass
-
     def _regras(
         self,
     ) -> Dict[Tuple[EstadoEstudo, TransicaoCaso], Callable[[], EstadoEstudo]]:
@@ -92,6 +82,9 @@ class MonitorEstudo:
             Log.log().error("Não foi encontrado o próximo caso")
             raise RuntimeError()
         self._caso_atual = caso
+        Log.log().info(
+            f"Estudo {self._estudo.nome} - Próximo caso: {caso.nome}"
+        )
         self._monitor_atual = MonitorCaso.factory(self._caso_atual)
         self._monitor_atual.observa(self.callback_evento_caso)
         if not self._monitor_atual.inicializa(self._estudo.casos_concluidos):
@@ -119,6 +112,7 @@ class MonitorEstudo:
     def _trata_inicio_caso(self) -> EstadoEstudo:
         sintetizador = SintetizadorEstudo(self._estudo)
         sintetizador.sintetiza_proximo_caso(self._estudo.proximo_caso)
+        Log.log().info(f"Estudo: {self._estudo.nome} - Iniciando novo caso")
         return EstadoEstudo.EXECUTANDO
 
     def _trata_fim_sucesso_caso(self) -> EstadoEstudo:
@@ -127,6 +121,7 @@ class MonitorEstudo:
             Log.log().error("Erro na síntese do estudo encadeado")
             raise RuntimeError()
         if self._estudo.terminou:
+            Log.log().info(f"Estudo: {self._estudo.nome} - Estudo concluído")
             return EstadoEstudo.CONCLUIDO
         else:
             if self._estudo.proximo_caso is None:
@@ -134,10 +129,16 @@ class MonitorEstudo:
                 raise RuntimeError()
             if not self.inicializa():
                 raise RuntimeError()
+            Log.log().info(
+                f"Estudo: {self._estudo.nome} - Caso concluído com sucesso"
+            )
             return EstadoEstudo.EXECUTANDO
 
     def _trata_erro_caso(self) -> EstadoEstudo:
         sintetizador = SintetizadorEstudo(self._estudo)
+        Log.log().error(
+            f"Estudo: {self._estudo.nome} - Erro na execução de caso"
+        )
         if not sintetizador.sintetiza_estudo():
             Log.log().error("Erro na síntese do estudo encadeado")
             raise RuntimeError()
