@@ -200,7 +200,9 @@ class GerenciadorFila:
         if self._estado_job == e:
             return
         self._estado_job = e
-        Log.log().info(f"GerenciadorFila: Job {self.id_job} - Novo estado: {e.value}")
+        Log.log().info(
+            f"GerenciadorFila: Job {self.id_job} - Novo estado: {e.value}"
+        )
         self._mudou_estado(e)
 
 
