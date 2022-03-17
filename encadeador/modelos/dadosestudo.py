@@ -366,17 +366,19 @@ class DadosEstudo:
 
         # Organiza os dados dos reservatórios
         reservatorios: pd.DataFrame = earm_reserv.transpose()
-        reservatorios["Estagio"] = reservatorios.index
-        reservatorios.reset_index(inplace=True)
+        reservatorios.columns = reservatorios.loc["Usina"]
+        reservatorios = reservatorios.drop(index="Usina")
         cols = list(reservatorios.columns)
+        reservatorios["Estagio"] = reservatorios.index
         reservatorios["Caso"] = nome
-        reservatorios = reservatorios[["Caso"] + cols]
+        reservatorios = reservatorios[["Caso", "Estagio"] + cols]
         if resumo_reservatorios.empty:
-            resumo_reservatorios = reservatorios
+            resumo_reservatorios = reservatorios.reset_index(drop=True)
         else:
             resumo_reservatorios = pd.concat(
                 [resumo_reservatorios, reservatorios], ignore_index=True
             )
+
         return resumo_estados, resumo_decomps, resumo_reservatorios
 
     @staticmethod
