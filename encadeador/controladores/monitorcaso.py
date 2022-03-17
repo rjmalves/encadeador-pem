@@ -258,14 +258,16 @@ class MonitorNEWAVE(MonitorCaso):
         Log.log().info(f"Caso {self._caso.nome}: fim da execução")
         if not self._avaliador.avalia():
             Log.log().info(f"Caso {self._caso.nome}: erro de dados")
-            self._transicao_caso(TransicaoCaso.ERRO_DADOS)
             self._caso.atualiza(EstadoCaso.ERRO_DADOS)
-            return
-        self._caso.atualiza(EstadoCaso.CONCLUIDO)
+            self._transicao_caso(TransicaoCaso.ERRO_DADOS)
+        else:
+            self._caso.atualiza(EstadoCaso.CONCLUIDO)
         sintetizador = SintetizadorCaso.factory(self._caso)
         if not sintetizador.sintetiza_caso():
             Log.log().error(f"Erro na síntese do caso {self._caso.nome}")
-        self._transicao_caso(TransicaoCaso.SUCESSO)
+            raise RuntimeError()
+        if self._caso.estado == EstadoCaso.CONCLUIDO:
+            self._transicao_caso(TransicaoCaso.SUCESSO)
 
     # Override
     def _trata_caso_inviavel(self):
