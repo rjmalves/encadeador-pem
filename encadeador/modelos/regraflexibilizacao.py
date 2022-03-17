@@ -1,9 +1,8 @@
 from abc import abstractmethod
-from logging import Logger
 from typing import List, Tuple
 import numpy as np  # type: ignore
 from idecomp.decomp.dadger import Dadger
-from idecomp.decomp.modelos.dadger import AC, ACVAZMIN, ACVERTJU, DP, FP, HE, CM
+from idecomp.decomp.modelos.dadger import AC, ACVAZMIN, ACVERTJU, DP, FP, CM
 
 from encadeador.modelos.inviabilidade import Inviabilidade
 from encadeador.modelos.inviabilidade import InviabilidadeEV
@@ -15,6 +14,7 @@ from encadeador.modelos.inviabilidade import InviabilidadeHE
 from encadeador.modelos.inviabilidade import InviabilidadeDEFMIN
 from encadeador.modelos.inviabilidade import InviabilidadeFP
 from encadeador.modelos.inviabilidade import InviabilidadeDeficit
+from encadeador.utils.log import Log
 
 
 class RegraFlexibilizacao:
@@ -43,13 +43,13 @@ class RegraFlexibilizacao:
         InviabilidadeDeficit: 2.0,
     }
 
-    def __init__(self, log: Logger) -> None:
-        self._log = log
+    def __init__(self) -> None:
+        pass
 
     @staticmethod
-    def factory(metodo: str, log: Logger) -> "RegraFlexibilizacao":
+    def factory(metodo: str) -> "RegraFlexibilizacao":
         if metodo == "absoluto":
-            return RegraFlexibilizacaoAbsoluto(log)
+            return RegraFlexibilizacaoAbsoluto()
         else:
             raise ValueError(f"Regra de flexibilização {metodo} não suportada")
 
@@ -133,8 +133,8 @@ class RegraFlexibilizacao:
 
 
 class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
-    def __init__(self, log: Logger) -> None:
-        super().__init__(log)
+    def __init__(self) -> None:
+        super().__init__()
 
     # Override
     def _flexibilizaEV(
@@ -169,7 +169,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             # Flexibiliza - Remove a consideração de evaporação na usina
             codigo = max_viol._codigo
             dadger.uh(codigo).evaporacao = False
-            self._log.info(
+            Log.log().info(
                 f"Flexibilizando EV {max_viol._codigo} "
                 + f" ({max_viol._nome_usina}) - "
                 + "Evaporação do registro UH desabilitada."
@@ -215,7 +215,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             novas_taxas = reg.taxas
             novas_taxas[idx] = novo_valor
             dadger.ti(max_viol._codigo).taxas = novas_taxas
-            self._log.info(
+            Log.log().info(
                 f"Flexibilizando TI {max_viol._codigo} -"
                 + f" Estágio {max_viol._estagio}: "
                 + f"{valor_atual} -> {novo_valor}"
@@ -276,7 +276,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 dadger.lv(
                     max_viol._codigo, max_viol._estagio
                 ).limites_superior = novo_valor
-            self._log.info(
+            Log.log().info(
                 f"Flexibilizando HV {max_viol._codigo} - Estágio"
                 + f" {max_viol._estagio} - {max_viol._limite}: "
                 + f"{valor_atual} -> {novo_valor}"
@@ -342,7 +342,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 dadger.lq(
                     max_viol._codigo, max_viol._estagio
                 ).limites_superiores = novos
-            self._log.info(
+            Log.log().info(
                 f"Flexibilizando HQ {max_viol._codigo} - Estágio"
                 + f" {max_viol._estagio} pat {max_viol._patamar}"
                 + f" - {max_viol._limite}: "
@@ -409,7 +409,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 dadger.lu(
                     max_viol._codigo, max_viol._estagio
                 ).limites_superiores = novos
-            self._log.info(
+            Log.log().info(
                 f"Flexibilizando RE {max_viol._codigo} - Estágio"
                 + f" {max_viol._estagio} pat {max_viol._patamar}"
                 + f" - {max_viol._limite}: "
@@ -448,19 +448,19 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             max_viol = __inv_maxima_violacao_identificada(inviabilidades, inv)
             # Procura por um registro FP
             try:
-                reg = dadger.fp(max_viol._codigo, 1)
+                dadger.fp(max_viol._codigo, 1)
                 # Procura por um AC VERTJU
                 try:
-                    reg = dadger.ac(max_viol._codigo, "VERTJU")
-                    self._log.info(
+                    reg_ac = dadger.ac(max_viol._codigo, "VERTJU")
+                    Log.log().info(
                         "Flexibilizando FP - "
                         + "Registro AC VERTJU"
                         + f" para a usina {max_viol._codigo} "
                         + f" ({max_viol._usina}) = 0"
                     )
-                    reg._modificacao._dados = 0
+                    reg_ac._modificacao._dados = 0
                 except ValueError:
-                    self._log.warning(
+                    Log.log().warning(
                         "Flexibilizando FP - "
                         + "Não foi encontrado registro AC VERTJU"
                         + f" para a usina {max_viol._codigo} "
@@ -474,7 +474,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                     dadger.cria_registro(dadger.ac(169, "NPOSNW"), reg_ac_novo)
 
             except ValueError:
-                self._log.warning(
+                Log.log().warning(
                     "Flexibilizando FP - "
                     + "Não foi encontrado registro FP"
                     + f" para a usina {max_viol._codigo} "
@@ -528,7 +528,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             try:
                 reg = dadger.ac(max_viol._codigo, "VAZMIN")
             except ValueError:
-                self._log.warning(
+                Log.log().warning(
                     "Flexibilizando DEFMIN - "
                     + "Não foi encontrado registro AC VAZMIN"
                     + f" para a usina {max_viol._codigo} "
@@ -545,7 +545,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             # Flexibiliza
             valor_flex = int(np.ceil(max_viol._violacao))
             novo_valor = np.max([0, reg._modificacao._dados - valor_flex])
-            self._log.info(
+            Log.log().info(
                 f"Flexibilizando DEFMIN {max_viol._codigo} -"
                 + f" Estágio {max_viol._estagio}:"
                 + f" {reg._modificacao._dados} -> {novo_valor}"
@@ -596,7 +596,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             valor_flex = max_viol._violacao + delta
             novo_valor = max([0, valor_atual - valor_flex])
             dadger.he(max_viol._codigo, max_viol._estagio).limite = novo_valor
-            self._log.info(
+            Log.log().info(
                 f"Flexibilizando HE {max_viol._codigo} - Estágio"
                 + f" {max_viol._estagio} - {max_viol._limite}: "
                 + f"{valor_atual} -> {novo_valor}"
@@ -636,7 +636,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
 
         # Estrutura para conter as tuplas
         # (código, estágio, limite) já flexibilizados
-        flexibilizados: List[Tuple[int, int, str]] = []
+        flexibilizados: List[Tuple[int, str]] = []
         for inv in inviabilidades:
             # Ignora os cenários do 2º mês
             if inv._estagio == dadger.lista_registros(DP)[-1].estagio:
@@ -675,9 +675,9 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                                 + f"{reg.tipo_penalidade}: {valor_atual} ->"
                                 + f" {novo_valor}"
                             )
-                            self._log.info(msg)
+                            Log.log().info(msg)
                             if novo_valor == 0:
-                                self._log.warning(
+                                Log.log().warning(
                                     f"Valor da HE {reg.codigo} chegou a"
                                     + " 0. e deveria ser"
                                     + f" {valor_atual - valor_flex}"

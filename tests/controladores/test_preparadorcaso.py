@@ -33,8 +33,7 @@ def test_preparador_newave_prepara():
     chdir(DIR_TESTE)
     load_dotenv("encadeia.cfg", override=True)
     cfg = Configuracoes.le_variaveis_ambiente()
-    c = ArmazenadorCaso.recupera_caso(cfg,
-                                      CAMINHO_TESTE_NW)
+    c = ArmazenadorCaso.recupera_caso(cfg, CAMINHO_TESTE_NW)
     p = PreparadorCaso.factory(c, log)
     r = p.prepara_caso()
     assert r
@@ -45,8 +44,7 @@ def test_preparador_newave_encadeia_primeiro():
     chdir(DIR_TESTE)
     load_dotenv("encadeia.cfg", override=True)
     cfg = Configuracoes.le_variaveis_ambiente()
-    c = ArmazenadorCaso.recupera_caso(cfg,
-                                      CAMINHO_TESTE_NW)
+    c = ArmazenadorCaso.recupera_caso(cfg, CAMINHO_TESTE_NW)
     p = PreparadorCaso.factory(c, log)
     r = p.encadeia_variaveis(None)
     assert r
@@ -57,12 +55,12 @@ def test_preparador_newave_encadeia_meio(mocker: MockerFixture):
     chdir(DIR_TESTE)
     load_dotenv("encadeia.cfg", override=True)
     cfg = Configuracoes.le_variaveis_ambiente()
-    c = ArmazenadorCaso.recupera_caso(cfg,
-                                      CAMINHO_TESTE_NW)
-    ca = ArmazenadorCaso.recupera_caso(cfg,
-                                       CAMINHO_TESTE_DCP)
-    m = mocker.patch("encadeador.controladores.encadeadorcaso" +
-                     ".EncadeadorDECOMPNEWAVE.encadeia")
+    c = ArmazenadorCaso.recupera_caso(cfg, CAMINHO_TESTE_NW)
+    ca = ArmazenadorCaso.recupera_caso(cfg, CAMINHO_TESTE_DCP)
+    m = mocker.patch(
+        "encadeador.controladores.encadeadorcaso"
+        + ".EncadeadorDECOMPNEWAVE.encadeia"
+    )
     m.return_value = True
     p = PreparadorCaso.factory(c, log)
     r = p.encadeia_variaveis(ca)
@@ -74,13 +72,13 @@ def test_preparador_decomp(mocker: MockerFixture):
     chdir(DIR_TESTE)
     load_dotenv("encadeia.cfg", override=True)
     cfg = Configuracoes.le_variaveis_ambiente()
-    c_ant = ArmazenadorCaso.recupera_caso(cfg,
-                                          CAMINHO_TESTE_NW)
-    c = ArmazenadorCaso.recupera_caso(cfg,
-                                      CAMINHO_TESTE_DCP)
+    c_ant = ArmazenadorCaso.recupera_caso(cfg, CAMINHO_TESTE_NW)
+    c = ArmazenadorCaso.recupera_caso(cfg, CAMINHO_TESTE_DCP)
     p = PreparadorCaso.factory(c, log)
-    m = mocker.patch("encadeador.controladores.preparadorcaso" +
-                     ".SintetizadorNEWAVE.verifica_cortes_extraidos")
+    m = mocker.patch(
+        "encadeador.controladores.preparadorcaso"
+        + ".SintetizadorNEWAVE.verifica_cortes_extraidos"
+    )
     m.return_value = True
     r = p.prepara_caso(caso_cortes=c_ant)
     assert r
@@ -91,8 +89,7 @@ def test_preparador_decomp_encadeia_primeiro():
     chdir(DIR_TESTE)
     load_dotenv("encadeia.cfg", override=True)
     cfg = Configuracoes.le_variaveis_ambiente()
-    c = ArmazenadorCaso.recupera_caso(cfg,
-                                      CAMINHO_TESTE_DCP)
+    c = ArmazenadorCaso.recupera_caso(cfg, CAMINHO_TESTE_DCP)
     p = PreparadorCaso.factory(c, log)
     r = p.encadeia_variaveis(None)
     assert r
@@ -103,12 +100,12 @@ def test_preparador_decomp_encadeia_meio(mocker: MockerFixture):
     chdir(DIR_TESTE)
     load_dotenv("encadeia.cfg", override=True)
     cfg = Configuracoes.le_variaveis_ambiente()
-    c = ArmazenadorCaso.recupera_caso(cfg,
-                                      CAMINHO_TESTE_DCP)
-    ca = ArmazenadorCaso.recupera_caso(cfg,
-                                       CAMINHO_TESTE_DCP)
-    m = mocker.patch("encadeador.controladores.encadeadorcaso" +
-                     ".EncadeadorDECOMPDECOMP.encadeia")
+    c = ArmazenadorCaso.recupera_caso(cfg, CAMINHO_TESTE_DCP)
+    ca = ArmazenadorCaso.recupera_caso(cfg, CAMINHO_TESTE_DCP)
+    m = mocker.patch(
+        "encadeador.controladores.encadeadorcaso"
+        + ".EncadeadorDECOMPDECOMP.encadeia"
+    )
     m.return_value = True
     p = PreparadorCaso.factory(c, log)
     r = p.encadeia_variaveis(ca)

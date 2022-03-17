@@ -1,100 +1,64 @@
 from os.path import join
-from logging import Logger
 from typing import Optional
-import time
 import pandas as pd  # type: ignore
 
 from encadeador.modelos.caso import Caso
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.dadoscaso import NOME_ARQUIVO_ESTADO
-from encadeador.modelos.arvorecasos import ArvoreCasos
-from encadeador.modelos.dadosestudo import DadosEstudo
-from encadeador.modelos.dadoscaso import INTERVALO_RETRY_ESCRITA
-from encadeador.modelos.dadoscaso import MAX_RETRY_ESCRITA
+from encadeador.modelos.estudo import Estudo
+from encadeador.utils.log import Log
+from encadeador.utils.io import escreve_df_em_csv, escreve_arquivo_json
 
 ARQUIVO_PROXIMO_CASO = "proximo_caso.csv"
-ARQUIVO_RESUMO_ESTADOS = "estudo_encadeado.csv"
 ARQUIVO_RESUMO_NEWAVES = "newaves_encadeados.csv"
 ARQUIVO_RESUMO_DECOMPS = "decomps_encadeados.csv"
-ARQUIVO_RESUMO_RESERVATORIOS = "resevatorios_encadeados.csv"
+ARQUIVO_RESUMO_RESERVATORIOS = "reservatorios_encadeados.csv"
 ARQUIVO_CONVERGENCIA_NEWAVES = "convergencia_newaves.csv"
 ARQUIVO_CONVERGENCIA_DECOMPS = "convergencia_decomps.csv"
 ARQUIVO_INVIABILIDADES_DECOMPS = "inviabilidades_decomps.csv"
 
 
 class SintetizadorEstudo:
-    def __init__(self, arvore: ArvoreCasos, log: Logger) -> None:
-        self._arvore = arvore
-        self._log = log
+    def __init__(self, estudo: Estudo) -> None:
+        self._estudo = estudo
 
     @staticmethod
-    def sintetiza_proximo_caso(caso: Optional[Caso], cfg: Configuracoes):
-        # TODO - quando usar o padrão Singleton, não precisa
-        # mais passar as Configurações
+    def sintetiza_proximo_caso(caso: Optional[Caso]):
         df_proximo_caso = pd.DataFrame(columns=["Caminho"])
         if caso is not None:
             caminho = join(caso.caminho, NOME_ARQUIVO_ESTADO)
             df_proximo_caso["Caminho"] = [caminho]
-        num_retry = 0
-        while num_retry < MAX_RETRY_ESCRITA:
-            try:
-                df_proximo_caso.to_csv(
-                    join(cfg.caminho_base_estudo, ARQUIVO_PROXIMO_CASO)
-                )
-                return
-            except OSError:
-                num_retry += 1
-                time.sleep(INTERVALO_RETRY_ESCRITA)
-                continue
-            except BlockingIOError:
-                num_retry += 1
-                time.sleep(INTERVALO_RETRY_ESCRITA)
-                continue
-        raise RuntimeError("Erro na sintese do próximo caso do estudo " + "encadeado.")
+            arq = join(
+                Configuracoes().caminho_base_estudo, ARQUIVO_PROXIMO_CASO
+            )
+            escreve_arquivo_json(arq, {"Caminho": caminho})
+        else:
+            raise RuntimeError(
+                "Erro na sintese do próximo caso do estudo " + "encadeado."
+            )
 
     def sintetiza_estudo(self) -> bool:
-        self._log.info("Sintetizando dados do estudo encadeado")
-        num_retry = 0
-        while num_retry < MAX_RETRY_ESCRITA:
-            try:
-                dados = DadosEstudo.resume_arvore(self._arvore)
-                # TODO - Ao invés de pegar o primeiro caso para ter as
-                # configurações, substituir pelo padrão Singleton
-                cfg = self._arvore.casos[0].configuracoes
-                diretorio_estudo = cfg.caminho_base_estudo
-                resumo_estados = join(diretorio_estudo, ARQUIVO_RESUMO_ESTADOS)
-                resumo_newaves = join(diretorio_estudo, ARQUIVO_RESUMO_NEWAVES)
-                resumo_decomps = join(diretorio_estudo, ARQUIVO_RESUMO_DECOMPS)
-                resumo_reserv = join(diretorio_estudo, ARQUIVO_RESUMO_RESERVATORIOS)
-                convergencias_newaves = join(
-                    diretorio_estudo, ARQUIVO_CONVERGENCIA_NEWAVES
-                )
-                convergencias_decomps = join(
-                    diretorio_estudo, ARQUIVO_CONVERGENCIA_DECOMPS
-                )
-                inviabilidades_decomps = join(
-                    diretorio_estudo, ARQUIVO_INVIABILIDADES_DECOMPS
-                )
-                dados.resumo_estados.to_csv(resumo_estados)
-                dados.resumo_newaves.to_csv(resumo_newaves)
-                dados.resumo_decomps.to_csv(resumo_decomps)
-                dados.resumo_reservatorios.to_csv(resumo_reserv)
-                dados.convergencias_newaves.to_csv(convergencias_newaves)
-                dados.convergencias_decomps.to_csv(convergencias_decomps)
-                dados.inviabilidades_decomps.to_csv(inviabilidades_decomps)
-                return True
-            except OSError as e:
-                num_retry += 1
-                time.sleep(INTERVALO_RETRY_ESCRITA)
-                self._log.warning(f"Retry na síntese do estudo: {e}")
-                continue
-            except BlockingIOError as e:
-                num_retry += 1
-                time.sleep(INTERVALO_RETRY_ESCRITA)
-                self._log.warning(f"Retry na síntese do estudo: {e}")
-                continue
-            except Exception as e:
-                self._log.error(f"Erro na síntese do estudo: {e}")
-                break
-        self._log.info("Erro na síntese do estudo encadeado")
-        return False
+        Log.log().info("Sintetizando dados do estudo encadeado")
+        dados = self._estudo.dados
+        diretorio_estudo = Configuracoes().caminho_base_estudo
+        resumo_newaves = join(diretorio_estudo, ARQUIVO_RESUMO_NEWAVES)
+        resumo_decomps = join(diretorio_estudo, ARQUIVO_RESUMO_DECOMPS)
+        resumo_reservatorios = join(
+            diretorio_estudo, ARQUIVO_RESUMO_RESERVATORIOS
+        )
+        convergencias_newaves = join(
+            diretorio_estudo, ARQUIVO_CONVERGENCIA_NEWAVES
+        )
+        convergencias_decomps = join(
+            diretorio_estudo, ARQUIVO_CONVERGENCIA_DECOMPS
+        )
+        inviabilidades_decomps = join(
+            diretorio_estudo, ARQUIVO_INVIABILIDADES_DECOMPS
+        )
+        escreve_df_em_csv(dados.resumo_newaves, resumo_newaves)
+        escreve_df_em_csv(dados.resumo_decomps, resumo_decomps)
+        escreve_df_em_csv(dados.resumo_reservatorios, resumo_reservatorios)
+        escreve_df_em_csv(dados.convergencias_newaves, convergencias_newaves)
+        escreve_df_em_csv(dados.convergencias_decomps, convergencias_decomps)
+        escreve_df_em_csv(dados.inviabilidades_decomps, inviabilidades_decomps)
+        return True

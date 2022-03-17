@@ -1,18 +1,15 @@
 from enum import Enum
 
 
-class EstadoJob(Enum):
+class EstadoEstudo(Enum):
     NAO_INICIADO = "NAO_INICIADO"
-    ESPERANDO = "ESPERANDO"
     EXECUTANDO = "EXECUTANDO"
-    DELETANDO = "DELETANDO"
-    TIMEOUT = "TIMEOUT"
+    CONCLUIDO = "CONCLUIDO"
     ERRO = "ERRO"
-    FINALIZADO = "FINALIZADO"
 
     @staticmethod
-    def factory(valor: str) -> "EstadoJob":
-        for estado in EstadoJob:
+    def factory(valor: str) -> "EstadoEstudo":
+        for estado in EstadoEstudo:
             if estado.value == valor:
                 return estado
         raise ValueError(f"Estado {valor} não suportado")

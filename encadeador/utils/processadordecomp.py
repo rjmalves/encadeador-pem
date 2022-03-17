@@ -1,6 +1,6 @@
 from idecomp.decomp.relato import Relato
 from idecomp.decomp.relgnl import RelGNL
-import pandas as pd
+import pandas as pd  # type: ignore
 
 
 class ProcessadorDecomp:
@@ -98,12 +98,12 @@ class ProcessadorDecomp:
             df_gt_min_max.loc[4, "GT Max"] = float(soma_gt.loc["GT Max"])
             return df_gt_min_max
 
-        df_completo = None
+        df_completo = pd.DataFrame()
         n_semanas = len(list(relato.volume_util_reservatorios.columns)) - 3
         for i in range(1, n_semanas + 1):
             df = extrai_gt_percentual_semana(relato, relgnl, i)
             df["Estágio"] = i
-            if df_completo is None:
+            if df_completo.empty:
                 df_completo = df
             else:
                 df_completo = pd.concat([df_completo, df], ignore_index=True)

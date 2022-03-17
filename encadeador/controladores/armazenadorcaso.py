@@ -1,31 +1,31 @@
-from logging import Logger
 from os.path import isfile
 from os.path import join
 
-from encadeador.modelos.configuracoes import Configuracoes
-from encadeador.modelos.dadoscaso import DadosCaso
 from encadeador.modelos.caso import Caso
+from encadeador.utils.log import Log
+from encadeador.utils.io import le_arquivo_json, escreve_arquivo_json
 
-NOME_ARQUIVO_ESTADO = "caso_encadeado.csv"
+NOME_ARQUIVO_ESTADO = "caso_encadeado.json"
 
 
 class ArmazenadorCaso:
-    def __init__(self, caso: Caso, log: Logger) -> None:
+    def __init__(self, caso: Caso) -> None:
         self._caso = caso
-        self._log = log
 
     def armazena_caso(self) -> bool:
         try:
-            self._caso._dados.escreve_arquivo()
+            caminho = join(self._caso.caminho, NOME_ARQUIVO_ESTADO)
+            dados = self._caso.to_json()
+            escreve_arquivo_json(caminho, dados)
             return True
         except Exception as e:
-            self._log.error(
+            Log.log().error(
                 "Erro no armazenamento do caso" + f" {self._caso.nome}: {e}"
             )
             return False
 
     @staticmethod
-    def recupera_caso(cfg: Configuracoes, caminho: str) -> Caso:
+    def recupera_caso(caminho: str) -> Caso:
 
         # Se não tem arquivo de resumo, o caso não começou a ser rodado
         arq = join(caminho, NOME_ARQUIVO_ESTADO)
@@ -36,10 +36,7 @@ class ArmazenadorCaso:
             )
 
         # Se tem, então o caso pelo menos começou
-        dados = DadosCaso.le_arquivo(caminho)
-        c = Caso.factory(dados.programa)
-        c.recupera_caso_dos_dados(dados, cfg)
-        return c
+        return Caso.from_json(le_arquivo_json(arq))
 
     @property
     def caso(self) -> Caso:

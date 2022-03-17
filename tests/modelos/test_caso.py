@@ -18,11 +18,7 @@ REVISAO_TESTE = 0
 def constroi_caso_configurado_teste(caso: Caso) -> Caso:
     load_dotenv(ARQ_CFG, override=True)
     cfg = Configuracoes.le_variaveis_ambiente()
-    caso.configura_caso(CAMINHO_TESTE,
-                        ANO_TESTE,
-                        MES_TESTE,
-                        REVISAO_TESTE,
-                        cfg)
+    caso.configura_caso(CAMINHO_TESTE, ANO_TESTE, MES_TESTE, REVISAO_TESTE, cfg)
     return caso
 
 

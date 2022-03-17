@@ -1,9 +1,11 @@
 from abc import abstractmethod
-import time
+from typing import Dict, List, Any
 
 from encadeador.modelos.dadoscaso import DadosCaso
 from encadeador.modelos.configuracoes import Configuracoes
-from encadeador.modelos.estadojob import EstadoJob
+from encadeador.modelos.job import Job
+from encadeador.modelos.estadocaso import EstadoCaso
+from encadeador.utils.log import Log
 
 
 class Caso:
@@ -16,228 +18,180 @@ class Caso:
 
     def __init__(
         self,
+        dados: DadosCaso,
+        jobs: List[Job],
+        estado: EstadoCaso = EstadoCaso.NAO_INICIADO,
     ) -> None:
-        self._dados: DadosCaso = None  # type: ignore
-        self._configuracoes: Configuracoes = None  # type: ignore
+        self._dados = dados
+        self._jobs = jobs
+        self._estado = estado
 
     @staticmethod
-    def factory(prog: str) -> "Caso":
-        if prog == "NEWAVE":
-            return CasoNEWAVE()
-        elif prog == "DECOMP":
-            return CasoDECOMP()
+    def factory(
+        dados: DadosCaso,
+        jobs: List[Job],
+        estado: EstadoCaso = EstadoCaso.NAO_INICIADO,
+    ) -> "Caso":
+        if dados.programa == "NEWAVE":
+            return CasoNEWAVE(dados, jobs, estado)
+        elif dados.programa == "DECOMP":
+            return CasoDECOMP(dados, jobs, estado)
         else:
-            raise ValueError(f"Programa {prog} não suportado")
+            raise ValueError(f"Programa {dados.programa} não suportado")
 
+    @staticmethod
+    def from_json(json_dict: Dict[str, Any]):
+        dados = DadosCaso.from_json(json_dict["_dados"])
+        jobs = [Job.from_json(j) for j in json_dict["_jobs"]]
+        estado = EstadoCaso.factory(json_dict["_estado"])
+        return Caso.factory(dados, jobs, estado)
+
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "_dados": self._dados.to_json(),
+            "_jobs": [j.to_json() for j in self._jobs],
+            "_estado": str(self._estado.value),
+        }
+
+    def atualiza(self, estado: EstadoCaso):
+        Log.log().info(f"Caso: {self._dados.nome} - estado -> {estado.value}")
+        self._estado = estado
+
+    def adiciona_job(self, job: Job, retry: bool):
+        if retry:
+            self._jobs[-1] = job
+        else:
+            self._jobs.append(job)
+
+    @staticmethod
     @abstractmethod
-    def configura_caso(
-        self, caminho: str, ano: int, mes: int, revisao: int, cfg: Configuracoes
-    ):
+    def gera_dados_caso(caminho: str, ano: int, mes: int, revisao: int):
         pass
 
     @abstractmethod
     def _constroi_nome_caso(self, ano: int, mes: int, revisao: int) -> str:
         pass
 
-    @abstractmethod
-    def _obtem_numero_processadores(self) -> int:
-        pass
-
-    def reseta_parametros_execucao(self):
-        self._dados.instante_entrada_fila = 0
-        self._dados.instante_inicio_execucao = 0
-        self._dados.instante_fim_execucao = 0
-        self._dados.sucesso = False
-
-    def inicializa_parametros_execucao(self):
-        self.reseta_parametros_execucao()
-        self._dados.numero_tentativas = 0
-        procs = self._obtem_numero_processadores()
-        self._dados.numero_processadores = procs
-        self._dados.sucesso = False
-        self._dados.estado = EstadoJob.NAO_INICIADO
-
-    def coloca_caso_na_fila(self):
-        self.reseta_parametros_execucao()
-        self._dados.instante_entrada_fila = time.time()
-        self._dados.estado = EstadoJob.ESPERANDO
-
-    def inicia_caso(self):
-        self._dados.instante_inicio_execucao = time.time()
-        self._dados.numero_tentativas += 1
-        self._dados.estado = EstadoJob.EXECUTANDO
-
-    def finaliza_caso(self, sucesso: bool, erro: bool = False):
-        self._dados.sucesso = sucesso
-        self._dados.instante_fim_execucao = time.time()
-        if erro:
-            self._dados.estado = EstadoJob.ERRO
-        else:
-            self._dados.estado = EstadoJob.CONCLUIDO
-
-    def adiciona_flexibilizacao(self):
-        self._dados.adiciona_flexibilizacao()
-
-    def recupera_caso_dos_dados(self, dados: DadosCaso, cfg: Configuracoes):
-        self._dados = dados
-        self._configuracoes = cfg
-
-    @staticmethod
-    def _verifica_caso_configurado(valor):
-        if valor is None:
+    def _verifica_caso_configurado(self):
+        if self._dados is None:
             raise ValueError("Caso não configurado!")
-        return valor
 
     @property
     def caminho(self) -> str:
-        Caso._verifica_caso_configurado(self._dados)
+        self._verifica_caso_configurado()
         return self._dados.caminho
 
     @caminho.setter
-    def caminho(self, c: str) -> str:
+    def caminho(self, c: str):
         self._dados.caminho = c
 
     @property
     def nome(self) -> str:
-        Caso._verifica_caso_configurado(self._dados)
+        self._verifica_caso_configurado()
         return self._dados.nome
 
     @property
-    def configuracoes(self) -> Configuracoes:
-        Caso._verifica_caso_configurado(self._configuracoes)
-        return self._configuracoes
-
-    @property
-    def instante_entrada_fila(self) -> float:
-        return self._dados.instante_entrada_fila
-
-    @property
-    def instante_inicio_execucao(self) -> float:
-        return self._dados.instante_inicio_execucao
-
-    @property
-    def instante_fim_execucao(self) -> float:
-        return self._dados.instante_fim_execucao
-
-    @property
     def tempo_fila(self) -> float:
-        Caso._verifica_caso_configurado(self._dados)
-        if self.instante_entrada_fila == 0:
-            t_fila = 0.0
-        elif self.instante_inicio_execucao == 0:
-            t_fila = time.time() - self.instante_entrada_fila
-        else:
-            t_fila = self.instante_inicio_execucao - self.instante_entrada_fila
-        return t_fila
+        self._verifica_caso_configurado()
+        return sum([j.tempo_fila for j in self._jobs])
 
     @property
     def tempo_execucao(self) -> float:
-        Caso._verifica_caso_configurado(self._dados)
-        if self.instante_inicio_execucao == 0:
-            t_exec = 0.0
-        elif self.instante_fim_execucao == 0:
-            t_exec = time.time() - self.instante_inicio_execucao
-        else:
-            t_exec = self.instante_fim_execucao - self.instante_inicio_execucao
-        return t_exec
+        self._verifica_caso_configurado()
+        return sum([j.tempo_execucao for j in self._jobs])
 
     @property
     def ano(self) -> int:
-        Caso._verifica_caso_configurado(self._dados)
+        self._verifica_caso_configurado()
         return self._dados.ano
 
     @property
     def mes(self) -> int:
-        Caso._verifica_caso_configurado(self._dados)
+        self._verifica_caso_configurado()
         return self._dados.mes
 
     @property
     def revisao(self) -> int:
-        Caso._verifica_caso_configurado(self._dados)
+        self._verifica_caso_configurado()
         return self._dados.revisao
 
     @property
-    def numero_tentativas(self) -> int:
-        Caso._verifica_caso_configurado(self._dados)
-        return self._dados.numero_tentativas
-
-    @property
-    def numero_processadores(self) -> int:
-        Caso._verifica_caso_configurado(self._dados)
-        return self._dados.numero_processadores
-
-    @property
-    def sucesso(self) -> bool:
-        Caso._verifica_caso_configurado(self._dados)
-        return self._dados.sucesso
-
-    @property
     def numero_flexibilizacoes(self) -> int:
-        Caso._verifica_caso_configurado(self._dados)
-        return self._dados.numero_flexibilizacoes
+        return len(self._jobs) - 1
 
     @property
-    def estado(self) -> EstadoJob:
-        return self._dados.estado
+    def estado(self) -> EstadoCaso:
+        return self._estado
+
+    @property
+    @abstractmethod
+    def numero_processadores(self) -> int:
+        pass
 
 
 class CasoNEWAVE(Caso):
-    def __init__(self) -> None:
-        super().__init__()
-
-    # Override
-    def configura_caso(
-        self, caminho: str, ano: int, mes: int, revisao: int, cfg: Configuracoes
-    ):
-        self._configuracoes = cfg
-        nome = self._constroi_nome_caso(ano, mes, revisao)
-        procs = self._obtem_numero_processadores()
-        self._dados = DadosCaso.obtem_dados_do_caso(
-            "NEWAVE", caminho, nome, ano, mes, revisao, procs
+    @staticmethod
+    def from_json(json_dict: Dict[str, Any]):
+        return CasoNEWAVE(
+            DadosCaso.from_json(json_dict["_dados"]),
+            [Job.from_json(j) for j in json_dict["_jobs"]],
         )
 
-    def _obtem_numero_processadores(self) -> int:
+    # Override
+    @staticmethod
+    def gera_dados_caso(caminho: str, ano: int, mes: int, revisao: int):
+        nome = CasoNEWAVE._constroi_nome_caso(ano, mes, revisao)
+        return DadosCaso("NEWAVE", caminho, nome, ano, mes, revisao)
+
+    # Override
+    @property
+    def numero_processadores(self) -> int:
         # TODO - Ler o dger.dat e conferir as restrições de número
         # de processadores (séries forward)
-        minimo = self.configuracoes.processadores_minimos_newave
-        maximo = self.configuracoes.processadores_maximos_newave
-        ajuste = self.configuracoes.ajuste_processadores_newave
+        minimo = Configuracoes().processadores_minimos_newave
+        maximo = Configuracoes().processadores_maximos_newave
+        ajuste = Configuracoes().ajuste_processadores_newave
         num_proc = minimo
         if ajuste:
             num_proc = maximo
         return num_proc
 
-    def _constroi_nome_caso(self, ano: int, mes: int, revisao: int) -> str:
-        return f"{self.configuracoes.nome_estudo} - NW {mes}/{ano}"
+    # Override
+    @staticmethod
+    def _constroi_nome_caso(ano: int, mes: int, revisao: int) -> str:
+        return f"{Configuracoes().nome_estudo} - NW {mes}/{ano}"
 
 
 class CasoDECOMP(Caso):
-    def __init__(self) -> None:
-        super().__init__()
-
-    def configura_caso(
-        self, caminho: str, ano: int, mes: int, revisao: int, cfg: Configuracoes
-    ):
-        self._configuracoes = cfg
-        nome = self._constroi_nome_caso(ano, mes, revisao)
-        procs = self._obtem_numero_processadores()
-        self._dados = DadosCaso.obtem_dados_do_caso(
-            "DECOMP", caminho, nome, ano, mes, revisao, procs
+    @staticmethod
+    def from_json(json_dict: Dict[str, Any]):
+        return CasoDECOMP(
+            DadosCaso.from_json(json_dict["_dados"]),
+            [Job.from_json(j) for j in json_dict["_jobs"]],
         )
 
-    def _obtem_numero_processadores(self) -> int:
+    # Override
+    @staticmethod
+    def gera_dados_caso(caminho: str, ano: int, mes: int, revisao: int):
+        nome = CasoDECOMP._constroi_nome_caso(ano, mes, revisao)
+        return DadosCaso("DECOMP", caminho, nome, ano, mes, revisao)
+
+    # Override
+    @property
+    def numero_processadores(self) -> int:
         # TODO - Ler o dadger.rvX e conferir as restrições de número
         # de processadores (séries do 2º mês)
-        minimo = self.configuracoes.processadores_minimos_decomp
-        maximo = self.configuracoes.processadores_maximos_decomp
-        ajuste = self.configuracoes.ajuste_processadores_decomp
+        minimo = Configuracoes().processadores_minimos_decomp
+        maximo = Configuracoes().processadores_maximos_decomp
+        ajuste = Configuracoes().ajuste_processadores_decomp
         num_proc = minimo
         if ajuste:
             num_proc = maximo
         return num_proc
 
-    def _constroi_nome_caso(self, ano: int, mes: int, revisao: int) -> str:
+    # Override
+    @staticmethod
+    def _constroi_nome_caso(ano: int, mes: int, revisao: int) -> str:
         return (
-            f"{self.configuracoes.nome_estudo} - DC"
-            + f" {mes}/{ano} rv{revisao}"
+            f"{Configuracoes().nome_estudo} - DC" + f" {mes}/{ano} rv{revisao}"
         )

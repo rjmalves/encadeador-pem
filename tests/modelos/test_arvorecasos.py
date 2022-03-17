@@ -17,8 +17,7 @@ def constroi_arvore_casos_teste() -> ArvoreCasos:
     log = getLogger()
     load_dotenv("encadeia.cfg", override=True)
     cfg = Configuracoes.le_variaveis_ambiente()
-    return ArvoreCasos(cfg,
-                       log)
+    return ArvoreCasos(cfg, log)
 
 
 def test_arvorecasos_le_arquivos_casos():
@@ -26,15 +25,19 @@ def test_arvorecasos_le_arquivos_casos():
     a = constroi_arvore_casos_teste()
     a.le_arquivo_casos()
     chdir(DIR_INICIAL)
-    assert a._diretorios_revisoes == ["2021_01_rv0",
-                                      "2021_01_rv1",
-                                      "2021_01_rv2",
-                                      "2021_01_rv3"]
-    assert a._diretorios_casos == [join(DIR_TESTE, "2021_01_rv0", "newave"),
-                                   join(DIR_TESTE, "2021_01_rv0", "decomp"),
-                                   join(DIR_TESTE, "2021_01_rv1", "decomp"),
-                                   join(DIR_TESTE, "2021_01_rv2", "decomp"),
-                                   join(DIR_TESTE, "2021_01_rv3", "decomp")]
+    assert a._diretorios_revisoes == [
+        "2021_01_rv0",
+        "2021_01_rv1",
+        "2021_01_rv2",
+        "2021_01_rv3",
+    ]
+    assert a._diretorios_casos == [
+        join(DIR_TESTE, "2021_01_rv0", "newave"),
+        join(DIR_TESTE, "2021_01_rv0", "decomp"),
+        join(DIR_TESTE, "2021_01_rv1", "decomp"),
+        join(DIR_TESTE, "2021_01_rv2", "decomp"),
+        join(DIR_TESTE, "2021_01_rv3", "decomp"),
+    ]
 
 
 def test_arvorecasos_constroi_casos():
