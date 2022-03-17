@@ -330,7 +330,7 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
 
         # Lê o AdTerm do último NEWAVE rv0 e faz o encadeamento
         # com o despacho anterior
-        self.__processa_adterm(adterm)
+        self.__processa_adterm(adterm, term)
 
         # Lê o RelGNL do último decomp e atribui o despacho
         # determinado pelo decomp
