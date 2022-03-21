@@ -6,6 +6,7 @@ from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 from encadeador.controladores.encadeadorcaso import Encadeador
 from encadeador.controladores.sintetizadorcaso import SintetizadorNEWAVE
 from encadeador.modelos.configuracoes import Configuracoes
+from encadeador.modelos.regrareservatorio import RegraReservatorio
 from encadeador.utils.terminal import converte_codificacao
 from encadeador.utils.log import Log
 from inewave.newave import DGer, Arquivos, CVAR  # type: ignore
@@ -32,6 +33,14 @@ class PreparadorCaso:
 
     @abstractmethod
     def encadeia_variaveis(self, casos_anteriores: List[Caso]) -> bool:
+        pass
+
+    @abstractmethod
+    def aplica_regras_operacao_reservatorios(
+        self,
+        casos_anteriores: List[Caso],
+        regras_operacao: List[RegraReservatorio],
+    ) -> bool:
         pass
 
     @property
@@ -99,6 +108,13 @@ class PreparadorNEWAVE(PreparadorCaso):
                 + f"{casos_anteriores[-1].nome} -> {self.caso.nome}"
             )
             return False
+
+    def aplica_regras_operacao_reservatorios(
+        self,
+        casos_anteriores: List[Caso],
+        regras_operacao: List[RegraReservatorio],
+    ) -> bool:
+        pass
 
 
 class PreparadorDECOMP(PreparadorCaso):
@@ -202,3 +218,10 @@ class PreparadorDECOMP(PreparadorCaso):
                 + f" -> {self.caso.nome}"
             )
             return False
+
+    def aplica_regras_operacao_reservatorios(
+        self,
+        casos_anteriores: List[Caso],
+        regras_operacao: List[RegraReservatorio],
+    ) -> bool:
+        pass

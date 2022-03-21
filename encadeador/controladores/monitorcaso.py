@@ -11,6 +11,7 @@ from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.dadosjob import DadosJob
 from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.modelos.job import Job
+from encadeador.modelos.regrareservatorio import RegraReservatorio
 from encadeador.modelos.transicaocaso import TransicaoCaso
 from encadeador.modelos.transicaojob import TransicaoJob
 from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
@@ -226,7 +227,11 @@ class MonitorNEWAVE(MonitorCaso):
         return f"NW{self.caso.ano}{self.caso.mes}"
 
     # Override
-    def inicializa(self, casos_anteriores: List[Caso]) -> bool:
+    def inicializa(
+        self,
+        casos_anteriores: List[Caso],
+        regras_operacao_reservatorios: List[RegraReservatorio],
+    ) -> bool:
         """
         Realiza a inicialização do caso, isto é, a preparação dos
         arquivos para adequação às necessidades do estudo
@@ -251,7 +256,10 @@ class MonitorNEWAVE(MonitorCaso):
         preparador = PreparadorCaso.factory(self._caso)
         sucesso_prepara = preparador.prepara_caso()
         sucesso_encadeia = preparador.encadeia_variaveis(casos_anteriores)
-        return sucesso_prepara and sucesso_encadeia
+        sucesso_regras = preparador.aplica_regras_operacao_reservatorios(
+            casos_anteriores, regras_operacao_reservatorios
+        )
+        return sucesso_prepara and sucesso_encadeia and sucesso_regras
 
     # Override
     def _trata_fim_execucao(self):
@@ -304,7 +312,11 @@ class MonitorDECOMP(MonitorCaso):
         return f"DC{self.caso.ano}{self.caso.mes}{self.caso.revisao}"
 
     # Override
-    def inicializa(self, casos_anteriores: List[Caso]) -> bool:
+    def inicializa(
+        self,
+        casos_anteriores: List[Caso],
+        regras_operacao_reservatorios: List[RegraReservatorio],
+    ) -> bool:
         """
         Realiza a inicialização do caso, isto é, a preparação dos
         arquivos para adequação às necessidades do estudo
@@ -323,7 +335,10 @@ class MonitorDECOMP(MonitorCaso):
         )
         sucesso_prepara = preparador.prepara_caso(caso_cortes=ultimo_newave)
         sucesso_encadeia = preparador.encadeia_variaveis(casos_anteriores)
-        return sucesso_prepara and sucesso_encadeia
+        sucesso_regras = preparador.aplica_regras_operacao_reservatorios(
+            casos_anteriores, regras_operacao_reservatorios
+        )
+        return sucesso_prepara and sucesso_encadeia and sucesso_regras
 
     # Override
     def _trata_fim_execucao(self):
@@ -362,7 +377,8 @@ class MonitorDECOMP(MonitorCaso):
             raise RuntimeError()
         if not self.submete():
             Log.log().error(
-                f"Caso {self._caso.nome}: erro " + "na submissão do job do caso"
+                f"Caso {self._caso.nome}: erro "
+                + "na submissão do job do caso"
             )
             self._caso.atualiza(EstadoCaso.ERRO)
             self._transicao_caso(TransicaoCaso.ERRO)

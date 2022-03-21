@@ -7,6 +7,7 @@ from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.controladores.monitorestudo import MonitorEstudo
 from encadeador.controladores.armazenadorestudo import ArmazenadorEstudo
 from encadeador.controladores.sintetizadorestudo import SintetizadorEstudo
+from encadeador.modelos.regrareservatorio import RegraReservatorio
 from encadeador.utils.log import Log
 
 INTERVALO_POLL = 5.0
@@ -19,6 +20,15 @@ class App:
 
     def __constroi_estudo_encadeado(self):
         self._estudo = ArmazenadorEstudo.gera_estudo()
+        # Força as regras a serem sempre as lidas do CSV
+        # TODO - melhorar essa lógica (organização dos dados em DB)
+        caminho_regras = Configuracoes().arquivo_regras_operacao_reservatorios
+        if caminho_regras is not None:
+            self._estudo._regras_reservatorio = RegraReservatorio.from_csv(
+                caminho_regras
+            )
+        else:
+            self._estudo._regras_reservatorio = []
         self._monitor = MonitorEstudo(self._estudo)
         self._estudo.atualiza(EstadoEstudo.EXECUTANDO)
         sintetizador = SintetizadorEstudo(self._estudo)

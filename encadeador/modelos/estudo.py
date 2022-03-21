@@ -8,6 +8,7 @@ from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
 from encadeador.modelos.dadosestudo import DadosEstudo
 from encadeador.modelos.estadoestudo import EstadoEstudo
 from encadeador.modelos.estadocaso import EstadoCaso
+from encadeador.modelos.regrareservatorio import RegraReservatorio
 from encadeador.utils.log import Log
 
 
@@ -16,21 +17,30 @@ class Estudo:
         self,
         dados: DadosEstudo,
         casos: List[Caso],
+        regras_reservatorio: List[RegraReservatorio],
         estado: EstadoEstudo = EstadoEstudo.NAO_INICIADO,
     ):
         self._dados = dados
         self._casos = casos
+        self._regras_reservatorio = regras_reservatorio
         self._estado = estado
 
     @staticmethod
     def from_json(json_dict: Dict[str, Any]):
         dados = DadosEstudo.from_json(json_dict["_dados"])
+        regras_reservatorio = [
+            RegraReservatorio.from_json(r)
+            for r in json_dict["_regras_reservatorio"]
+        ]
         estado = EstadoEstudo.factory(json_dict["_estado"])
-        return Estudo(dados, [], estado)
+        return Estudo(dados, [], regras_reservatorio, estado)
 
     def to_json(self) -> Dict[str, Any]:
         return {
             "_dados": self._dados.to_json(),
+            "_regras_reservatorio": [
+                r.to_json() for r in self._regras_reservatorio
+            ],
             "_estado": str(self._estado.value),
         }
 

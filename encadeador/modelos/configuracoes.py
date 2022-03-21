@@ -5,6 +5,7 @@ from abc import abstractmethod
 import re
 from typing import List
 
+from encadeador.utils.log import Log
 from encadeador.utils.singleton import Singleton
 
 
@@ -46,6 +47,7 @@ class Configuracoes(metaclass=Singleton):
         self._fator_aumento_gap_decomp = None
         self._gap_maximo_decomp = None
         self._script_converte_codificacao = None
+        self._arquivo_regras_operacao_reservatorios = None
 
     @classmethod
     def le_variaveis_ambiente(cls) -> "Configuracoes":
@@ -83,6 +85,9 @@ class Configuracoes(metaclass=Singleton):
             .fator_aumento_gap_decomp("FATOR_AUMENTO_GAP_DECOMP")
             .gap_maximo_decomp("GAP_MAXIMO_DECOMP")
             .script_converte_codificacao("SCRIPT_CONVERTE_CODIFICACAO")
+            .arquivo_regras_operacao_reservatorios(
+                "ARQUIVO_REGRAS_OPERACAO_RESERVATORIOS"
+            )
             .build()
         )
         return c
@@ -341,6 +346,13 @@ class Configuracoes(metaclass=Singleton):
         """
         return self._script_converte_codificacao
 
+    @property
+    def arquivo_regras_operacao_reservatorios(self) -> str:
+        """
+        Caminho do arquivo com as regras de operação dos reservatórios.
+        """
+        return self._arquivo_regras_operacao_reservatorios
+
 
 class BuilderConfiguracoes:
     """ """
@@ -473,6 +485,10 @@ class BuilderConfiguracoes:
 
     @abstractmethod
     def script_converte_codificacao(self, variavel: str):
+        pass
+
+    @abstractmethod
+    def arquivo_regras_operacao_reservatorios(self, variavel: str):
         pass
 
 
@@ -851,5 +867,19 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         if not re.match(BuilderConfiguracoesENV.regex_alfanum, valor):
             raise ValueError(f"Nome de arquivo {valor} inválido.")
         self._configuracoes._script_converte_codificacao = valor
+        # Fluent method
+        return self
+
+    def arquivo_regras_operacao_reservatorios(self, variavel: str):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        # Confere se existe o arquivo no diretorio raiz de encadeamento
+        if not isfile(join(curdir, valor)):
+            Log.log().warning(
+                "Arquivo com as regras de operação de reservatórios não "
+                + f"encontrado: {valor}"
+            )
+            self._configuracoes._arquivo_lista_casos = None
+        else:
+            self._configuracoes._arquivo_lista_casos = valor
         # Fluent method
         return self
