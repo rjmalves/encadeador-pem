@@ -29,6 +29,16 @@ class RegraReservatorio:
         self._periodicidade = _periodicidade
         self._legenda_faixa = _legenda_faixa
 
+    def __str__(self) -> str:
+        return (
+            f"Regra: reservatório {self._codigo_reservatorio}"
+            + f" -> usina {self._codigo_usina} | {self._tipo_restricao}"
+            + f" mês {self._mes}. Faixa {self._legenda_faixa}: "
+            + f" ({self._volume_minimo}, {self._volume_maximo})"
+            + f" -> ({self._limite_minimo},{self._limite_maximo}). "
+            + f" Periodicidade {self._periodicidade}"
+        )
+
     @staticmethod
     def from_csv(caminho: str) -> List["RegraReservatorio"]:
         df = pd.read_csv(caminho, index_col=None, sep=";")
@@ -57,3 +67,39 @@ class RegraReservatorio:
 
     def to_json(self) -> Dict[str, Any]:
         return self.__dict__
+
+    @property
+    def codigo_reservatorio(self) -> int:
+        return self._codigo_reservatorio
+
+    @property
+    def codigo_usina(self) -> int:
+        return self._codigo_usina
+
+    @property
+    def tipo_restricao(self) -> str:
+        return self._tipo_restricao
+
+    @property
+    def mes(self) -> int:
+        return self._mes
+
+    @property
+    def volume_minimo(self) -> float:
+        return self._volume_minimo
+
+    @property
+    def volume_maximo(self) -> float:
+        return self._volume_maximo
+
+    @property
+    def limite_minimo(self) -> float:
+        return self._limite_minimo
+
+    @property
+    def limite_maximo(self) -> float:
+        return self._limite_maximo
+
+    @property
+    def periodicidade(self) -> str:
+        return self._periodicidade

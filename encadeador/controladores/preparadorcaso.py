@@ -7,6 +7,9 @@ from encadeador.controladores.encadeadorcaso import Encadeador
 from encadeador.controladores.sintetizadorcaso import SintetizadorNEWAVE
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.regrareservatorio import RegraReservatorio
+from encadeador.controladores.aplicadorregrasreservatorios import (
+    AplicadorRegrasReservatorios,
+)
 from encadeador.utils.terminal import converte_codificacao
 from encadeador.utils.log import Log
 from inewave.newave import DGer, Arquivos, CVAR  # type: ignore
@@ -114,7 +117,8 @@ class PreparadorNEWAVE(PreparadorCaso):
         casos_anteriores: List[Caso],
         regras_operacao: List[RegraReservatorio],
     ) -> bool:
-        pass
+        aplicador = AplicadorRegrasReservatorios.factory(self.caso)
+        return aplicador.aplica_regras(casos_anteriores, regras_operacao)
 
 
 class PreparadorDECOMP(PreparadorCaso):
@@ -224,4 +228,5 @@ class PreparadorDECOMP(PreparadorCaso):
         casos_anteriores: List[Caso],
         regras_operacao: List[RegraReservatorio],
     ) -> bool:
-        pass
+        aplicador = AplicadorRegrasReservatorios.factory(self.caso)
+        return aplicador.aplica_regras(casos_anteriores, regras_operacao)
