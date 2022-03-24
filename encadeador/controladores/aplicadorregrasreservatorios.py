@@ -2,13 +2,17 @@ from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
 from encadeador.modelos.regrareservatorio import RegraReservatorio
 from encadeador.utils.log import Log
 
+from inewave.newave.modelos.modif import USINA, VAZMINT
+from inewave.newave import Modif, RE
 from idecomp.decomp.modelos.dadger import DP, HQ, LQ
 from idecomp.decomp.dadger import Dadger
 from idecomp.decomp.relato import Relato
+from idecomp.decomp.hidr import Hidr
 from abc import abstractmethod
 from typing import List, Dict, Optional
 import pandas as pd  # type: ignore
 from datetime import date, timedelta
+from dateutil.relativedelta import relativedelta
 
 
 class AplicadorRegrasReservatorios:
@@ -61,13 +65,23 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
     def __init__(self, caso: CasoNEWAVE) -> None:
         super().__init__(caso)
 
+    MAPA_FICTICIAS_MODIF: Dict[int, List[int]] = {
+        156: [156, 295],
+        178: [172, 176, 178],
+    }
+    MAPA_FICTICIAS_RE: Dict[int, List[int]] = {
+        156: [156],
+        178: [172, 176, 178],
+    }
+
     # Override
     def identifica_regra_ativa(
         self,
         regras: List[RegraReservatorio],
         codigo_usina: int,
         volumes: pd.DataFrame,
-    ) -> Optional[RegraReservatorio]:
+        estagio: int,
+    ) -> Dict[int, Optional[RegraReservatorio]]:
         # TODO - Assume que uma usina só olha para um reservatório.
         # Não suporta o caso de uma usina depender de mais
         # de um volume.
@@ -76,9 +90,13 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
             for r in regras
             if r.codigo_usina == codigo_usina
         )
-        volume_inicio_mes = float(
-            volumes.loc[volumes["Número"] == codigo_reservatorio, "Estágio 1"]
+        volume_estagio = float(
+            volumes.loc[
+                volumes["Número"] == codigo_reservatorio,
+                f"Estágio {estagio}",
+            ]
         )
+        regras_ativas: Dict[str, Optional[RegraReservatorio]] = {}
         try:
             regra = next(
                 r
@@ -88,8 +106,8 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
                         r.codigo_usina == codigo_usina,
                         r.codigo_reservatorio == codigo_reservatorio,
                         r.volume_minimo
-                        <= volume_inicio_mes
-                        <= r.volume_maximo,
+                        <= float(volume_estagio)
+                        < r.volume_maximo,
                     ]
                 )
             )
@@ -98,38 +116,205 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
                 "Não foi encontrada regra de operação ativa "
                 + f"para a usina {codigo_usina} "
                 + f"(reservatório {codigo_reservatorio}) "
-                + f"no volume {volume_inicio_mes}"
+                + f"no volume {float(volume_estagio)}"
             )
             regra = None
-        return regra
-
-    def identifica_regras_ativas(
-        self, regras: List[RegraReservatorio], ultimo_decomp: CasoDECOMP
-    ) -> List[RegraReservatorio]:
-        # Lê o relato do último DECOMP
-        arq_relato = f"relato.rv{ultimo_decomp.revisao}"
-        relato = Relato.le_arquivo(ultimo_decomp.caminho, arq_relato)
-        # Obtém os volumes
-        volumes = relato.volume_util_reservatorios[
-            ["Usina", "Número", "Estágio 1"]
-        ]
-        # Obtém as regras ativas para cada usina
-        usinas_com_restricao = list(set([r.codigo_usina for r in regras]))
-        regras_ativas: List[RegraReservatorio] = []
-        for u in usinas_com_restricao:
-            regra = self.identifica_regra_ativa(regras, u, volumes)
-            if regra is not None:
-                regras_ativas.append(regra)
+            regras_ativas[estagio] = regra
         return regras_ativas
 
-    def obtem_produtibilidade_usina(self, codigo: int) -> float:
-        pass
+    def regras_estagios(
+        self,
+        regras: List[RegraReservatorio],
+        mapa_estagio_dia: Dict[int, date],
+    ) -> Dict[int, List[RegraReservatorio]]:
+        regras_mapeadas: Dict[int, List[RegraReservatorio]] = {}
+        for estagio, dia_fim in mapa_estagio_dia.items():
+            regras_mapeadas[estagio] = list(
+                set([r for r in regras if r.mes == dia_fim.month])
+            )
+        return regras_mapeadas
+
+    def identifica_regras_ativas(
+        self, regras: Dict[int, List[RegraReservatorio]], relato: Relato
+    ) -> Dict[int, List[RegraReservatorio]]:
+        # Obtém os volumes
+        volumes = relato.volume_util_reservatorios
+
+        regras_ativas_estagios: Dict[int, List[RegraReservatorio]] = {}
+        # Obtém as regras ativas para cada usina
+        for estagio, regras_estagio in regras.items():
+            usinas_com_restricao = list(
+                set([r.codigo_usina for r in regras_estagio])
+            )
+            regras_ativas: Dict[str, List[RegraReservatorio]] = {[]}
+            for u in usinas_com_restricao:
+                regras_estagios = self.identifica_regra_ativa(
+                    regras, u, volumes, estagio
+                )
+                if regras_estagios is not None:
+                    regras_ativas[estagio].append(regras_estagios)
+            regras_ativas_estagios[estagio] = regras_ativas
+        return regras_ativas_estagios
+
+    def obtem_ghmax_usina(self, codigo: int, qdef: float) -> float:
+        def aplica_polinomio(coeficientes: List, vol: float) -> float:
+            return sum([c * vol**i for i, c in enumerate(coeficientes)])
+
+        # Lê o hidr.dat do caso atual
+        hidr = Hidr.le_arquivo(self._caso.caminho).tabela
+        # Localiza os dados de interesse da usina
+        volmin = float(hidr.loc[codigo, "Volume Mínimo"])
+        volmax = float(hidr.loc[codigo, "Volume Máximo"])
+        volutil = volmax - volmin
+        vol65 = volmin + 0.65 * volutil
+        hjus = float(hidr.loc[codigo, "Canal de Fuga Médio"])
+        hmon = aplica_polinomio(
+            [float(hidr.loc[codigo, f"C{i} CV"]) for i in range(1, 6)], vol65
+        )
+        perdas = float(hidr.loc[codigo, "Perdas"])
+        hliq = hmon - hjus - perdas
+        prod = float(hidr.loc[codigo, "Produtibilidade Específica"])
+        prod_media = prod * hliq
+        return prod_media * qdef
+
+    def aplica_regra_qdef_modif(
+        self, regra: RegraReservatorio, modif: Modif, codigo: int = None
+    ):
+        if codigo is None:
+            codigo = regra.codigo_usina
+        # Se a usina em questão não é modificada, cria uma modificação nova
+        if not any([m.codigo == codigo for m in modif.usina]):
+            pass
+        # Obtém o registro que modifica a usina
+        usina = next(m for m in modif.usina if m.codigo == codigo)
+        # Obtém o próximo registro de usina
+        idx_usina = usina._ordem
+        idx_proxima_usina = modif.usina[modif.usina.index(usina) + 1]._ordem
+        # TODO - REVER PREMISSA
+        # Se existem VAZMINT para a usina, deleta
+        vazmint_existentes = [
+            m
+            for m in modif.vazmint
+            if idx_usina <= m._ordem <= idx_proxima_usina
+        ]
+        # Guarda a vazão do último VAZMINT
+        if len(vazmint_existentes) > 0:
+            ultima_vazao = vazmint_existentes[-1].vazao
+        else:
+            hidr = Hidr.le_arquivo(self._caso.caminho).tabela
+            ultima_vazao = float(hidr.loc[codigo, "Vazão Mínima"])
+        for m in vazmint_existentes:
+            modif.deleta_registro(m)
+        # Cria os VAZMINT
+        # - O primeiro é válido para os 2 primeiros meses
+        novo_vazmint = VAZMINT()
+        novo_vazmint.mes = self._caso.mes
+        novo_vazmint.ano = self._caso.ano
+        novo_vazmint.vazao = regra.limite_minimo
+        modif.cria_registro(usina, novo_vazmint)
+        # - O segundo é para retornar ao valor anterior
+        fim_vazmint = date(
+            year=self._caso.ano, month=self._caso.mes, day=1
+        ) + relativedelta(months=+2)
+        prox_vazmint = VAZMINT()
+        prox_vazmint.mes = fim_vazmint.month
+        prox_vazmint.ano = fim_vazmint.year
+        prox_vazmint.vazao = ultima_vazao
+        modif.cria_registro(novo_vazmint, prox_vazmint)
+
+    def aplica_regra_qdef_re(
+        self, regra: RegraReservatorio, re: RE, codigo: int = None
+    ):
+        if codigo is None:
+            codigo = regra.codigo_usina
+        # Se não existe um conjunto com a usina em questão, cria.
+        cols_usinas = [f"Usina {i}" for i in range(1, 11)]
+        df_conjuntos = re.usinas_conjuntos
+        conjuntos = list(df_conjuntos["Conjunto"].unique())
+        if not any(
+            [
+                codigo
+                in df_conjuntos.loc[
+                    df_conjuntos["Conjunto"] == c, cols_usinas
+                ].tolist()
+                for c in conjuntos
+            ]
+        ):
+            num_conjunto = max(conjuntos) + 1
+            novo_conjunto = {
+                **{"Conjunto": [num_conjunto]},
+                **{c: [0] for c in cols_usinas},
+            }
+            novo_conjunto["Usina 1"] = [codigo]
+            re.usinas_conjuntos = df_conjuntos.append(
+                pd.DataFrame(data=novo_conjunto), ignore_index=True
+            )
+        # Senão, identifica.
+        num_conjunto = next(
+            c
+            for c in conjuntos
+            if codigo
+            in df_conjuntos.loc[
+                df_conjuntos["Conjunto"] == c, cols_usinas
+            ].tolist()
+        )
+        # Deleta as restrições do conjunto em questão, se existirem
+        restricoes = re.restricoes
+        indices_restricoes = restricoes.loc[
+            restricoes["Conjunto"] == num_conjunto, :
+        ].index
+        restricoes = restricoes.drop(index=indices_restricoes)
+        # Cria as restrições para o conjunto em questão, nos 2 primeiros
+        # meses do horizonte
+        mes_inicial = date(year=self._caso.ano, month=self._caso.mes, day=1)
+        mes_final = mes_inicial + relativedelta(months=+1)
+        nova_restricao = {
+            "Conjunto": [num_conjunto],
+            "Mês Início": [mes_inicial.month],
+            "Ano Início": [mes_inicial.year],
+            "Mês Fim": [mes_final.month],
+            "Ano Fim": [mes_final.year],
+            "Flag P": [0],
+            "Restrição": [self.obtem_ghmax_usina(codigo, regra.limite_maximo)],
+            "Motivo": ["REGRA ANA"],
+        }
+        re.restricoes = restricoes.append(
+            pd.DataFrame(data=nova_restricao), ignore_index=True
+        )
 
     def aplica_regra(self, regra: RegraReservatorio) -> bool:
-        # Extrai o valor esperado para o início do mês (aproximado na semana)
-        # Obtem a produtibilidade para o cálculo do GHmax
-        # Se ocorrer algum erro, retorna False
-        pass
+        if regra.tipo_restricao == "QDEF":
+            Log.log().info(
+                f"Aplicando regra: {str(regra)} no mês {self._caso.mes}"
+            )
+            # No caso de existirem, aplica também nas fictícias
+            # Aplica a restrição da defluência mínima, se houver,
+            # no modif.dat
+            mapa_modif = (
+                AplicadorRegrasReservatoriosNEWAVE.MAPA_FICTICIAS_MODIF
+            )
+            if regra.limite_minimo is not None:
+                modif = Modif.le_arquivo(self._caso.caminho)
+                if regra.codigo_usina in mapa_modif.keys():
+                    for codigo in mapa_modif[regra.codigo_usina]:
+                        self.aplica_regra_qdef_modif(
+                            regra, modif, codigo=codigo
+                        )
+                else:
+                    self.aplica_regra_qdef_modif(regra, modif)
+                modif.escreve_arquivo(self._caso.caminho)
+            # Aplica a restrição da defluência máxima, se houver,
+            # no re.dat
+            mapa_re = AplicadorRegrasReservatoriosNEWAVE.MAPA_FICTICIAS_RE
+            if regra.limite_maximo is not None:
+                re = RE.le_arquivo(self._caso.caminho)
+                if regra.codigo_usina in mapa_re.keys():
+                    for codigo in mapa_re[regra.codigo_usina]:
+                        self.aplica_regra_qdef_re(regra, re, codigo=codigo)
+                else:
+                    self.aplica_regra_qdef_re(regra, re)
+                re.escreve_arquivo(self._caso.caminho)
+        return True
 
     def aplica_regras(
         self,
@@ -150,16 +335,22 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
                 + f"Não serão aplicadas regras operativas de reservatórios."
             )
             return True
+
+        arq_relato = f"relato.rv{ultimo_decomp.revisao}"
+        relato = Relato.le_arquivo(ultimo_decomp.caminho, arq_relato)
+
         # Filtra as regras de operação para o mês do caso
         regras_mes = self.regras_mes(regras_operacao, self._caso.mes)
+
         # Identifica as regras ativas
-        regras_ativas = self.identifica_regras_ativas(
-            regras_mes, ultimo_decomp
-        )
-        # Aplica as regras ativas
+        regras_ativas = self.identifica_regras_ativas(regras_mes, relato)
+
         sucessos: List[bool] = []
-        for r in regras_ativas:
-            sucessos.append(self.aplica_regra(r))
+        # Para o NEWAVE, são sempre tomadas as regras vigentes para os
+        # volumes do últimos estágio semanal do último DECOMP do mês anterior
+        estagio = sorted(list(regras_ativas.keys()))[-1]
+        for r in regras_ativas[estagio]:
+            sucessos.append(self.aplica_regra(r, estagio))
         return all(sucessos)
 
 
@@ -173,8 +364,8 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         regras: List[RegraReservatorio],
         codigo_usina: int,
         volumes: pd.DataFrame,
-        estagios: List[str],
-    ) -> Dict[str, Optional[RegraReservatorio]]:
+        estagio: int,
+    ) -> Dict[int, Optional[RegraReservatorio]]:
         # TODO - Assume que uma usina só olha para um reservatório.
         # Não suporta o caso de uma usina depender de mais
         # de um volume.
@@ -183,35 +374,35 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
             for r in regras
             if r.codigo_usina == codigo_usina
         )
-        volumes_estagios = volumes.loc[
-            volumes["Número"] == codigo_reservatorio,
-            estagios,
-        ]
+        volume_estagio = float(
+            volumes.loc[
+                volumes["Número"] == codigo_reservatorio,
+                f"Estágio {estagio}",
+            ]
+        )
         regras_ativas: Dict[str, Optional[RegraReservatorio]] = {}
-        for c in estagios:
-            try:
-                regra = next(
-                    r
-                    for r in regras
-                    if all(
-                        [
-                            r.codigo_usina == codigo_usina,
-                            r.codigo_reservatorio == codigo_reservatorio,
-                            r.volume_minimo
-                            <= float(volumes_estagios[c])
-                            < r.volume_maximo,
-                        ]
-                    )
+        try:
+            regra = next(
+                r
+                for r in regras
+                if all(
+                    [
+                        r.codigo_usina == codigo_usina,
+                        r.codigo_reservatorio == codigo_reservatorio,
+                        r.volume_minimo
+                        <= float(volume_estagio)
+                        < r.volume_maximo,
+                    ]
                 )
-            except StopIteration:
-                Log.log().warning(
-                    "Não foi encontrada regra de operação ativa "
-                    + f"para a usina {codigo_usina} "
-                    + f"(reservatório {codigo_reservatorio}) "
-                    + f"no volume {float(volumes_estagios[c])}"
-                )
-                regra = None
-            estagio = int(c.split("Estágio")[1])
+            )
+        except StopIteration:
+            Log.log().warning(
+                "Não foi encontrada regra de operação ativa "
+                + f"para a usina {codigo_usina} "
+                + f"(reservatório {codigo_reservatorio}) "
+                + f"no volume {float(volume_estagio)}"
+            )
+            regra = None
             regras_ativas[estagio] = regra
         return regras_ativas
 
@@ -220,8 +411,6 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
     ) -> Dict[int, List[RegraReservatorio]]:
         # Obtém os volumes
         volumes = relato.volume_util_reservatorios
-        # Filtra as colunas de estágios de interesse
-        cols_estagios = [c for c in volumes.columns if "Estágio" in c]
 
         regras_ativas_estagios: Dict[int, List[RegraReservatorio]] = {}
         # Obtém as regras ativas para cada usina
@@ -232,11 +421,10 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
             regras_ativas: Dict[str, List[RegraReservatorio]] = {[]}
             for u in usinas_com_restricao:
                 regras_estagios = self.identifica_regra_ativa(
-                    regras, u, volumes, cols_estagios
+                    regras, u, volumes, estagio
                 )
-                for c in cols_estagios:
-                    if regras_estagios[c] is not None:
-                        regras_ativas[c].append(regras_estagios[c])
+                if regras_estagios is not None:
+                    regras_ativas[estagio].append(regras_estagios)
             regras_ativas_estagios[estagio] = regras_ativas
         return regras_ativas_estagios
 
@@ -319,28 +507,11 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
             )
         return regras_mapeadas
 
-    def aplica_regras(
+    def aplica_regras_caso(
         self,
-        casos_anteriores: List[Caso],
         regras_operacao: List[RegraReservatorio],
+        ultimo_decomp: CasoDECOMP,
     ) -> bool:
-
-        # TODO - tratar as regras mensais x semanais
-        # Como está, todas são semanais.
-
-        # Obtém o último DECOMP executado
-        try:
-            ultimo_decomp = next(
-                c
-                for c in reversed(casos_anteriores)
-                if isinstance(c, CasoDECOMP)
-            )
-        except StopIteration:
-            Log.log().info(
-                f"Caso {self._caso.nome} não possui DECOMP anterior. "
-                + f"Não serão aplicadas regras operativas de reservatórios."
-            )
-            return True
 
         # Lê o dadger do decomp atual e o relato do decomp anterior
         arq_dadger = f"dadger.rv{self._caso.revisao}"
@@ -375,3 +546,43 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         # Escreve o dadger
         dadger.escreve_arquivo(self._caso.caminho, arq_dadger)
         return all(sucessos)
+
+    def aplica_regras(
+        self,
+        casos_anteriores: List[Caso],
+        regras_operacao: List[RegraReservatorio],
+    ) -> bool:
+        regras_semanais = list(
+            set([r for r in regras_operacao if r.periodicidade == "S"])
+        )
+        try:
+            ultimo_decomp = next(
+                c
+                for c in reversed(casos_anteriores)
+                if isinstance(c, CasoDECOMP)
+            )
+            self.aplica_regras_caso(regras_semanais, ultimo_decomp)
+        except StopIteration:
+            Log.log().info(
+                f"Caso {self._caso.nome} não possui DECOMP anterior. "
+                + f"Não serão aplicadas regras operativas de reservatórios "
+                + "com periodicidade semanal."
+            )
+
+        try:
+            mes_anterior = 12 if self._caso.mes == 1 else self._caso.mes - 1
+            ultimo_decomp_mes_anterior = next(
+                c
+                for c in reversed(casos_anteriores)
+                if isinstance(c, CasoDECOMP) and c.mes == mes_anterior
+            )
+            regras_mensais = list(
+                set([r for r in regras_operacao if r.periodicidade == "M"])
+            )
+            self.aplica_regras_caso(regras_mensais, ultimo_decomp_mes_anterior)
+        except StopIteration:
+            Log.log().info(
+                f"Caso {self._caso.nome} não possui DECOMP no mês anterior. "
+                + f"Não serão aplicadas regras operativas de reservatórios "
+                + "com periodicidade mensal."
+            )
