@@ -2,12 +2,13 @@ from encadeador.modelos.caso import Caso, CasoDECOMP, CasoNEWAVE
 from encadeador.modelos.regrareservatorio import RegraReservatorio
 from encadeador.utils.log import Log
 
-from idecomp.decomp.modelos.dadger import DP
+from idecomp.decomp.modelos.dadger import DP, HQ, LQ
 from idecomp.decomp.dadger import Dadger
 from idecomp.decomp.relato import Relato
 from abc import abstractmethod
 from typing import List, Dict, Optional
 import pandas as pd  # type: ignore
+from datetime import date, timedelta
 
 
 class AplicadorRegrasReservatorios:
@@ -198,7 +199,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
                             r.codigo_reservatorio == codigo_reservatorio,
                             r.volume_minimo
                             <= float(volumes_estagios[c])
-                            <= r.volume_maximo,
+                            < r.volume_maximo,
                         ]
                     )
                 )
@@ -215,69 +216,118 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         return regras_ativas
 
     def identifica_regras_ativas(
-        self,
-        regras: List[RegraReservatorio],
-        relato: Relato,
-        estagio_mensal=False,
-    ) -> Dict[str, List[RegraReservatorio]]:
+        self, regras: Dict[int, List[RegraReservatorio]], relato: Relato
+    ) -> Dict[int, List[RegraReservatorio]]:
         # Obtém os volumes
         volumes = relato.volume_util_reservatorios
         # Filtra as colunas de estágios de interesse
         cols_estagios = [c for c in volumes.columns if "Estágio" in c]
-        cols_estagios = (
-            [cols_estagios[-1]] if estagio_mensal else cols_estagios[:-1]
-        )
+
+        regras_ativas_estagios: Dict[int, List[RegraReservatorio]] = {}
         # Obtém as regras ativas para cada usina
-        usinas_com_restricao = list(set([r.codigo_usina for r in regras]))
-        regras_ativas: Dict[str, List[RegraReservatorio]] = {[]}
-        for u in usinas_com_restricao:
-            regras_estagios = self.identifica_regra_ativa(
-                regras, u, volumes, cols_estagios
+        for estagio, regras_estagio in regras.items():
+            usinas_com_restricao = list(
+                set([r.codigo_usina for r in regras_estagio])
             )
-            for c in cols_estagios:
-                if regras_estagios[c] is not None:
-                    regras_ativas[c].append(regras_estagios[c])
-        return regras_ativas
+            regras_ativas: Dict[str, List[RegraReservatorio]] = {[]}
+            for u in usinas_com_restricao:
+                regras_estagios = self.identifica_regra_ativa(
+                    regras, u, volumes, cols_estagios
+                )
+                for c in cols_estagios:
+                    if regras_estagios[c] is not None:
+                        regras_ativas[c].append(regras_estagios[c])
+            regras_ativas_estagios[estagio] = regras_ativas
+        return regras_ativas_estagios
 
     def aplica_regra(
         self,
         dadger: Dadger,
         regra: RegraReservatorio,
-        estagio_decomp_anterior: int,
+        estagio_aplicacao: int,
     ) -> bool:
-        # Descobre o número de estágios do caso atual
-        num_estagios_caso_anterior = self.extrai_numero_estagios(dadger)
-        # Descobre em quais estágios aplicar a regra, no caso atual
-        estagios_caso_atual = self.mapeia_estagios_regras(
-            num_estagios_caso_anterior, estagio_decomp_anterior
+        def aplica_regra_qdef(
+            regra: RegraReservatorio, dadger: Dadger, estagio: int
+        ):
+            # Se vai aplicar uma regra em um determinado estágio
+            # acessa a restrição em todos os estágios futuros, até
+            # o limite, para garantir os valore serão mantidos.
+            try:
+                ef = dadger.hq(regra.codigo_usina).estagio_final
+            except ValueError:
+                # Se não existe o registro HQ, cria, junto com um LQ
+                ef = len(dadger.lista_registros(DP))
+                hq_novo = HQ()
+                hq_novo._dados = [regra.codigo_usina, 1, ef]
+                lq_novo = LQ()
+                lq_novo._dados = [regra.codigo_usina, 1] + [
+                    0,
+                    99999,
+                    0,
+                    99999,
+                    0,
+                    99999,
+                ]
+                dadger.cria_registro(dadger.ev, hq_novo)
+                dadger.cria_registro(hq_novo, lq_novo)
+            for e in range(estagio, ef + 1):
+                dadger.lq(regra.codigo_usina, e)
+            # Aplica a regra no estágio devido, se tiver limites inf/sup
+            if regra.limite_minimo is not None:
+                dadger.lq(regra.codigo_usina, estagio).limites_inferiores = [
+                    regra.limite_minimo
+                ] * 3
+            if regra.limite_maximo is not None:
+                dadger.lq(regra.codigo_usina, estagio).limites_superiores = [
+                    regra.limite_maximo
+                ] * 3
+
+        Log.log().info(
+            f"Aplicando regra: {str(regra)} no estágio {estagio_aplicacao}"
         )
-        for e in estagios_caso_atual:
-            Log.log().info(f"Aplicando regra: {str(regra)} no estágio {e}")
-            # Se ocorrer algum erro, retorna False
-            pass
+        # Se ocorrer algum erro, retorna False
+        if regra.tipo_restricao == "QDEF":
+            aplica_regra_qdef(regra, dadger, estagio_aplicacao)
+        else:
+            return False
         return True
 
-    def extrai_numero_estagios(self, dadger: Dadger) -> int:
-        return len(dadger.lista_registros(DP))
+    def mapeia_semanas_dias_fim(
+        self, dadger: Dadger, relato: Relato
+    ) -> Dict[int, date]:
+        dt = dadger.dt
+        dia_inicio_caso_atual = date(dt.ano, dt.mes, dt.dia)
+        num_semanas_caso_anterior = (
+            len(relato.volume_util_reservatorios.columns) - 2
+        )
+        return {
+            i
+            + 1: dia_inicio_caso_atual
+            - timedelta(weeks=(num_semanas_caso_anterior - i), days=1)
+            for i in range(num_semanas_caso_anterior)
+        }
 
-    def mapeia_estagios_regras(
+    def regras_estagios(
         self,
-        num_estagios_caso_atual: int,
-        estagio_caso_anterior: int,
-    ) -> List[int]:
-        if self._caso.revisao == 0:
-            return {
-                1: list(range(1, num_estagios_caso_atual)),
-                2: [num_estagios_caso_atual],
-            }
-        else:
-            return [estagio_caso_anterior]
+        regras: List[RegraReservatorio],
+        mapa_estagio_dia: Dict[int, date],
+    ) -> Dict[int, List[RegraReservatorio]]:
+        regras_mapeadas: Dict[int, List[RegraReservatorio]] = {}
+        for estagio, dia_fim in mapa_estagio_dia.items():
+            regras_mapeadas[estagio] = list(
+                set([r for r in regras if r.mes == dia_fim.month])
+            )
+        return regras_mapeadas
 
     def aplica_regras(
         self,
         casos_anteriores: List[Caso],
         regras_operacao: List[RegraReservatorio],
     ) -> bool:
+
+        # TODO - tratar as regras mensais x semanais
+        # Como está, todas são semanais.
+
         # Obtém o último DECOMP executado
         try:
             ultimo_decomp = next(
@@ -291,38 +341,36 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
                 + f"Não serão aplicadas regras operativas de reservatórios."
             )
             return True
-        # Filtra as regras de operação para o mês do caso
-        regras_mes = self.regras_mes(regras_operacao, self._caso.mes)
-        # Filtra as regras de operação para o mês seguinte
-        regras_mes_seguinte = self.regras_mes(
-            regras_operacao, (self._caso.mes % 12) + 1
-        )
-        # Lê o relato do último DECOMP
+
+        # Lê o dadger do decomp atual e o relato do decomp anterior
+        arq_dadger = f"dadger.rv{self._caso.revisao}"
+        dadger = Dadger.le_arquivo(self._caso.caminho, arq_dadger)
         arq_relato = f"relato.rv{ultimo_decomp.revisao}"
         relato = Relato.le_arquivo(ultimo_decomp.caminho, arq_relato)
+
+        # Identifica o dia de fim de cada semana do DECOMP anterior
+        mapa_dias_fim = self.mapeia_semanas_dias_fim(dadger, relato)
+
+        # Filtra as regras de operação para cada estágio
+        # do DECOMP anterior
+        regras_estagios = self.regras_estagios(regras_operacao, mapa_dias_fim)
+
         # Identifica as regras ativas
-        regras_ativas_mes = self.identifica_regras_ativas(regras_mes, relato)
-        regras_ativas_mes_seguinte = self.identifica_regras_ativas(
-            regras_mes_seguinte, relato, estagio_mensal=True
-        )
-        regras_ativas = {**regras_ativas_mes, **regras_ativas_mes_seguinte}
-        if len(regras_ativas) > 0:
-            arq_dadger = f"dadger.rv{self._caso.revisao}"
-            dadger = Dadger.le_arquivo(self._caso.caminho, arq_dadger)
-        else:
-            Log.log().warning(
-                "Não foram encontradas regras ativas para "
-                + f"os reservatórios no caso {self._caso.nome}."
-            )
-            return False
+        regras_ativas = self.identifica_regras_ativas(regras_estagios, relato)
+
         # Aplica as regras ativas
+        estagios_decomp_atual = list(
+            range(len(dadger.lista_registros(DP)) + 1, start=1)
+        )
         sucessos: List[bool] = []
-        for estagio, regras in regras_ativas.items():
-            for r in regras:
+        for estagio in estagios_decomp_atual:
+            if estagio not in regras_ativas.keys():
+                estagio_aplicacao = sorted(list(regras_ativas.keys()))[-1]
+            else:
+                estagio_aplicacao = estagio
+            for r in regras_ativas[estagio_aplicacao]:
                 sucessos.append(
-                    self.aplica_regra(
-                        dadger, r, int(estagio.split("Estágio")[1])
-                    )
+                    self.aplica_regra(dadger, r, estagio_aplicacao)
                 )
         # Escreve o dadger
         dadger.escreve_arquivo(self._caso.caminho, arq_dadger)

@@ -1,7 +1,6 @@
-from idecomp.decomp.dadger import Dadger
-
+from pickle import NONE
 import pandas as pd  # type: ignore
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 
 class RegraReservatorio:
@@ -13,8 +12,8 @@ class RegraReservatorio:
         _mes: int,
         _volume_minimo: float,
         _volume_maximo: float,
-        _limite_minimo: float,
-        _limite_maximo: float,
+        _limite_minimo: Optional[float],
+        _limite_maximo: Optional[float],
         _periodicidade: str,
         _legenda_faixa: str,
     ):
@@ -53,8 +52,12 @@ class RegraReservatorio:
                     int(linha["MES"]),
                     float(linha["VOL_MIN"]),
                     float(linha["VOL_MAX"]),
-                    float(linha["LIM_MIN"]),
-                    float(linha["LIM_MAX"]),
+                    None
+                    if linha["LIM_MIN"] == "-"
+                    else float(linha["LIM_MIN"]),
+                    None
+                    if linha["LIM_MAX"] == "-"
+                    else float(linha["LIM_MAX"]),
                     linha["PERIOD"],
                     linha["LEGENDA_FAIXA"],
                 )
@@ -93,11 +96,11 @@ class RegraReservatorio:
         return self._volume_maximo
 
     @property
-    def limite_minimo(self) -> float:
+    def limite_minimo(self) -> Optional[float]:
         return self._limite_minimo
 
     @property
-    def limite_maximo(self) -> float:
+    def limite_maximo(self) -> Optional[float]:
         return self._limite_maximo
 
     @property
