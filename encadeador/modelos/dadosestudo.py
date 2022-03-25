@@ -182,7 +182,7 @@ class DadosEstudo:
         for c in DadosEstudo.COLUNAS_CUSTOS:
             if c == "Caso":
                 continue
-            custo = float(custos.loc[c.ljust(18), "Valor Esperado"])
+            custo = float(custos.loc[c, "Valor Esperado"])
             dados_variaveis[c].append(custo)
         df_variaveis = pd.DataFrame(data=dados_variaveis)
         if resumo_newaves.empty:

@@ -1,4 +1,3 @@
-from pickle import NONE
 import pandas as pd  # type: ignore
 from typing import List, Dict, Any, Optional
 

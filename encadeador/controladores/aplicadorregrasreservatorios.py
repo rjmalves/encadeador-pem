@@ -12,7 +12,7 @@ from abc import abstractmethod
 from typing import List, Dict, Optional
 import pandas as pd  # type: ignore
 from datetime import date, timedelta
-from dateutil.relativedelta import relativedelta
+from dateutil.relativedelta import relativedelta  # type: ignore
 
 
 class AplicadorRegrasReservatorios:
@@ -32,25 +32,6 @@ class AplicadorRegrasReservatorios:
         self, regras: List[RegraReservatorio], mes: int
     ) -> List[RegraReservatorio]:
         return list(set([r for r in regras if r.mes == mes]))
-
-    @abstractmethod
-    def identifica_regra_ativa(
-        self,
-        regras: List[RegraReservatorio],
-        codigo_usina: int,
-        volumes: pd.DataFrame,
-    ) -> Optional[RegraReservatorio]:
-        pass
-
-    @abstractmethod
-    def identifica_regras_ativas(
-        self, regras: List[RegraReservatorio], ultimo_decomp: CasoDECOMP
-    ):
-        pass
-
-    @abstractmethod
-    def aplica_regra(self, regra: RegraReservatorio):
-        pass
 
     @abstractmethod
     def aplica_regras(
@@ -74,14 +55,13 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         178: [172, 176, 178],
     }
 
-    # Override
     def identifica_regra_ativa(
         self,
         regras: List[RegraReservatorio],
         codigo_usina: int,
         volumes: pd.DataFrame,
         estagio: int,
-    ) -> Dict[int, Optional[RegraReservatorio]]:
+    ) -> Optional[RegraReservatorio]:
         # TODO - Assume que uma usina só olha para um reservatório.
         # Não suporta o caso de uma usina depender de mais
         # de um volume.
@@ -96,7 +76,6 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
                 f"Estágio {estagio}",
             ]
         )
-        regras_ativas: Dict[str, Optional[RegraReservatorio]] = {}
         try:
             regra = next(
                 r
@@ -119,8 +98,7 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
                 + f"no volume {float(volume_estagio)}"
             )
             regra = None
-            regras_ativas[estagio] = regra
-        return regras_ativas
+        return regra
 
     def regras_estagios(
         self,
@@ -135,25 +113,29 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         return regras_mapeadas
 
     def identifica_regras_ativas(
-        self, regras: Dict[int, List[RegraReservatorio]], relato: Relato
+        self, regras: List[RegraReservatorio], relato: Relato
     ) -> Dict[int, List[RegraReservatorio]]:
         # Obtém os volumes
         volumes = relato.volume_util_reservatorios
 
         regras_ativas_estagios: Dict[int, List[RegraReservatorio]] = {}
+        estagio = int(
+            [
+                c
+                for c in list(relato.volume_util_reservatorios.columns)
+                if "Estágio" in c
+            ][-1].split("Estágio")[1]
+        )
         # Obtém as regras ativas para cada usina
-        for estagio, regras_estagio in regras.items():
-            usinas_com_restricao = list(
-                set([r.codigo_usina for r in regras_estagio])
+        usinas_com_restricao = list(set([r.codigo_usina for r in regras]))
+        regras_ativas: List[RegraReservatorio] = []
+        for u in usinas_com_restricao:
+            regra_estagio = self.identifica_regra_ativa(
+                regras, u, volumes, estagio
             )
-            regras_ativas: Dict[str, List[RegraReservatorio]] = {[]}
-            for u in usinas_com_restricao:
-                regras_estagios = self.identifica_regra_ativa(
-                    regras, u, volumes, estagio
-                )
-                if regras_estagios is not None:
-                    regras_ativas[estagio].append(regras_estagios)
-            regras_ativas_estagios[estagio] = regras_ativas
+            if regra_estagio is not None:
+                regras_ativas.append(regra_estagio)
+        regras_ativas_estagios[estagio] = regras_ativas
         return regras_ativas_estagios
 
     def obtem_ghmax_usina(self, codigo: int, qdef: float) -> float:
@@ -182,9 +164,15 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
     ):
         if codigo is None:
             codigo = regra.codigo_usina
+        # Se a regra não tem limite mínimo, ignora
+        if regra.limite_minimo is None:
+            return
         # Se a usina em questão não é modificada, cria uma modificação nova
         if not any([m.codigo == codigo for m in modif.usina]):
-            pass
+            nova_usina = USINA()
+            nova_usina.codigo = codigo
+            nova_usina.nome = ""
+            modif.cria_registro(modif.usina[-1], nova_usina)
         # Obtém o registro que modifica a usina
         usina = next(m for m in modif.usina if m.codigo == codigo)
         # Obtém o próximo registro de usina
@@ -268,6 +256,11 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         # meses do horizonte
         mes_inicial = date(year=self._caso.ano, month=self._caso.mes, day=1)
         mes_final = mes_inicial + relativedelta(months=+1)
+
+        # Se a regra não tem limite máximo, ignora
+        qdef = regra.limite_maximo
+        if qdef is None:
+            return
         nova_restricao = {
             "Conjunto": [num_conjunto],
             "Mês Início": [mes_inicial.month],
@@ -275,7 +268,7 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
             "Mês Fim": [mes_final.month],
             "Ano Fim": [mes_final.year],
             "Flag P": [0],
-            "Restrição": [self.obtem_ghmax_usina(codigo, regra.limite_maximo)],
+            "Restrição": [self.obtem_ghmax_usina(codigo, qdef)],
             "Motivo": ["REGRA ANA"],
         }
         re.restricoes = restricoes.append(
@@ -332,7 +325,7 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         except StopIteration:
             Log.log().info(
                 f"Caso {self._caso.nome} não possui DECOMP anterior. "
-                + f"Não serão aplicadas regras operativas de reservatórios."
+                + "Não serão aplicadas regras operativas de reservatórios."
             )
             return True
 
@@ -350,7 +343,7 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         # volumes do últimos estágio semanal do último DECOMP do mês anterior
         estagio = sorted(list(regras_ativas.keys()))[-1]
         for r in regras_ativas[estagio]:
-            sucessos.append(self.aplica_regra(r, estagio))
+            sucessos.append(self.aplica_regra(r))
         return all(sucessos)
 
 
@@ -365,7 +358,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         codigo_usina: int,
         volumes: pd.DataFrame,
         estagio: int,
-    ) -> Dict[int, Optional[RegraReservatorio]]:
+    ) -> Optional[RegraReservatorio]:
         # TODO - Assume que uma usina só olha para um reservatório.
         # Não suporta o caso de uma usina depender de mais
         # de um volume.
@@ -380,7 +373,6 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
                 f"Estágio {estagio}",
             ]
         )
-        regras_ativas: Dict[str, Optional[RegraReservatorio]] = {}
         try:
             regra = next(
                 r
@@ -403,8 +395,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
                 + f"no volume {float(volume_estagio)}"
             )
             regra = None
-            regras_ativas[estagio] = regra
-        return regras_ativas
+        return regra
 
     def identifica_regras_ativas(
         self, regras: Dict[int, List[RegraReservatorio]], relato: Relato
@@ -418,13 +409,13 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
             usinas_com_restricao = list(
                 set([r.codigo_usina for r in regras_estagio])
             )
-            regras_ativas: Dict[str, List[RegraReservatorio]] = {[]}
+            regras_ativas: List[RegraReservatorio] = []
             for u in usinas_com_restricao:
-                regras_estagios = self.identifica_regra_ativa(
-                    regras, u, volumes, estagio
+                regra_estagio = self.identifica_regra_ativa(
+                    regras[estagio], u, volumes, estagio
                 )
-                if regras_estagios is not None:
-                    regras_ativas[estagio].append(regras_estagios)
+                if regra_estagio is not None:
+                    regras_ativas.append(regra_estagio)
             regras_ativas_estagios[estagio] = regras_ativas
         return regras_ativas_estagios
 
@@ -531,7 +522,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
 
         # Aplica as regras ativas
         estagios_decomp_atual = list(
-            range(len(dadger.lista_registros(DP)) + 1, start=1)
+            range(1, len(dadger.lista_registros(DP)) + 1)
         )
         sucessos: List[bool] = []
         for estagio in estagios_decomp_atual:
@@ -565,7 +556,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         except StopIteration:
             Log.log().info(
                 f"Caso {self._caso.nome} não possui DECOMP anterior. "
-                + f"Não serão aplicadas regras operativas de reservatórios "
+                + "Não serão aplicadas regras operativas de reservatórios "
                 + "com periodicidade semanal."
             )
 
@@ -583,6 +574,8 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         except StopIteration:
             Log.log().info(
                 f"Caso {self._caso.nome} não possui DECOMP no mês anterior. "
-                + f"Não serão aplicadas regras operativas de reservatórios "
+                + "Não serão aplicadas regras operativas de reservatórios "
                 + "com periodicidade mensal."
             )
+
+        return True
