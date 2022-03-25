@@ -477,7 +477,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         dt = dadger.dt
         dia_inicio_caso_atual = date(dt.ano, dt.mes, dt.dia)
         num_semanas_caso_anterior = (
-            len(relato.volume_util_reservatorios.columns) - 2
+            len(relato.volume_util_reservatorios.columns) - 3
         )
         return {
             i
