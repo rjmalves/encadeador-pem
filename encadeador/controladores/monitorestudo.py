@@ -84,10 +84,11 @@ class MonitorEstudo:
             if self._estudo.terminou:
                 self._estudo.atualiza(EstadoEstudo.CONCLUIDO)
                 Log.log().info("Estudo já finalizado")
+                return True
             else:
                 self._estudo.atualiza(EstadoEstudo.ERRO)
                 Log.log().error("Não foi encontrado o próximo caso")
-            return False
+                return False
         self._caso_atual = caso
         Log.log().info(
             f"Estudo {self._estudo.nome} - Próximo caso: {caso.nome}"

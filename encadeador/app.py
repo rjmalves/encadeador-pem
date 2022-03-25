@@ -33,20 +33,17 @@ class App:
 
     def executa(self) -> bool:
         Log.log().info(f"Iniciando Encadeador - {Configuracoes().nome_estudo}")
-        try:
-            self.__constroi_estudo_encadeado()
-            # Refaz a síntese como estão as coisas
-            if not self._monitor.inicializa():
-                sintetizador = SintetizadorEstudo(self._estudo)
-                sintetizador.sintetiza_estudo()
-                raise RuntimeError()
-            # O programa fica nesse loop até acabar o estudo, ou ocorrer erro
-            while not self._estudo.terminou:
-                chdir(Configuracoes().caminho_base_estudo)
-                self._monitor.monitora()
-                time.sleep(INTERVALO_POLL)
-            Log.log().info("Finalizando Encadeador")
-            return self._estudo.estado == EstadoEstudo.CONCLUIDO
-        except Exception as e:
-            Log.log().error(f"Execução do Encadeador interrompida: {e}")
-            raise e
+        self.__constroi_estudo_encadeado()
+        # Refaz a síntese como estão as coisas
+        if not self._monitor.inicializa():
+            Log.log().info("Erro na inicialização do Encadeador")
+            return False
+        ArmazenadorEstudo(self._estudo).armazena_estudo()
+        SintetizadorEstudo(self._estudo).sintetiza_estudo()
+        # O programa fica nesse loop até acabar o estudo, ou ocorrer erro
+        while not self._estudo.terminou:
+            chdir(Configuracoes().caminho_base_estudo)
+            self._monitor.monitora()
+            time.sleep(INTERVALO_POLL)
+        Log.log().info("Finalizando Encadeador")
+        return self._estudo.estado == EstadoEstudo.CONCLUIDO
