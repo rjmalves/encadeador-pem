@@ -436,6 +436,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
             except ValueError:
                 # Se não existe o registro HQ, cria, junto com um LQ
                 ef = len(dadger.lista_registros(DP))
+                Log.log().info(f"Criando HQ {regra.codigo_usina} - 1 {ef}")
                 hq_novo = HQ()
                 hq_novo._dados = [regra.codigo_usina, 1, ef]
                 lq_novo = LQ()
@@ -512,6 +513,9 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
 
         # Identifica o dia de fim de cada semana do DECOMP anterior
         mapa_dias_fim = self.mapeia_semanas_dias_fim(dadger, relato)
+        Log.log().info(
+            f"Dias de fim dos estágios do DECOMP anterior: {mapa_dias_fim}"
+        )
 
         # Filtra as regras de operação para cada estágio
         # do DECOMP anterior
@@ -526,16 +530,18 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         )
         sucessos: List[bool] = []
         for estagio in estagios_decomp_atual:
+            Log.log().info(
+                f"Aplicando regras de reservatórios no estágio {estagio}"
+            )
             if estagio not in regras_ativas.keys():
                 estagio_aplicacao = sorted(list(regras_ativas.keys()))[-1]
             else:
                 estagio_aplicacao = estagio
             for r in regras_ativas[estagio_aplicacao]:
-                sucessos.append(
-                    self.aplica_regra(dadger, r, estagio_aplicacao)
-                )
-        # Escreve o dadger
-        dadger.escreve_arquivo(self._caso.caminho, arq_dadger)
+                dadger = Dadger.le_arquivo(self._caso.caminho, arq_dadger)
+                sucessos.append(self.aplica_regra(dadger, r, estagio))
+                dadger.escreve_arquivo(self._caso.caminho, arq_dadger)
+
         return all(sucessos)
 
     def aplica_regras(
