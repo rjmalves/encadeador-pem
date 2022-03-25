@@ -96,7 +96,9 @@ class MonitorEstudo:
         self._estudo.atualiza(EstadoEstudo.EXECUTANDO)
         self._monitor_atual = MonitorCaso.factory(self._caso_atual)
         self._monitor_atual.observa(self.callback_evento_caso)
-        if not self._monitor_atual.inicializa(self._estudo.casos_concluidos):
+        if not self._monitor_atual.inicializa(
+            self._estudo.casos_concluidos, self._estudo._regras_reservatorio
+        ):
             Log.log().error(
                 "Erro de inicialização do caso " + f"{self._caso_atual.nome}"
             )

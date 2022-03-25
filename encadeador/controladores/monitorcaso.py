@@ -105,7 +105,11 @@ class MonitorCaso:
         }
 
     @abstractmethod
-    def inicializa(self, casos_anteriores: List[Caso]) -> bool:
+    def inicializa(
+        self,
+        casos_anteriores: List[Caso],
+        regras_operacao_reservatorios: List[RegraReservatorio],
+    ) -> bool:
         """
         Realiza a inicialização do caso, isto é, a preparação dos
         arquivos para adequação às necessidades do estudo
