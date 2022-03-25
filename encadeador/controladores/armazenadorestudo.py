@@ -23,7 +23,8 @@ class ArmazenadorEstudo:
             return True
         except Exception as e:
             Log.log().error(
-                "Erro no armazenamento do estudo" + f" {self._estudo.nome}: {e}"
+                "Erro no armazenamento do estudo"
+                + f" {self._estudo.nome}: {e}"
             )
             return False
 
@@ -49,7 +50,7 @@ class ArmazenadorEstudo:
                 [c.tempo_execucao for c in casos],
                 [c.estado for c in casos],
             )
-            return Estudo(dados, casos)
+            return Estudo(dados, casos, [])
 
         # Se tem, então o estudo pelo menos começou. Então constroi
         # o estudo a partir dos detalhes nos arquivos de cada caso
