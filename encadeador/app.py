@@ -30,10 +30,6 @@ class App:
         else:
             self._estudo._regras_reservatorio = []
         self._monitor = MonitorEstudo(self._estudo)
-        self._estudo.atualiza(EstadoEstudo.EXECUTANDO)
-        sintetizador = SintetizadorEstudo(self._estudo)
-        if not sintetizador.sintetiza_estudo():
-            raise RuntimeError()
 
     def executa(self) -> bool:
         Log.log().info(f"Iniciando Encadeador - {Configuracoes().nome_estudo}")
@@ -41,6 +37,8 @@ class App:
             self.__constroi_estudo_encadeado()
             # Refaz a síntese como estão as coisas
             if not self._monitor.inicializa():
+                sintetizador = SintetizadorEstudo(self._estudo)
+                sintetizador.sintetiza_estudo()
                 raise RuntimeError()
             # O programa fica nesse loop até acabar o estudo, ou ocorrer erro
             while not self._estudo.terminou:

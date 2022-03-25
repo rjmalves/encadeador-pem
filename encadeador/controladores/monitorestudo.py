@@ -81,12 +81,18 @@ class MonitorEstudo:
         """
         caso = self._estudo.proximo_caso
         if caso is None:
-            Log.log().error("Não foi encontrado o próximo caso")
-            raise RuntimeError()
+            if self._estudo.terminou:
+                self._estudo.atualiza(EstadoEstudo.CONCLUIDO)
+                Log.log().info("Estudo já finalizado")
+            else:
+                self._estudo.atualiza(EstadoEstudo.ERRO)
+                Log.log().error("Não foi encontrado o próximo caso")
+            return False
         self._caso_atual = caso
         Log.log().info(
             f"Estudo {self._estudo.nome} - Próximo caso: {caso.nome}"
         )
+        self._estudo.atualiza(EstadoEstudo.EXECUTANDO)
         self._monitor_atual = MonitorCaso.factory(self._caso_atual)
         self._monitor_atual.observa(self.callback_evento_caso)
         if not self._monitor_atual.inicializa(self._estudo.casos_concluidos):
