@@ -9,7 +9,7 @@ from encadeador.modelos.estudo import Estudo
 from encadeador.utils.log import Log
 from encadeador.utils.io import escreve_df_em_csv, escreve_arquivo_json
 
-ARQUIVO_PROXIMO_CASO = "proximo_caso.csv"
+ARQUIVO_PROXIMO_CASO = "proximo_caso.json"
 ARQUIVO_RESUMO_NEWAVES = "newaves_encadeados.csv"
 ARQUIVO_RESUMO_DECOMPS = "decomps_encadeados.csv"
 ARQUIVO_RESUMO_RESERVATORIOS = "reservatorios_encadeados.csv"
