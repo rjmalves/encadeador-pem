@@ -219,15 +219,7 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         cols_usinas = [f"Usina {i}" for i in range(1, 11)]
         df_conjuntos = re.usinas_conjuntos
         conjuntos = list(df_conjuntos["Conjunto"].unique())
-        if not any(
-            [
-                codigo
-                in df_conjuntos.loc[
-                    df_conjuntos["Conjunto"] == c, cols_usinas
-                ].tolist()
-                for c in conjuntos
-            ]
-        ):
+        if not codigo in df_conjuntos[cols_usinas].to_numpy():
             num_conjunto = max(conjuntos) + 1
             novo_conjunto = {
                 **{"Conjunto": [num_conjunto]},
@@ -239,12 +231,10 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
             )
         # Senão, identifica.
         num_conjunto = next(
-            c
-            for c in conjuntos
+            int(linha["Conjunto"])
+            for _, linha in df_conjuntos.iterrows()
             if codigo
-            in df_conjuntos.loc[
-                df_conjuntos["Conjunto"] == c, cols_usinas
-            ].tolist()
+            in linha[cols_usinas]
         )
         # Deleta as restrições do conjunto em questão, se existirem
         restricoes = re.restricoes
