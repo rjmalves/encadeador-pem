@@ -483,7 +483,8 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         return {
             i
             + 1: dia_inicio_caso_atual
-            - timedelta(weeks=(num_semanas_caso_anterior - i), days=1)
+            - timedelta(weeks=1, days=1)
+            + timedelta(weeks=i, days=0)
             for i in range(num_semanas_caso_anterior)
         }
 
@@ -528,9 +529,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         registros_dp = dadger.lista_registros(DP)
         num_patamares = registros_dp[0].num_patamares
         num_estagios = len(registros_dp) / num_patamares
-        estagios_decomp_atual = list(
-            range(1, num_estagios + 1)
-        )
+        estagios_decomp_atual = list(range(1, num_estagios + 1))
         sucessos: List[bool] = []
         for estagio in estagios_decomp_atual:
             Log.log().info(
