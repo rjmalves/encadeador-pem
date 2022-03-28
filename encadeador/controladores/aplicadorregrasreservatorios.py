@@ -4,7 +4,7 @@ from encadeador.utils.log import Log
 
 from inewave.newave.modelos.modif import USINA, VAZMINT
 from inewave.newave import Modif, RE
-from idecomp.decomp.modelos.dadger import DP, HQ, LQ
+from idecomp.decomp.modelos.dadger import SB, HQ, LQ, DP
 from idecomp.decomp.dadger import Dadger
 from idecomp.decomp.relato import Relato
 from idecomp.decomp.hidr import Hidr
@@ -435,7 +435,9 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
                 ef = dadger.hq(regra.codigo_usina).estagio_final
             except ValueError:
                 # Se não existe o registro HQ, cria, junto com um LQ
-                ef = len(dadger.lista_registros(DP))
+                registros_dp = dadger.lista_registros(DP)
+                num_subsistemas = len(dadger.lista_registros(SB))
+                ef = int(len(registros_dp) / num_subsistemas)
                 Log.log().info(f"Criando HQ {regra.codigo_usina} - 1 {ef}")
                 hq_novo = HQ()
                 hq_novo._dados = [regra.codigo_usina, 1, ef]
@@ -527,8 +529,8 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
 
         # Aplica as regras ativas
         registros_dp = dadger.lista_registros(DP)
-        num_patamares = registros_dp[0].num_patamares
-        num_estagios = int(len(registros_dp) / num_patamares)
+        num_subsistemas = len(dadger.lista_registros(SB))
+        num_estagios = int(len(registros_dp) / num_subsistemas)
         estagios_decomp_atual = list(range(1, num_estagios + 1))
         sucessos: List[bool] = []
         for estagio in estagios_decomp_atual:
