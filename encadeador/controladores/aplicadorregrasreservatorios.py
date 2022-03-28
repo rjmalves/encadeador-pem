@@ -4,7 +4,7 @@ from encadeador.utils.log import Log
 
 from inewave.newave.modelos.modif import USINA, VAZMINT
 from inewave.newave import Modif, RE
-from idecomp.decomp.modelos.dadger import SB, HQ, LQ, DP
+from idecomp.decomp.modelos.dadger import SB, HQ, LQ, CQ, DP
 from idecomp.decomp.dadger import Dadger
 from idecomp.decomp.relato import Relato
 from idecomp.decomp.hidr import Hidr
@@ -432,17 +432,34 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
             # acessa a restrição em todos os estágios futuros, até
             # o limite, para garantir os valore serão mantidos.
             try:
-                ef = dadger.hq(regra.codigo_usina).estagio_final
+                cqs = dadger.lista_registros(CQ)
+                cqs_usina = [
+                    c for c in cqs if c._dados[2] == regra.codigo_usina
+                ]
+                if len(cqs_usina) > 0:
+                    cq_usina = cqs_usina[0]
+                    codigo_restricao = cq_usina._dados[0]
+                else:
+                    codigo_restricao = cqs[-1]._dados[0] + 1
+                    cq_usina = CQ()
+                    cq_usina._dados = [
+                        codigo_restricao,
+                        1,
+                        regra.codigo_usina,
+                        1.0,
+                        regra.tipo_restricao,
+                    ]
+                ef = dadger.hq(codigo_restricao).estagio_final
             except ValueError:
                 # Se não existe o registro HQ, cria, junto com um LQ
                 registros_dp = dadger.lista_registros(DP)
                 num_subsistemas = len(dadger.lista_registros(SB))
                 ef = int(len(registros_dp) / num_subsistemas)
-                Log.log().info(f"Criando HQ {regra.codigo_usina} - 1 {ef}")
+                Log.log().info(f"Criando HQ {codigo_restricao} - 1 {ef}")
                 hq_novo = HQ()
-                hq_novo._dados = [regra.codigo_usina, 1, ef]
+                hq_novo._dados = [codigo_restricao, 1, ef]
                 lq_novo = LQ()
-                lq_novo._dados = [regra.codigo_usina, 1] + [
+                lq_novo._dados = [codigo_restricao, 1] + [
                     0,
                     99999,
                     0,
@@ -452,17 +469,20 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
                 ]
                 dadger.cria_registro(dadger.ev, hq_novo)
                 dadger.cria_registro(hq_novo, lq_novo)
+                dadger.cria_registro(cq_usina)
             for e in range(estagio, ef + 1):
-                dadger.lq(regra.codigo_usina, e)
+                dadger.lq(codigo_restricao, e)
             # Aplica a regra no estágio devido, se tiver limites inf/sup
             if regra.limite_minimo is not None:
-                dadger.lq(regra.codigo_usina, estagio).limites_inferiores = [
+                dadger.lq(codigo_restricao, estagio).limites_inferiores = [
                     regra.limite_minimo
                 ] * 3
             if regra.limite_maximo is not None:
-                dadger.lq(regra.codigo_usina, estagio).limites_superiores = [
+                dadger.lq(codigo_restricao, estagio).limites_superiores = [
                     regra.limite_maximo
                 ] * 3
+            # Cria o registro CQ para definir o tipo QDEF
+            dadger.cria_registro
 
         Log.log().info(
             f"Aplicando regra: {str(regra)} no estágio {estagio_aplicacao}"
