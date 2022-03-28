@@ -528,7 +528,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         # Aplica as regras ativas
         registros_dp = dadger.lista_registros(DP)
         num_patamares = registros_dp[0].num_patamares
-        num_estagios = len(registros_dp) / num_patamares
+        num_estagios = int(len(registros_dp) / num_patamares)
         estagios_decomp_atual = list(range(1, num_estagios + 1))
         sucessos: List[bool] = []
         for estagio in estagios_decomp_atual:
