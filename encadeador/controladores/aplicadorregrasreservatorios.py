@@ -175,6 +175,9 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
             nova_usina.codigo = codigo
             nova_usina.nome = nome_usina
             modif.cria_registro(modif._registros[-1], nova_usina)
+            Log.log().info(
+                f"Criando novo registro USINA {codigo} após {modif._registros[-1]}"
+            )
         # Obtém o registro que modifica a usina
         usina = next(m for m in modif.usina if m.codigo == codigo)
         # Obtém o próximo registro de usina
@@ -190,13 +193,18 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         vazmint_existentes = [
             m
             for m in modif.vazmint
-            if idx_usina <= m._ordem <= idx_proxima_usina
+            if idx_usina < m._ordem < idx_proxima_usina
         ]
+        Log.log().info(
+            f"Existem {len(vazmint_existentes)} VAZMINT"
+            + f" entre os registros {idx_usina} e {idx_proxima_usina}"
+        )
         # Guarda a vazão do último VAZMINT
         if len(vazmint_existentes) > 0:
             ultima_vazao = vazmint_existentes[-1].vazao
         else:
             ultima_vazao = float(hidr.loc[codigo, "Vazão Mínima"])
+        Log.log().info(f"Última vazão = {ultima_vazao}")
         for m in vazmint_existentes:
             modif.deleta_registro(m)
         # Cria os VAZMINT
@@ -205,6 +213,10 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         novo_vazmint.mes = self._caso.mes
         novo_vazmint.ano = self._caso.ano
         novo_vazmint.vazao = regra.limite_minimo
+        Log.log().info(
+            f"Criando VAZMINT = {self._caso.mes}"
+            + f" {self._caso.ano} {regra.limite_minimo}"
+        )
         modif.cria_registro(usina, novo_vazmint)
         # - O segundo é para retornar ao valor anterior
         fim_vazmint = date(
@@ -214,6 +226,10 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         prox_vazmint.mes = fim_vazmint.month
         prox_vazmint.ano = fim_vazmint.year
         prox_vazmint.vazao = ultima_vazao
+        Log.log().info(
+            f"Criando VAZMINT = {fim_vazmint.month}"
+            + f" {fim_vazmint.year} {ultima_vazao}"
+        )
         modif.cria_registro(novo_vazmint, prox_vazmint)
 
     def aplica_regra_qdef_re(
@@ -524,6 +540,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         regras_operacao: List[RegraReservatorio],
         ultimo_decomp: CasoDECOMP,
         gap_semanas: int = 0,
+        regras_mensais: bool = False,
     ) -> bool:
 
         # Lê o dadger do decomp atual e o relato do decomp anterior
@@ -536,6 +553,11 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         mapa_dias_fim = self.mapeia_semanas_dias_fim(
             dadger, relato, gap_semanas
         )
+        # Se está falando de regras mensais, não consulta semana a semana
+        if regras_mensais:
+            ultimo_estagio = list(mapa_dias_fim.keys())[-1]
+            mapa_dias_fim = {1: mapa_dias_fim[ultimo_estagio]}
+            pass
         Log.log().info(
             f"Dias de fim dos estágios do DECOMP anterior: {mapa_dias_fim}"
         )
@@ -606,7 +628,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
                 - 2
             )
             self.aplica_regras_caso(
-                regras_mensais, ultimo_decomp_mes_anterior, gap_semanas
+                regras_mensais, ultimo_decomp_mes_anterior, gap_semanas, True
             )
         except StopIteration:
             Log.log().info(
