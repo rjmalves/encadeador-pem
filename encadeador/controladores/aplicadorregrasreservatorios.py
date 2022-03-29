@@ -602,9 +602,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
             )
             gap_semanas = (
                 len(casos_anteriores)
-                - casos_anteriores.index(
-                    regras_operacao.index(ultimo_decomp_mes_anterior)
-                )
+                - casos_anteriores.index(ultimo_decomp_mes_anterior)
                 - 1
             )
             self.aplica_regras_caso(
