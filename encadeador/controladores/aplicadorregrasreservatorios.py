@@ -177,7 +177,12 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         usina = next(m for m in modif.usina if m.codigo == codigo)
         # Obtém o próximo registro de usina
         idx_usina = usina._ordem
-        idx_proxima_usina = modif.usina[modif.usina.index(usina) + 1]._ordem
+        if modif.usina.index(usina) == len(modif.usina) - 1:
+            idx_proxima_usina = 99999
+        else:
+            idx_proxima_usina = modif.usina[
+                modif.usina.index(usina) + 1
+            ]._ordem
         # TODO - REVER PREMISSA
         # Se existem VAZMINT para a usina, deleta
         vazmint_existentes = [
@@ -232,8 +237,6 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
             )
             df_conjuntos = re.usinas_conjuntos
         # Senão, identifica.
-        Log.log().info(df_conjuntos)
-        Log.log().info([linha for _, linha in df_conjuntos.iterrows()])
         num_conjunto = next(
             int(linha["Conjunto"])
             for _, linha in df_conjuntos.iterrows()
