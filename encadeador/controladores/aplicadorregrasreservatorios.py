@@ -492,7 +492,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         return True
 
     def mapeia_semanas_dias_fim(
-        self, dadger: Dadger, relato: Relato, delta_inicial: int = 1
+        self, dadger: Dadger, relato: Relato, delta_inicial: int = 0
     ) -> Dict[int, date]:
         dt = dadger.dt
         dia_inicio_caso_atual = date(dt.ano, dt.mes, dt.dia)
