@@ -234,7 +234,7 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
             int(linha["Conjunto"])
             for _, linha in df_conjuntos.iterrows()
             if codigo
-            in linha[cols_usinas]
+            in linha[cols_usinas].to_numpy()
         )
         # Deleta as restrições do conjunto em questão, se existirem
         restricoes = re.restricoes
