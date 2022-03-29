@@ -230,6 +230,9 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
                 pd.DataFrame(data=novo_conjunto), ignore_index=True
             )
         # Senão, identifica.
+        Log.log().info(df_conjuntos)
+        Log.log().info([linha
+            for _, linha in df_conjuntos.iterrows()])
         num_conjunto = next(
             int(linha["Conjunto"])
             for _, linha in df_conjuntos.iterrows()
