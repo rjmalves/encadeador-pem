@@ -492,7 +492,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         return True
 
     def mapeia_semanas_dias_fim(
-        self, dadger: Dadger, relato: Relato
+        self, dadger: Dadger, relato: Relato, delta_inicial: int = 1
     ) -> Dict[int, date]:
         dt = dadger.dt
         dia_inicio_caso_atual = date(dt.ano, dt.mes, dt.dia)
@@ -502,7 +502,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         return {
             i
             + 1: dia_inicio_caso_atual
-            - timedelta(weeks=1, days=1)
+            - timedelta(weeks=delta_inicial, days=1)
             + timedelta(weeks=i, days=0)
             for i in range(num_semanas_caso_anterior)
         }
@@ -523,6 +523,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         self,
         regras_operacao: List[RegraReservatorio],
         ultimo_decomp: CasoDECOMP,
+        gap_semanas: int = 1,
     ) -> bool:
 
         # Lê o dadger do decomp atual e o relato do decomp anterior
@@ -532,7 +533,9 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         relato = Relato.le_arquivo(ultimo_decomp.caminho, arq_relato)
 
         # Identifica o dia de fim de cada semana do DECOMP anterior
-        mapa_dias_fim = self.mapeia_semanas_dias_fim(dadger, relato)
+        mapa_dias_fim = self.mapeia_semanas_dias_fim(
+            dadger, relato, gap_semanas
+        )
         Log.log().info(
             f"Dias de fim dos estágios do DECOMP anterior: {mapa_dias_fim}"
         )
@@ -597,7 +600,16 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
             regras_mensais = list(
                 set([r for r in regras_operacao if r.periodicidade == "M"])
             )
-            self.aplica_regras_caso(regras_mensais, ultimo_decomp_mes_anterior)
+            gap_semanas = (
+                len(casos_anteriores)
+                - casos_anteriores.index(
+                    regras_operacao.index(ultimo_decomp_mes_anterior)
+                )
+                - 1
+            )
+            self.aplica_regras_caso(
+                regras_mensais, ultimo_decomp_mes_anterior, gap_semanas
+            )
         except StopIteration:
             Log.log().info(
                 f"Caso {self._caso.nome} não possui DECOMP no mês anterior. "
