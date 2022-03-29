@@ -171,8 +171,11 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         nome_usina = str(hidr.loc[codigo, "Nome"])
         # Se a usina em questão não é modificada, cria uma modificação nova
         if not any([m.codigo == codigo for m in modif.usina]):
-            k = lambda r: r._ordem
-            ultimo_registro = sorted(modif._registros, key=k)[-1]
+
+            def compare(r):
+                return r._ordem
+
+            ultimo_registro = sorted(modif._registros, key=compare)[-1]
             nova_usina = USINA()
             nova_usina.codigo = codigo
             nova_usina.nome = nome_usina
@@ -185,7 +188,7 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         # Obtém o próximo registro de usina
         idx_usina = usina._ordem
         if modif.usina.index(usina) == len(modif.usina) - 1:
-            idx_proxima_usina = 99999.
+            idx_proxima_usina = 99999.0
         else:
             idx_proxima_usina = modif.usina[
                 modif.usina.index(usina) + 1
@@ -243,7 +246,7 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         cols_usinas = [f"Usina {i}" for i in range(1, 11)]
         df_conjuntos = re.usinas_conjuntos
         conjuntos = list(df_conjuntos["Conjunto"].unique())
-        if not codigo in df_conjuntos[cols_usinas].to_numpy():
+        if codigo not in df_conjuntos[cols_usinas].to_numpy():
             Log.log().info(f"Criando conjunto com usina {codigo}")
             num_conjunto = max(conjuntos) + 1
             novo_conjunto = {
