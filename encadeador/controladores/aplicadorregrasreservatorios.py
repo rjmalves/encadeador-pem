@@ -185,7 +185,7 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         # Obtém o próximo registro de usina
         idx_usina = usina._ordem
         if modif.usina.index(usina) == len(modif.usina) - 1:
-            idx_proxima_usina = 99999
+            idx_proxima_usina = 99999.
         else:
             idx_proxima_usina = modif.usina[
                 modif.usina.index(usina) + 1
@@ -484,7 +484,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
                 ]
                 dadger.cria_registro(dadger.ev, hq_novo)
                 dadger.cria_registro(hq_novo, lq_novo)
-                dadger.cria_registro(cq_usina)
+                dadger.cria_registro(lq_novo, cq_usina)
             for e in range(estagio, ef + 1):
                 dadger.lq(codigo_restricao, e)
             # Aplica a regra no estágio devido, se tiver limites inf/sup
