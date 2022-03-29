@@ -168,7 +168,7 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         if regra.limite_minimo is None:
             return
         hidr = Hidr.le_arquivo(self._caso.caminho).tabela
-        nome_usina = hidr.loc[codigo, "Nome"].tolist()[0]
+        nome_usina = str(hidr.loc[codigo, "Nome"])
         # Se a usina em questão não é modificada, cria uma modificação nova
         if not any([m.codigo == codigo for m in modif.usina]):
             nova_usina = USINA()
