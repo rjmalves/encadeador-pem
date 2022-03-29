@@ -171,12 +171,15 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         nome_usina = str(hidr.loc[codigo, "Nome"])
         # Se a usina em questão não é modificada, cria uma modificação nova
         if not any([m.codigo == codigo for m in modif.usina]):
+            ultimo_registro = sorted(
+                modif._registros, key=lambda r1, r2: r1._ordem > r2._ordem
+            )[-1]
             nova_usina = USINA()
             nova_usina.codigo = codigo
             nova_usina.nome = nome_usina
-            modif.cria_registro(modif._registros[-1], nova_usina)
+            modif.cria_registro(ultimo_registro, nova_usina)
             Log.log().info(
-                f"Criando novo registro USINA {codigo} após {modif._registros[-1]}"
+                f"Criando novo registro USINA {codigo} após {ultimo_registro.mnemonico}"
             )
         # Obtém o registro que modifica a usina
         usina = next(m for m in modif.usina if m.codigo == codigo)
