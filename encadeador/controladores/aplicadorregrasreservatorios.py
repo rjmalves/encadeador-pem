@@ -167,12 +167,14 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         # Se a regra não tem limite mínimo, ignora
         if regra.limite_minimo is None:
             return
+        hidr = Hidr.le_arquivo(self._caso.caminho).tabela
+        nome_usina = hidr.loc[codigo, "Nome"].tolist()[0]
         # Se a usina em questão não é modificada, cria uma modificação nova
         if not any([m.codigo == codigo for m in modif.usina]):
             nova_usina = USINA()
             nova_usina.codigo = codigo
-            nova_usina.nome = ""
-            modif.cria_registro(modif.usina[-1], nova_usina)
+            nova_usina.nome = nome_usina
+            modif.cria_registro(modif._registros[-1], nova_usina)
         # Obtém o registro que modifica a usina
         usina = next(m for m in modif.usina if m.codigo == codigo)
         # Obtém o próximo registro de usina
@@ -194,7 +196,6 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         if len(vazmint_existentes) > 0:
             ultima_vazao = vazmint_existentes[-1].vazao
         else:
-            hidr = Hidr.le_arquivo(self._caso.caminho).tabela
             ultima_vazao = float(hidr.loc[codigo, "Vazão Mínima"])
         for m in vazmint_existentes:
             modif.deleta_registro(m)
