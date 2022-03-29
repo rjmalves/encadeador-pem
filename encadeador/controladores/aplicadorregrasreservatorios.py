@@ -220,6 +220,7 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         df_conjuntos = re.usinas_conjuntos
         conjuntos = list(df_conjuntos["Conjunto"].unique())
         if not codigo in df_conjuntos[cols_usinas].to_numpy():
+            Log.log().info(f"Criando conjunto com usina {codigo}")
             num_conjunto = max(conjuntos) + 1
             novo_conjunto = {
                 **{"Conjunto": [num_conjunto]},
@@ -229,15 +230,14 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
             re.usinas_conjuntos = df_conjuntos.append(
                 pd.DataFrame(data=novo_conjunto), ignore_index=True
             )
+            df_conjuntos = re.usinas_conjuntos
         # Senão, identifica.
         Log.log().info(df_conjuntos)
-        Log.log().info([linha
-            for _, linha in df_conjuntos.iterrows()])
+        Log.log().info([linha for _, linha in df_conjuntos.iterrows()])
         num_conjunto = next(
             int(linha["Conjunto"])
             for _, linha in df_conjuntos.iterrows()
-            if codigo
-            in linha[cols_usinas].to_numpy()
+            if codigo in linha[cols_usinas].to_numpy()
         )
         # Deleta as restrições do conjunto em questão, se existirem
         restricoes = re.restricoes
