@@ -523,7 +523,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         self,
         regras_operacao: List[RegraReservatorio],
         ultimo_decomp: CasoDECOMP,
-        gap_semanas: int = 1,
+        gap_semanas: int = 0,
     ) -> bool:
 
         # Lê o dadger do decomp atual e o relato do decomp anterior
