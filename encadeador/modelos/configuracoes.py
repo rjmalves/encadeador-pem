@@ -871,13 +871,14 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         return self
 
     def arquivo_regras_operacao_reservatorios(self, variavel: str):
-        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        valor = getenv(variavel)
         # Confere se existe o arquivo no diretorio raiz de encadeamento
-        if not isfile(join(curdir, valor)):
-            Log.log().warning(
-                "Arquivo com as regras de operação de reservatórios não "
-                + f"encontrado: {valor}"
-            )
+        if valor is not None:
+            if not isfile(join(curdir, valor)):
+                Log.log().warning(
+                    "Arquivo com as regras de operação de reservatórios não "
+                    + f"encontrado: {valor}"
+                )
             self._configuracoes._arquivo_regras_operacao_reservatorios = None
         else:
             self._configuracoes._arquivo_regras_operacao_reservatorios = valor
