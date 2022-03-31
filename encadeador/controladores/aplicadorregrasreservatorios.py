@@ -77,19 +77,20 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
             ]
         )
         try:
-            regra = next(
-                r
-                for r in regras
+            regra = None
+            for r in regras:
+                limsup = 100.1 if r.volume_maximo == 100.0 else r.volume_maximo
                 if all(
                     [
                         r.codigo_usina == codigo_usina,
                         r.codigo_reservatorio == codigo_reservatorio,
-                        r.volume_minimo
-                        <= float(volume_estagio)
-                        < r.volume_maximo,
+                        r.volume_minimo <= float(volume_estagio) < limsup,
                     ]
-                )
-            )
+                ):
+                    regra = r
+                    break
+            if regra is None:
+                raise StopIteration()
         except StopIteration:
             Log.log().warning(
                 "Não foi encontrada regra de operação ativa "
@@ -193,25 +194,42 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
             idx_proxima_usina = modif.usina[
                 modif.usina.index(usina) + 1
             ]._ordem
-        # TODO - REVER PREMISSA
-        # Se existem VAZMINT para a usina, deleta
         vazmint_existentes = [
             m
             for m in modif.vazmint
             if idx_usina < m._ordem < idx_proxima_usina
         ]
+        vazmin_existentes = [
+            m for m in modif.vazmin if idx_usina < m._ordem < idx_proxima_usina
+        ]
         Log.log().info(
             f"Existem {len(vazmint_existentes)} VAZMINT"
             + f" entre os registros {idx_usina} e {idx_proxima_usina}"
         )
-        # Guarda a vazão do último VAZMINT
+        Log.log().info(
+            f"Existem {len(vazmin_existentes)} VAZMIN"
+            + f" entre os registros {idx_usina} e {idx_proxima_usina}"
+        )
+        # Guarda a vazão do primeiro VAZMINT que tenha início após os
+        # 2 primeiros meses. Se não existir, procura VAZMIN. Por último,
+        # procura no HIDR
+        data_caso = date(self._caso.ano, self._caso.mes, 1)
         if len(vazmint_existentes) > 0:
-            ultima_vazao = vazmint_existentes[-1].vazao
+            for m in vazmint_existentes:
+                data_inicio = date(m.ano, m.mes, 1)
+                if data_inicio >= data_caso + relativedelta(months=+2):
+                    ultima_vazao = m.vazao
+                    break
+        elif len(vazmin_existentes) > 0:
+            ultima_vazao = vazmin_existentes[-1].vazao
         else:
             ultima_vazao = float(hidr.loc[codigo, "Vazão Mínima"])
         Log.log().info(f"Última vazão = {ultima_vazao}")
         for m in vazmint_existentes:
-            modif.deleta_registro(m)
+            # Deleta os VAZMINT que iniciem nos 2 primeiros meses
+            data_inicio = date(m.ano, m.mes, 1)
+            if data_inicio < data_caso + relativedelta(months=+2):
+                modif.deleta_registro(m)
         # Cria os VAZMINT
         # - O primeiro é válido para os 2 primeiros meses
         novo_vazmint = VAZMINT()
@@ -264,16 +282,26 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
             for _, linha in df_conjuntos.iterrows()
             if codigo in linha[cols_usinas].to_numpy()
         )
-        # Deleta as restrições do conjunto em questão, se existirem
-        restricoes = re.restricoes
-        indices_restricoes = restricoes.loc[
-            restricoes["Conjunto"] == num_conjunto, :
-        ].index
-        restricoes = restricoes.drop(index=indices_restricoes)
         # Cria as restrições para o conjunto em questão, nos 2 primeiros
         # meses do horizonte
         mes_inicial = date(year=self._caso.ano, month=self._caso.mes, day=1)
         mes_final = mes_inicial + relativedelta(months=+1)
+        # Deleta as restrições do conjunto em questão, se existirem e começarem
+        # em algum dos 2 primeiros meses
+        restricoes = re.restricoes
+        indices_restricoes = restricoes.loc[
+            (restricoes["Conjunto"] == num_conjunto)
+            & (
+                (restricoes["Mês Início"] == mes_inicial.month)
+                | (restricoes["Mês Início"] == mes_final.month)
+            )
+            & (
+                (restricoes["Ano Início"] == mes_inicial.year)
+                | (restricoes["Ano Início"] == mes_final.year)
+            ),
+            :,
+        ].index
+        restricoes = restricoes.drop(index=indices_restricoes)
 
         # Se a regra não tem limite máximo, ignora
         qdef = regra.limite_maximo
@@ -392,19 +420,20 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
             ]
         )
         try:
-            regra = next(
-                r
-                for r in regras
+            regra = None
+            for r in regras:
+                limsup = 100.1 if r.volume_maximo == 100.0 else r.volume_maximo
                 if all(
                     [
                         r.codigo_usina == codigo_usina,
                         r.codigo_reservatorio == codigo_reservatorio,
-                        r.volume_minimo
-                        <= float(volume_estagio)
-                        < r.volume_maximo,
+                        r.volume_minimo <= float(volume_estagio) < limsup,
                     ]
-                )
-            )
+                ):
+                    regra = r
+                    break
+            if regra is None:
+                raise StopIteration()
         except StopIteration:
             Log.log().warning(
                 "Não foi encontrada regra de operação ativa "
@@ -455,52 +484,55 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
                     c for c in cqs if c._dados[2] == regra.codigo_usina
                 ]
                 if len(cqs_usina) > 0:
-                    cq_usina = cqs_usina[0]
-                    codigo_restricao = cq_usina._dados[0]
+                    codigos_restricoes = [cq._dados[0] for cq in cqs_usina]
                 else:
-                    codigo_restricao = cqs[-1]._dados[0] + 1
-                    cq_usina = CQ()
-                    cq_usina._dados = [
-                        codigo_restricao,
+                    codigos_restricoes = [cqs[-1]._dados[0] + 1]
+                    cqs_usinas = [CQ()]
+                    cqs_usinas[0]._dados = [
+                        codigos_restricoes[0],
                         1,
                         regra.codigo_usina,
                         1.0,
                         regra.tipo_restricao,
                     ]
-                ef = dadger.hq(codigo_restricao).estagio_final
-            except ValueError:
-                # Se não existe o registro HQ, cria, junto com um LQ
-                registros_dp = dadger.lista_registros(DP)
-                num_subsistemas = len(dadger.lista_registros(SB))
-                ef = int(len(registros_dp) / num_subsistemas)
-                Log.log().info(f"Criando HQ {codigo_restricao} - 1 {ef}")
-                hq_novo = HQ()
-                hq_novo._dados = [codigo_restricao, 1, ef]
-                lq_novo = LQ()
-                lq_novo._dados = [codigo_restricao, 1] + [
-                    0,
-                    99999,
-                    0,
-                    99999,
-                    0,
-                    99999,
+                efs = [
+                    dadger.hq(codigo).estagio_final
+                    for codigo in codigos_restricoes
                 ]
-                dadger.cria_registro(dadger.ev, hq_novo)
-                dadger.cria_registro(hq_novo, lq_novo)
-                dadger.cria_registro(lq_novo, cq_usina)
-            for e in range(estagio, ef + 1):
-                dadger.lq(codigo_restricao, e)
-            # Aplica a regra no estágio devido, se tiver limites inf/sup
-            if regra.limite_minimo is not None:
-                dadger.lq(codigo_restricao, estagio).limites_inferiores = [
-                    regra.limite_minimo
-                ] * 3
-            if regra.limite_maximo is not None:
-                dadger.lq(codigo_restricao, estagio).limites_superiores = [
-                    regra.limite_maximo
-                ] * 3
-            # Cria o registro CQ para definir o tipo QDEF
-            dadger.cria_registro
+            except ValueError:
+                for cq_usina, codigo, ef in zip(
+                    cqs_usina, codigos_restricoes, efs
+                ):
+                    # Se não existe o registro HQ, cria, junto com um LQ
+                    registros_dp = dadger.lista_registros(DP)
+                    num_subsistemas = len(dadger.lista_registros(SB))
+                    ef = int(len(registros_dp) / num_subsistemas)
+                    Log.log().info(f"Criando HQ {codigo} - 1 {ef}")
+                    hq_novo = HQ()
+                    hq_novo._dados = [codigo, 1, ef]
+                    lq_novo = LQ()
+                    lq_novo._dados = [codigo, 1] + [
+                        0,
+                        99999,
+                        0,
+                        99999,
+                        0,
+                        99999,
+                    ]
+                    dadger.cria_registro(dadger.ev, hq_novo)
+                    dadger.cria_registro(hq_novo, lq_novo)
+                    dadger.cria_registro(lq_novo, cq_usina)
+                    for e in range(estagio, ef + 1):
+                        dadger.lq(codigo, e)
+                    # Aplica a regra no estágio devido, se tiver limites inf/sup
+                    if regra.limite_minimo is not None:
+                        dadger.lq(codigo, estagio).limites_inferiores = [
+                            regra.limite_minimo
+                        ] * 3
+                    if regra.limite_maximo is not None:
+                        dadger.lq(codigo, estagio).limites_superiores = [
+                            regra.limite_maximo
+                        ] * 3
 
         Log.log().info(
             f"Aplicando regra: {str(regra)} no estágio {estagio_aplicacao}"
