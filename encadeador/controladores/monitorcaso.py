@@ -349,13 +349,13 @@ class MonitorDECOMP(MonitorCaso):
         Log.log().info(f"Caso {self._caso.nome}: fim da execução")
         if not self._avaliador.avalia():
             self._caso.atualiza(EstadoCaso.INVIAVEL)
-            return
-
-        self._caso.atualiza(EstadoCaso.CONCLUIDO)
+        else:
+            self._caso.atualiza(EstadoCaso.CONCLUIDO)
+            self._transicao_caso(TransicaoCaso.SUCESSO)
+        # Sempre realiza a síntese
         sintetizador = SintetizadorCaso.factory(self._caso)
         if not sintetizador.sintetiza_caso():
             Log.log().error(f"Erro na síntese do caso {self._caso.nome}")
-        self._transicao_caso(TransicaoCaso.SUCESSO)
 
     # Override
     def _trata_caso_inviavel(self):
