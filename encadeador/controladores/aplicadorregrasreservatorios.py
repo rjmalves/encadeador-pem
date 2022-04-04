@@ -525,17 +525,21 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
                     dadger.cria_registro(dadger.ev, hq_novo)
                     dadger.cria_registro(hq_novo, lq_novo)
                     dadger.cria_registro(lq_novo, cq_usina)
-                    for e in range(estagio, ef + 1):
-                        dadger.lq(codigo, e)
-                    # Aplica a regra no estágio devido, se tiver limites inf/sup
-                    if regra.limite_minimo is not None:
-                        dadger.lq(codigo, estagio).limites_inferiores = [
-                            regra.limite_minimo
-                        ] * 3
-                    if regra.limite_maximo is not None:
-                        dadger.lq(codigo, estagio).limites_superiores = [
-                            regra.limite_maximo
-                        ] * 3
+
+            for cq_usina, codigo, ef in zip(
+                cqs_usina, codigos_restricoes, efs
+            ):
+                for e in range(estagio, ef + 1):
+                    dadger.lq(codigo, e)
+                # Aplica a regra no estágio devido, se tiver limites inf/sup
+                if regra.limite_minimo is not None:
+                    dadger.lq(codigo, estagio).limites_inferiores = [
+                        regra.limite_minimo
+                    ] * 3
+                if regra.limite_maximo is not None:
+                    dadger.lq(codigo, estagio).limites_superiores = [
+                        regra.limite_maximo
+                    ] * 3
 
         Log.log().info(
             f"Aplicando regra: {str(regra)} no estágio {estagio_aplicacao}"
