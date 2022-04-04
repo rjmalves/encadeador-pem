@@ -879,8 +879,6 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
                     "Arquivo com as regras de operação de reservatórios não "
                     + f"encontrado: {valor}"
                 )
-            self._configuracoes._arquivo_regras_operacao_reservatorios = None
-        else:
-            self._configuracoes._arquivo_regras_operacao_reservatorios = valor
+        self._configuracoes._arquivo_regras_operacao_reservatorios = valor
         # Fluent method
         return self
