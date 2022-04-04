@@ -503,9 +503,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
                     for codigo in codigos_restricoes
                 ]
             except ValueError:
-                for cq_usina, codigo, ef in zip(
-                    cqs_usina, codigos_restricoes, efs
-                ):
+                for cq_usina, codigo in zip(cqs_usina, codigos_restricoes):
                     # Se não existe o registro HQ, cria, junto com um LQ
                     registros_dp = dadger.lista_registros(DP)
                     num_subsistemas = len(dadger.lista_registros(SB))
@@ -525,6 +523,10 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
                     dadger.cria_registro(dadger.ev, hq_novo)
                     dadger.cria_registro(hq_novo, lq_novo)
                     dadger.cria_registro(lq_novo, cq_usina)
+                efs = [
+                    dadger.hq(codigo).estagio_final
+                    for codigo in codigos_restricoes
+                ]
 
             for cq_usina, codigo, ef in zip(
                 cqs_usina, codigos_restricoes, efs
