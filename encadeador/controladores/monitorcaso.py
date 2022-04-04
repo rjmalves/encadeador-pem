@@ -363,11 +363,11 @@ class MonitorDECOMP(MonitorCaso):
 
         Log.log().info(f"Caso {self._caso.nome}: fim da execução")
         if not self._avaliador.avalia():
-            sintetiza()
             self._caso.atualiza(EstadoCaso.INVIAVEL)
-        else:
             sintetiza()
+        else:
             self._caso.atualiza(EstadoCaso.CONCLUIDO)
+            sintetiza()
             self._transicao_caso(TransicaoCaso.SUCESSO)
         # Sempre realiza a síntese
         sintetiza()
