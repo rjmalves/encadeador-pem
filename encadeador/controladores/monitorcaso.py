@@ -270,6 +270,7 @@ class MonitorNEWAVE(MonitorCaso):
 
         def sintetiza():
             sintetizador = SintetizadorCaso.factory(self._caso)
+            Log.log().info(f"Sintetizando caso...")
             if not sintetizador.sintetiza_caso():
                 Log.log().error(f"Erro na síntese do caso {self._caso.nome}")
                 raise RuntimeError()
@@ -352,16 +353,24 @@ class MonitorDECOMP(MonitorCaso):
 
     # Override
     def _trata_fim_execucao(self):
+
+        def sintetiza():
+            sintetizador = SintetizadorCaso.factory(self._caso)
+            Log.log().info(f"Sintetizando caso...")
+            if not sintetizador.sintetiza_caso():
+                Log.log().error(f"Erro na síntese do caso {self._caso.nome}")
+                raise RuntimeError()
+
         Log.log().info(f"Caso {self._caso.nome}: fim da execução")
         if not self._avaliador.avalia():
+            sintetiza()
             self._caso.atualiza(EstadoCaso.INVIAVEL)
         else:
+            sintetiza()
             self._caso.atualiza(EstadoCaso.CONCLUIDO)
             self._transicao_caso(TransicaoCaso.SUCESSO)
         # Sempre realiza a síntese
-        sintetizador = SintetizadorCaso.factory(self._caso)
-        if not sintetizador.sintetiza_caso():
-            Log.log().error(f"Erro na síntese do caso {self._caso.nome}")
+        sintetiza()
 
     # Override
     def _trata_caso_inviavel(self):
