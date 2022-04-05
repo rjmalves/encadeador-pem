@@ -182,7 +182,7 @@ class DadosEstudo:
         for c in DadosEstudo.COLUNAS_CUSTOS:
             if c == "Caso":
                 continue
-            custo = float(custos.loc[c.ljust(18), "Valor Esperado"])
+            custo = float(custos.loc[c, "Valor Esperado"])
             dados_variaveis[c].append(custo)
         df_variaveis = pd.DataFrame(data=dados_variaveis)
         if resumo_newaves.empty:
@@ -267,7 +267,9 @@ class DadosEstudo:
             nomes.append("Inicial")
             for s in subsistemas:
                 cmos[s].append(np.nan)
-                eas = earm_subsis.loc[earm_subsis["Subsistema"] == s, "Inicial"]
+                eas = earm_subsis.loc[
+                    earm_subsis["Subsistema"] == s, "Inicial"
+                ]
                 earms_sub[s].append(float(eas))
                 gts_sub[s].append(np.nan)
                 gts_perc_m_sub[s].append(np.nan)
