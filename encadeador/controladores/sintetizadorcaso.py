@@ -170,16 +170,17 @@ class SintetizadorDECOMP(SintetizadorCaso):
             :, ["Estágio", "Usina", "Qdef (m3/s)"]
         ].copy()
         # Formata
-        cols = [f"Estágio {e}" for e in estagios]
+        cols = ["Usina"] + [f"Estágio {e}" for e in estagios]
         df_reserv = pd.DataFrame(columns=cols)
-        for u in usinas:
+        for i, u in enumerate(usinas):
             df_u = def_reserv.loc[def_reserv["Usina"] == u, :].copy()
             df_u = df_u.sort_values("Estágio")
             defluencias = df_u["Qdef (m3/s)"].tolist()
             if len(defluencias) != len(estagios):
-                df_reserv.loc[u, :] = 0
+                df_reserv.loc[i, :] = 0
+                df_reserv.loc[i, "Usina"] = u
             else:
-                df_reserv.loc[u, :] = df_u["Qdef (m3/s)"].tolist()
+                df_reserv.loc[i, :] = [u] + df_u["Qdef (m3/s)"].tolist()
         return df_reserv
 
     @staticmethod
