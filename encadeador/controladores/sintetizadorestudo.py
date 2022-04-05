@@ -13,6 +13,7 @@ ARQUIVO_PROXIMO_CASO = "proximo_caso.json"
 ARQUIVO_RESUMO_NEWAVES = "newaves_encadeados.csv"
 ARQUIVO_RESUMO_DECOMPS = "decomps_encadeados.csv"
 ARQUIVO_RESUMO_RESERVATORIOS = "reservatorios_encadeados.csv"
+ARQUIVO_RESUMO_DEFLUENCIAS = "defluencias_encadeadas.csv"
 ARQUIVO_CONVERGENCIA_NEWAVES = "convergencia_newaves.csv"
 ARQUIVO_CONVERGENCIA_DECOMPS = "convergencia_decomps.csv"
 ARQUIVO_INVIABILIDADES_DECOMPS = "inviabilidades_decomps.csv"
@@ -46,6 +47,9 @@ class SintetizadorEstudo:
         resumo_reservatorios = join(
             diretorio_estudo, ARQUIVO_RESUMO_RESERVATORIOS
         )
+        resumo_defluencias = join(
+            diretorio_estudo, ARQUIVO_RESUMO_DEFLUENCIAS
+        )
         convergencias_newaves = join(
             diretorio_estudo, ARQUIVO_CONVERGENCIA_NEWAVES
         )
@@ -58,6 +62,7 @@ class SintetizadorEstudo:
         escreve_df_em_csv(dados.resumo_newaves, resumo_newaves)
         escreve_df_em_csv(dados.resumo_decomps, resumo_decomps)
         escreve_df_em_csv(dados.resumo_reservatorios, resumo_reservatorios)
+        escreve_df_em_csv(dados.resumo_defluencias, resumo_defluencias)
         escreve_df_em_csv(dados.convergencias_newaves, convergencias_newaves)
         escreve_df_em_csv(dados.convergencias_decomps, convergencias_decomps)
         escreve_df_em_csv(dados.inviabilidades_decomps, inviabilidades_decomps)

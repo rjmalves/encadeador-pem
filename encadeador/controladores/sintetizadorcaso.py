@@ -146,7 +146,9 @@ class SintetizadorDECOMP(SintetizadorCaso):
 
     @staticmethod
     def __processa_dado_sin(dado_subsis: pd.DataFrame) -> pd.DataFrame:
-        cols_estagios = [c for c in list(dado_subsis.columns) if "Estágio" in c]
+        cols_estagios = [
+            c for c in list(dado_subsis.columns) if "Estágio" in c
+        ]
         dado_sin = dado_subsis.loc[:, cols_estagios].sum(axis=0)
         df = pd.DataFrame(columns=cols_estagios)
         df.loc[0, :] = dado_sin
@@ -155,8 +157,30 @@ class SintetizadorDECOMP(SintetizadorCaso):
     @staticmethod
     def __processa_reservatorios(reservatorios: pd.DataFrame) -> pd.DataFrame:
         estagios = [c for c in list(reservatorios.columns) if "Estágio" in c]
-        gh = reservatorios.loc[:, ["Usina", "Inicial"] + estagios].copy()
-        return gh
+        earm_reserv = reservatorios.loc[
+            :, ["Usina", "Inicial"] + estagios
+        ].copy()
+        return earm_reserv
+
+    @staticmethod
+    def __processa_defluencias(relatorio: pd.DataFrame) -> pd.DataFrame:
+        estagios = list(relatorio["Estágio"].unique())
+        usinas = list(relatorio["Usina"].unique())
+        def_reserv = relatorio.loc[
+            :, ["Estágio", "Usina", "Qdef (m3/s)"]
+        ].copy()
+        # Formata
+        cols = [f"Estágio {e}" for e in estagios]
+        df_reserv = pd.DataFrame(columns=cols)
+        for u in usinas:
+            df_u = def_reserv.loc[def_reserv["Usina"] == u, :].copy()
+            df_u = df_u.sort_values("Estágio")
+            defluencias = df_u["Qdef (m3/s)"].tolist()
+            if len(defluencias) != len(estagios):
+                df_reserv.loc[u, :] = 0
+            else:
+                df_reserv.loc[u, :] = df_u["Qdef (m3/s)"].tolist()
+        return df_reserv
 
     @staticmethod
     def __processa_gh(balanco: pd.DataFrame) -> pd.DataFrame:
@@ -289,7 +313,9 @@ class SintetizadorDECOMP(SintetizadorCaso):
         earm_subsis = relato.energia_armazenada_subsistema
         earmax = relato.energia_armazenada_maxima_subsistema
         reservatorio = relato.volume_util_reservatorios
+        relatorio = relato.relatorio_operacao_uhe
         earm_reserv = SintetizadorDECOMP.__processa_reservatorios(reservatorio)
+        def_usi = SintetizadorDECOMP.__processa_defluencias(relatorio)
         earm_sin = SintetizadorDECOMP.__processa_earm_sin(earm_subsis, earmax)
         gt_subsis = relato.geracao_termica_subsistema
         gt_sin = SintetizadorDECOMP.__processa_dado_sin(gt_subsis)
@@ -309,6 +335,7 @@ class SintetizadorDECOMP(SintetizadorCaso):
         # Exporta os dados
         escreve_df_em_csv(cmo, join(caminho_saida, "cmo.csv"))
         escreve_df_em_csv(earm_reserv, join(caminho_saida, "earm_reserv.csv"))
+        escreve_df_em_csv(def_usi, join(caminho_saida, "def_usi.csv"))
         escreve_df_em_csv(earm_subsis, join(caminho_saida, "earm_subsis.csv"))
         escreve_df_em_csv(earm_sin, join(caminho_saida, "earm_sin.csv"))
         escreve_df_em_csv(gt_subsis, join(caminho_saida, "gt_subsis.csv"))
@@ -324,7 +351,9 @@ class SintetizadorDECOMP(SintetizadorCaso):
         escreve_df_em_csv(
             merc_subsis, join(caminho_saida, "mercado_subsis.csv")
         )
-        escreve_df_em_csv(def_subsis, join(caminho_saida, "deficit_subsis.csv"))
+        escreve_df_em_csv(
+            def_subsis, join(caminho_saida, "deficit_subsis.csv")
+        )
         escreve_df_em_csv(merc_sin, join(caminho_saida, "mercado_sin.csv"))
         escreve_df_em_csv(def_sin, join(caminho_saida, "deficit_sin.csv"))
         return True
