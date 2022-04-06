@@ -34,7 +34,9 @@ class Encadeador:
         self._caso_atual = caso_atual
 
     @staticmethod
-    def factory(casos_anteriores: List[Caso], caso_atual: Caso) -> "Encadeador":
+    def factory(
+        casos_anteriores: List[Caso], caso_atual: Caso
+    ) -> "Encadeador":
         if isinstance(caso_atual, CasoDECOMP):
             return EncadeadorDECOMPDECOMP(casos_anteriores, caso_atual)
         elif isinstance(caso_atual, CasoNEWAVE):
@@ -180,7 +182,9 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             cols_ena_previsao = list(ena_previsao.columns)
             cols_ena_previsao = cols_ena_previsao[:-1]
             ena_previsao = ena_previsao[cols_ena_previsao]
-            cols_ena_previsao = [c for c in cols_ena_previsao if "Estágio" in c]
+            cols_ena_previsao = [
+                c for c in cols_ena_previsao if "Estágio" in c
+            ]
             # enas_previstas é um DF apenas com as colunas de ENA prevista
             # para cada semana. É ordenado de maneira cronológica.
             enas_previstas = ena_previsao[cols_ena_previsao]
@@ -192,7 +196,9 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             enas_verificadas = ena_pre_estudo[reversed(cols_ena_verif)]
             # enas_verificadas é um DF apenas com as colunas de ENA verificada
             # para cada semana. É ordenado de maneira cronológica.
-            enas_semanas = pd.concat([enas_previstas, enas_verificadas], axis=1)
+            enas_semanas = pd.concat(
+                [enas_previstas, enas_verificadas], axis=1
+            )
             n_semanas = len(enas_semanas.columns)
             enas_semanas.columns = [
                 f"Semana {i}" for i in range(1, n_semanas + 1)
@@ -314,7 +320,8 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
 
     def __colunas_gtmin(self) -> List[str]:
         cols_gtmin = [
-            f"GT Min {MESES_DF[i - 1]}" for i in range(self._caso_atual.mes, 13)
+            f"GT Min {MESES_DF[i - 1]}"
+            for i in range(self._caso_atual.mes, 13)
         ]
         cols_gtmin += ["GT Min D+ Anos"]
         return cols_gtmin
@@ -500,6 +507,9 @@ class EncadeadorDECOMPDECOMP(Encadeador):
             registros_usina_anterior = [
                 r for r in registros_anteriores if r.codigo == c
             ]
+            # Se a usina não existia no deck anterior, ignora
+            if len(registros_usina_anterior) == 0:
+                continue
             cols_despacho = [f"Despacho Pat. {i}" for i in [1, 2, 3]]
             for r in registros_usina:
                 # Para a última semana, o registro GL do DadGNL atual deve vir
