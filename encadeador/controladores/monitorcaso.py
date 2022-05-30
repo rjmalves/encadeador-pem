@@ -267,7 +267,6 @@ class MonitorNEWAVE(MonitorCaso):
 
     # Override
     def _trata_fim_execucao(self):
-
         def sintetiza():
             sintetizador = SintetizadorCaso.factory(self._caso)
             Log.log().info(f"Sintetizando caso...")
@@ -353,7 +352,6 @@ class MonitorDECOMP(MonitorCaso):
 
     # Override
     def _trata_fim_execucao(self):
-
         def sintetiza():
             sintetizador = SintetizadorCaso.factory(self._caso)
             Log.log().info(f"Sintetizando caso...")

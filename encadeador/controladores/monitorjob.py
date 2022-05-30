@@ -57,6 +57,11 @@ class MonitorJob:
                 EstadoJob.DELETANDO,
                 EstadoJob.FINALIZADO,
             ): self._trata_job_deletado,
+            (EstadoJob.EXECUTANDO, EstadoJob.TIMEOUT): self._trata_timeout_job,
+            (
+                EstadoJob.TIMEOUT,
+                EstadoJob.DELETANDO,
+            ): self._trata_comando_deleta_job,
         }
 
     def callback_estado_job(self, novo_estado: EstadoJob):
@@ -93,20 +98,14 @@ class MonitorJob:
 
     def monitora(self):
         self._gerenciador.monitora_estado_job()
-        if all(
-            [
-                self._job.estado == EstadoJob.EXECUTANDO,
-                self._gerenciador.tempo_job_idle
-                > __class__.TIMEOUT_ERRO_COMUNICACAO,
-            ]
-        ):
-            self.deleta()
 
     def observa(self, f: Callable):
         self._transicao_job.append(f)
 
     def _trata_entrada_fila(self):
-        Log.log().info(f"Job {self._job.id}[{self._job.nome}] inserido na fila")
+        Log.log().info(
+            f"Job {self._job.id}[{self._job.nome}] inserido na fila"
+        )
         self._transicao_job(TransicaoJob.ENTRADA_FILA)
 
     def _trata_comando_deleta_job(self):
@@ -144,3 +143,7 @@ class MonitorJob:
             f"Job {self._job.id}[{self._job.nome}] - erro de execução"
         )
         self._transicao_job(TransicaoJob.ERRO_EXECUCAO)
+
+    def _trata_timeout_job(self):
+        Log.log().info(f"Job {self._job.id}[{self._job.nome}] - timeout")
+        self.deleta()
