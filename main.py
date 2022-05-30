@@ -6,8 +6,6 @@ from encadeador.app import App
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.utils.log import Log
 
-print("teste")
-
 # Lê as configurações das variáveis de ambiente
 load_dotenv(override=True)
 
