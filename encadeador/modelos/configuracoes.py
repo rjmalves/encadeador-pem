@@ -48,6 +48,7 @@ class Configuracoes(metaclass=Singleton):
         self._gap_maximo_decomp = None
         self._script_converte_codificacao = None
         self._arquivo_regras_operacao_reservatorios = None
+        self._arquivo_regras_flexibilizacao_inviabilidades = None
 
     @classmethod
     def le_variaveis_ambiente(cls) -> "Configuracoes":
@@ -87,6 +88,9 @@ class Configuracoes(metaclass=Singleton):
             .script_converte_codificacao("SCRIPT_CONVERTE_CODIFICACAO")
             .arquivo_regras_operacao_reservatorios(
                 "ARQUIVO_REGRAS_OPERACAO_RESERVATORIOS"
+            )
+            .arquivo_regras_flexibilizacao_inviabilidades(
+                "ARQUIVO_REGRAS_FLEXIBILIZACAO_INVIABILIDADES"
             )
             .build()
         )
@@ -353,6 +357,13 @@ class Configuracoes(metaclass=Singleton):
         """
         return self._arquivo_regras_operacao_reservatorios
 
+    @property
+    def arquivo_regras_flexibilizacao_inviabilidades(self) -> str:
+        """
+        Caminho do arquivo com as regras de flexibilização das inviabilidades.
+        """
+        return self._arquivo_regras_flexibilizacao_inviabilidades
+
 
 class BuilderConfiguracoes:
     """ """
@@ -369,127 +380,131 @@ class BuilderConfiguracoes:
 
     @abstractmethod
     def nome_estudo(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def arquivo_lista_casos(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def nome_diretorio_newave(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def nome_diretorio_decomp(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def diretorio_instalacao_newaves(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def diretorio_instalacao_decomps(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def gerenciador_fila(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def versao_newave(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def versao_decomp(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def processadores_no(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def processadores_minimos_newave(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def processadores_maximos_newave(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def processadores_minimos_decomp(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def processadores_maximos_decomp(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def ajuste_processadores_newave(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def ajuste_processadores_decomp(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def variaveis_encadeadas(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def flexibiliza_deficit(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def maximo_flexibilizacoes_revisao(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def ultimas_iteracoes_flexibilizacao(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def metodo_flexibilizacao(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def adequa_decks_newave(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def cvar(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def opcao_parpa(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def adequa_decks_decomp(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def previne_gap_negativo(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def maximo_iteracoes_decomp(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def fator_aumento_gap_decomp(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def gap_maximo_decomp(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def script_converte_codificacao(self, variavel: str):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def arquivo_regras_operacao_reservatorios(self, variavel: str):
-        pass
+        raise NotImplementedError()
+
+    @abstractmethod
+    def arquivo_regras_flexibilizacao_inviabilidades(self, variavel: str):
+        raise NotImplementedError()
 
 
 class BuilderConfiguracoesENV(BuilderConfiguracoes):
@@ -880,5 +895,20 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
                     + f"encontrado: {valor}"
                 )
         self._configuracoes._arquivo_regras_operacao_reservatorios = valor
+        # Fluent method
+        return self
+
+    def arquivo_regras_flexibilizacao_inviabilidades(self, variavel: str):
+        valor = getenv(variavel)
+        # Confere se existe o arquivo no diretorio raiz de encadeamento
+        if valor is not None:
+            if not isfile(join(curdir, valor)):
+                Log.log().warning(
+                    "Arquivo com as regras de flexibilização das"
+                    + f" inviabilidades não encontrado: {valor}"
+                )
+        self._configuracoes._arquivo_regras_flexibilizacao_inviabilidades = (
+            valor
+        )
         # Fluent method
         return self

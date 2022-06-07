@@ -8,3 +8,4 @@ python-dotenv
 pytest
 pytest-cov
 pytest-mock
+black

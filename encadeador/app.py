@@ -22,10 +22,10 @@ class App:
         self._estudo = ArmazenadorEstudo.gera_estudo()
         # Força as regras a serem sempre as lidas do CSV
         # TODO - melhorar essa lógica (organização dos dados em DB)
-        caminho_regras = Configuracoes().arquivo_regras_operacao_reservatorios
-        if caminho_regras is not None:
+        regras_reserv = Configuracoes().arquivo_regras_operacao_reservatorios
+        if regras_reserv is not None:
             self._estudo._regras_reservatorio = RegraReservatorio.from_csv(
-                caminho_regras
+                regras_reserv
             )
         else:
             self._estudo._regras_reservatorio = []
