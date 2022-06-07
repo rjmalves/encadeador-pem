@@ -53,10 +53,6 @@ class Caso:
             "_estado": str(self._estado.value),
         }
 
-    def atualiza(self, estado: EstadoCaso):
-        Log.log().info(f"Caso: {self._dados.nome} - estado -> {estado.value}")
-        self._estado = estado
-
     def adiciona_job(self, job: Job, retry: bool):
         if retry:
             self._jobs[-1] = job
@@ -122,6 +118,11 @@ class Caso:
     @property
     def estado(self) -> EstadoCaso:
         return self._estado
+
+    @estado.setter
+    def estado(self, e: EstadoCaso):
+        Log.log().info(f"Caso: {self._dados.nome} - estado -> {e.value}")
+        self._estado = e
 
     @property
     @abstractmethod

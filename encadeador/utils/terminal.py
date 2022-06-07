@@ -5,8 +5,33 @@ from os.path import isfile
 from typing import List, Tuple
 
 
+NUM_RETRY_DEFAULT = 3
+TIMEOUT_DEFAULT = 10
+
+
+def executa_terminal_retry(
+    cmds: List[str], num_retry: int = NUM_RETRY_DEFAULT
+) -> Tuple[int, List[str]]:
+    """
+    Executa um comando no terminal e obtém as saídas e o código
+    retornado pelo comando. Caso ocorram falhas, possui um
+    retry de um número especificado de vezes.
+
+    :param cmds: Partes do comando que serão unidas em uma única
+        string para execução.
+    :param retry: Número máximo de novas tentativas.
+    :return: O código e as linhas de saída do comando.
+    :rtype: Tuple[int, List[str]]
+    """
+    for _ in range(num_retry):
+        cod, saidas = executa_terminal(cmds)
+        if cod == 0:
+            return cod, saidas
+    return -1, []
+
+
 def executa_terminal(
-    cmds: List[str], timeout: float = 10
+    cmds: List[str], timeout: float = TIMEOUT_DEFAULT
 ) -> Tuple[int, List[str]]:
     """
     Executa um comando no terminal e obtém as saídas e o código
@@ -38,7 +63,7 @@ def executa_terminal(
             break
         t_atual = time.time()
         if t_atual - t_inicio > timeout:
-            raise TimeoutError(f"Timeout para resposta do comando: {cmd}")
+            break
         time.sleep(0.5)
     processo.terminate()
     return codigo, linhas_saida

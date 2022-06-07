@@ -43,7 +43,7 @@ class Job:
             self._dados.instante_entrada_fila = t
         elif self.estado == EstadoJob.EXECUTANDO:
             self._dados.instante_inicio_execucao = t
-        elif self.estado == EstadoJob.FINALIZADO:
+        elif self.estado in [EstadoJob.FINALIZADO, EstadoJob.ERRO]:
             self._dados.instante_saida_fila = t
 
     @property

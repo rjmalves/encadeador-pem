@@ -17,8 +17,6 @@ class MonitorJob:
     adquirindo informações do estado por meio do Observer Pattern.
     """
 
-    TIMEOUT_ERRO_COMUNICACAO = 1800
-
     def __init__(self, job: Job):
         self._job = job
         g = Configuracoes().gerenciador_fila
@@ -52,7 +50,6 @@ class MonitorJob:
                 EstadoJob.EXECUTANDO,
                 EstadoJob.FINALIZADO,
             ): self._trata_fim_execucao,
-            (EstadoJob.EXECUTANDO, EstadoJob.ERRO): self._trata_erro_execucao,
             (
                 EstadoJob.DELETANDO,
                 EstadoJob.FINALIZADO,
@@ -88,13 +85,8 @@ class MonitorJob:
         self._job.numero_processadores = numero_processadores
         return r
 
-    def deleta(self):
-        if not self._gerenciador.deleta_job():
-            Log.log().error(
-                "Erro ao executar comando de deleção "
-                + f"do job {self._job.id}[{self._job.nome}]"
-            )
-            raise RuntimeError()
+    def deleta(self) -> bool:
+        return self._gerenciador.deleta_job()
 
     def monitora(self):
         self._gerenciador.monitora_estado_job()
@@ -138,12 +130,6 @@ class MonitorJob:
         )
         self._transicao_job(TransicaoJob.ERRO_DELECAO)
 
-    def _trata_erro_execucao(self):
-        Log.log().info(
-            f"Job {self._job.id}[{self._job.nome}] - erro de execução"
-        )
-        self._transicao_job(TransicaoJob.ERRO_EXECUCAO)
-
     def _trata_timeout_job(self):
         Log.log().info(f"Job {self._job.id}[{self._job.nome}] - timeout")
-        self.deleta()
+        self._transicao_job(TransicaoJob.TIMEOUT_EXECUCAO)

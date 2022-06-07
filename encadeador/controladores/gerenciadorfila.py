@@ -5,7 +5,7 @@ import time
 
 from encadeador.modelos.estadojob import EstadoJob
 from encadeador.utils.log import Log
-from encadeador.utils.terminal import executa_terminal
+from encadeador.utils.terminal import executa_terminal_retry
 from encadeador.utils.event import Event
 
 
@@ -120,14 +120,14 @@ class GerenciadorFila:
             caminho_job, nome_job, num_processadores
         )
         try:
-            cod, self._respostas = executa_terminal(self._comandos)
+            cod, self._respostas = executa_terminal_retry(self._comandos)
         except TimeoutError:
             return False
         self._inicializa_gerenciador()
         return cod == 0
 
     def deleta_job(self) -> bool:
-        cod, _ = executa_terminal(self.comando_qdel())
+        cod, _ = executa_terminal_retry(self.comando_qdel())
         return cod == 0
 
     @abstractmethod
@@ -251,10 +251,7 @@ class GerenciadorFilaSGE(GerenciadorFila):
 
     # Override
     def _extrai_estado_job(self):
-        try:
-            cod, saidas = executa_terminal(self.comando_qstat())
-        except TimeoutError as e:
-            raise e
+        cod, saidas = executa_terminal_retry(self.comando_qstat())
         if cod != 0:
             raise ValueError(f"Erro na execução do qstat: código {cod}")
         estado = ""

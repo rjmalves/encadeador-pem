@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Dict, List, Tuple, Callable
+from typing import Dict, List, Tuple, Callable, Union
 from os.path import join
 from os import chdir, listdir
 from encadeador.controladores.avaliadorcaso import AvaliadorCaso
@@ -47,18 +47,18 @@ class MonitorCaso:
         else:
             raise ValueError(f"Caso do tipo {type(caso)} não suportado")
 
-    def callback_evento_job(self, evento: TransicaoJob):
+    def callback_evento(self, evento: Union[TransicaoJob, TransicaoCaso]):
         """
         Esta função é usada para implementar o Observer Pattern.
         Quando chamada, significa que ocorreu algo com o job do caso
-        em um GerenciadorFila e deve reagir atualizando os campos
-        adequados nos objetos.
+        em um GerenciadorFila ou algo de interesse aconteceu com o caso em si
+        e o monitor deve reagir atualizando os campos adequados nos objetos.
 
-        :param evento: O evento ocorrido com o job
-        :type evento: TransicaoJob
+        :param evento: O evento ocorrido com o job ou caso
+        :type evento: Union[TransicaoJob, TransicaoCaso]
         """
         # Executa a ação da transição de estado
-        self._regras()[self._caso.estado, evento]()
+        self._regras()[evento]()
 
     @property
     @abstractmethod
@@ -72,36 +72,20 @@ class MonitorCaso:
 
     def _regras(
         self,
-    ) -> Dict[Tuple[EstadoCaso, TransicaoJob], Callable]:
+    ) -> Dict[Union[TransicaoJob, TransicaoCaso], Callable]:
         return {
-            (
-                EstadoCaso.INICIADO,
-                TransicaoJob.ENTRADA_FILA,
-            ): self._trata_entrada_fila,
-            (
-                EstadoCaso.ESPERANDO_FILA,
-                TransicaoJob.INICIO_EXECUCAO,
-            ): self._trata_inicio_execucao,
-            (
-                EstadoCaso.ESPERANDO_FILA,
-                TransicaoJob.COMANDO_DELETA_JOB,
-            ): self._trata_inicio_del_job,
-            (
-                EstadoCaso.EXECUTANDO,
-                TransicaoJob.COMANDO_DELETA_JOB,
-            ): self._trata_inicio_del_job,
-            (
-                EstadoCaso.EXECUTANDO,
-                TransicaoJob.ERRO_EXECUCAO,
-            ): self._trata_erro_execucao,
-            (
-                EstadoCaso.EXECUTANDO,
-                TransicaoJob.FIM_EXECUCAO,
-            ): self._trata_fim_execucao,
-            (
-                EstadoCaso.ESPERANDO_DEL_JOB,
-                TransicaoJob.FIM_EXECUCAO,
-            ): self._trata_erro,
+            (TransicaoCaso.INICIOU): self._trata_iniciou_caso,
+            (TransicaoCaso.AGUARDANDO_SUBMISSAO): self._trata_caso_aguardando,
+            (TransicaoJob.ENTRADA_FILA): self._trata_entrada_fila,
+            (TransicaoJob.INICIO_EXECUCAO): self._trata_inicio_execucao,
+            (TransicaoJob.FIM_EXECUCAO): self._trata_fim_execucao,
+            (TransicaoJob.TIMEOUT_EXECUCAO): self._trata_timeout_execucao,
+            (TransicaoJob.COMANDO_DELETA_JOB): self._trata_comando_del_job,
+            (TransicaoCaso.SUCESSO): self._trata_fim_sucesso,
+            (TransicaoCaso.INVIAVEL): self._trata_caso_inviavel,
+            (TransicaoCaso.ERRO): self._trata_erro,
+            (TransicaoCaso.ERRO_DADOS): self._trata_erro_dados,
+            (TransicaoCaso.ERRO_MAX_FLEX): self._trata_erro_max_flex,
         }
 
     @abstractmethod
@@ -133,7 +117,7 @@ class MonitorCaso:
         )
         self._caso.adiciona_job(self._job_atual, retry)
         self._monitor_job_atual = MonitorJob(self._job_atual)
-        self._monitor_job_atual.observa(self.callback_evento_job)
+        self._monitor_job_atual.observa(self.callback_evento)
         ret = self._monitor_job_atual.submete(self._caso.numero_processadores)
         Log.log().info(f"Caso {self._caso.nome}: submetido")
         chdir(Configuracoes().caminho_base_estudo)
@@ -156,8 +140,19 @@ class MonitorCaso:
             Log.log().error(f"Erro ao armazenar caso {self._caso.nome}")
         chdir(Configuracoes().caminho_base_estudo)
 
+    # TODO - PADRONIZAR MOMENTOS DE ATUALIZAÇÃO DE ESTADO ????
+
     def observa(self, f: Callable):
         self._transicao_caso.append(f)
+
+    def _trata_iniciou_caso(self):
+        Log.log().info(f"Caso {self._caso.nome}: inicializado")
+        self._caso.estado = EstadoCaso.INICIADO
+        self.callback_evento(TransicaoCaso.AGUARDANDO_SUBMISSAO)
+
+    def _trata_caso_aguardando(self):
+        Log.log().info(f"Caso {self._caso.nome}: aguardando submissão")
+        self.submete()
 
     def _trata_entrada_fila(self):
         Log.log().info(f"Caso {self._caso.nome}: esperando na fila")
@@ -167,14 +162,18 @@ class MonitorCaso:
         Log.log().info(f"Caso {self._caso.nome}: iniciou execução")
         self._caso.atualiza(EstadoCaso.EXECUTANDO)
 
-    def _trata_inicio_del_job(self):
+    def _trata_comando_del_job(self):
         # Aguarda o job ser deletado completamente
         Log.log().info(f"Caso {self._caso.nome}: deleção solicitada")
         self._caso.atualiza(EstadoCaso.ESPERANDO_DEL_JOB)
 
-    def _trata_erro_execucao(self):
-        Log.log().info(f"Caso {self._caso.nome}: erro durante a execução")
-        self._caso.atualiza(EstadoCaso.ESPERANDO_DEL_JOB)
+    def _trata_erro_dados(self):
+        Log.log().info(f"Caso {self._caso.nome}: erro de dados")
+        self._caso.atualiza(EstadoCaso.ERRO_DADOS)
+
+    def _trata_timeout_execucao(self):
+        Log.log().info(f"Caso {self._caso.nome}: timeout durante a execução")
+        self._monitor_job_atual.deleta()
 
     @abstractmethod
     def _trata_fim_execucao(self):
