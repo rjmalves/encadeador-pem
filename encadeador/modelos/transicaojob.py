@@ -2,10 +2,13 @@ from enum import Enum, auto
 
 
 class TransicaoJob(Enum):
-    ENTRADA_FILA = auto()
+    CRIADO = auto()
+    SUBMISSAO_SOLICITADA = auto()
+    SUBMISSAO_ERRO = auto()
+    SUBMISSAO_SUCESSO = auto()
+    DELECAO_SOLICITADA = auto()
+    DELECAO_ERRO = auto()
+    DELECAO_SUCESSO = auto()
     INICIO_EXECUCAO = auto()
     FIM_EXECUCAO = auto()
     TIMEOUT_EXECUCAO = auto()
-    COMANDO_DELETA_JOB = auto()
-    JOB_DELETADO = auto()
-    ERRO_DELECAO = auto()

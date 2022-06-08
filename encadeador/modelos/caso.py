@@ -53,11 +53,8 @@ class Caso:
             "_estado": str(self._estado.value),
         }
 
-    def adiciona_job(self, job: Job, retry: bool):
-        if retry:
-            self._jobs[-1] = job
-        else:
-            self._jobs.append(job)
+    def adiciona_job(self, job: Job):
+        self._jobs.append(job)
 
     @staticmethod
     @abstractmethod

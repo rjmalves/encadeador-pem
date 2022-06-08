@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Dict, List, Tuple, Callable, Union
+from typing import Dict, List, Callable, Union
 from os.path import join
 from os import chdir, listdir
 from encadeador.controladores.avaliadorcaso import AvaliadorCaso
@@ -74,54 +74,94 @@ class MonitorCaso:
         self,
     ) -> Dict[Union[TransicaoJob, TransicaoCaso], Callable]:
         return {
-            (TransicaoCaso.INICIOU): self._trata_iniciou_caso,
-            (TransicaoCaso.AGUARDANDO_SUBMISSAO): self._trata_caso_aguardando,
-            (TransicaoJob.ENTRADA_FILA): self._trata_entrada_fila,
-            (TransicaoJob.INICIO_EXECUCAO): self._trata_inicio_execucao,
-            (TransicaoJob.FIM_EXECUCAO): self._trata_fim_execucao,
-            (TransicaoJob.TIMEOUT_EXECUCAO): self._trata_timeout_execucao,
-            (TransicaoJob.COMANDO_DELETA_JOB): self._trata_comando_del_job,
-            (TransicaoCaso.SUCESSO): self._trata_fim_sucesso,
-            (TransicaoCaso.INVIAVEL): self._trata_caso_inviavel,
-            (TransicaoCaso.ERRO): self._trata_erro,
-            (TransicaoCaso.ERRO_DADOS): self._trata_erro_dados,
-            (TransicaoCaso.ERRO_MAX_FLEX): self._trata_erro_max_flex,
+            TransicaoCaso.CRIADO: self._handler_criado,
+            (
+                TransicaoCaso.PREPARA_EXECUCAO_SOLICITADA
+            ): self._handler_prepara_execucao_solicitada,
+            (
+                TransicaoCaso.PREPARA_EXECUCAO_SUCESSO
+            ): self._handler_prepara_execucao_sucesso,
+            (
+                TransicaoCaso.PREPARA_EXECUCAO_ERRO
+            ): self._handler_prepara_execucao_erro,
+            (
+                TransicaoCaso.INICIO_EXECUCAO_SOLICITADA
+            ): self._handler_inicio_execucao_solicitada,
+            (
+                TransicaoCaso.INICIO_EXECUCAO_SUCESSO
+            ): self._handler_inicio_execucao_sucesso,
+            (
+                TransicaoCaso.INICIO_EXECUCAO_ERRO
+            ): self._handler_inicio_execucao_erro,
+            (
+                TransicaoCaso.FLEXIBILIZACAO_SOLICITADA
+            ): self._handler_flexibilizacao_solicitada,
+            (
+                TransicaoCaso.FLEXIBILIZACAO_SUCESSO
+            ): self._handler_flexibilizacao_sucesso,
+            (
+                TransicaoCaso.FLEXIBILIZACAO_ERRO
+            ): self._handler_flexibilizacao_erro,
+            (TransicaoJob.SUBMISSAO_SUCESSO): self._handler_submissao_sucesso,
+            (TransicaoJob.INICIO_EXECUCAO): self._handler_inicio_execucao,
+            (TransicaoJob.FIM_EXECUCAO): self._handler_fim_execucao,
+            (TransicaoJob.TIMEOUT_EXECUCAO): self._handler_timeout_execucao,
+            (
+                TransicaoJob.DELECAO_SOLICITADA
+            ): self._handler_delecao_solicitada,
+            (TransicaoJob.DELECAO_ERRO): self._handler_delecao_erro,
+            (TransicaoJob.DELECAO_SUCESSO): self._handler_delecao_sucesso,
+            (TransicaoCaso.CONCLUIDO): self._handler_caso_concluido,
+            (TransicaoCaso.INVIAVEL): self._handler_caso_inviavel,
+            (TransicaoCaso.ERRO): self._handler_erro,
         }
 
     @abstractmethod
     def inicializa(
         self,
         casos_anteriores: List[Caso],
-        regras_operacao_reservatorios: List[RegraReservatorio],
     ) -> bool:
         """
-        Realiza a inicialização do caso, isto é, a preparação dos
-        arquivos para adequação às necessidades do estudo
-        encadeado e o encadeamento das variáveis selecionadas.
+        Realiza a inicialização do caso. Isto é, a extração e
+        renomeação de arquivos que podem ser necessários.
 
         :return: O sucesso ou não da inicialização do caso.
         :rtype: bool
         """
         raise NotImplementedError()
 
-    def submete(self, retry: bool = False) -> bool:
+    @abstractmethod
+    def prepara(
+        self,
+        casos_anteriores: List[Caso],
+        regras_operacao_reservatorios: List[RegraReservatorio],
+    ) -> bool:
+        """
+        Realiza a preparação dos arquivos para adequação às
+        necessidades do estudo encadeado e o encadeamento das
+        variáveis selecionadas.
+
+        :return: O sucesso ou não da preparação do caso.
+        :rtype: bool
+        """
+        raise NotImplementedError()
+
+    def submete(self):
         """
         Cria um novo Job para o caso e o submete à fila.
-
-        :return: O sucesso ou não da submissão do job.
-        :rtype: bool
         """
         chdir(self._caso.caminho)
         self._job_atual = Job(
             DadosJob("", self.nome_job, self.caminho_job, 0.0, 0.0, 0.0, 0)
         )
-        self._caso.adiciona_job(self._job_atual, retry)
+        self._caso.adiciona_job(self._job_atual)
         self._monitor_job_atual = MonitorJob(self._job_atual)
         self._monitor_job_atual.observa(self.callback_evento)
-        ret = self._monitor_job_atual.submete(self._caso.numero_processadores)
-        Log.log().info(f"Caso {self._caso.nome}: submetido")
+        if self._monitor_job_atual.submete(self._caso.numero_processadores):
+            self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SUCESSO)
+        else:
+            self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_ERRO)
         chdir(Configuracoes().caminho_base_estudo)
-        return ret
 
     def monitora(self):
         """
@@ -129,75 +169,102 @@ class MonitorCaso:
         job associado.
         """
         chdir(self._caso.caminho)
-        # Trata os casos onde não existe job: inviável e flexibilizando
-        if self._caso.estado == EstadoCaso.INVIAVEL:
-            self._trata_caso_inviavel()
-        elif self._caso.estado == EstadoCaso.FLEXIBILIZANDO:
-            self._trata_caso_flexibilizando()
-        # Trata os casos com job
         self._monitor_job_atual.monitora()
         if not self._armazenador.armazena_caso():
             Log.log().error(f"Erro ao armazenar caso {self._caso.nome}")
         chdir(Configuracoes().caminho_base_estudo)
 
-    # TODO - PADRONIZAR MOMENTOS DE ATUALIZAÇÃO DE ESTADO ????
-
     def observa(self, f: Callable):
         self._transicao_caso.append(f)
 
-    def _trata_iniciou_caso(self):
-        Log.log().info(f"Caso {self._caso.nome}: inicializado")
+    def _handler_criado(self):
+        Log.log().info(f"Caso {self._caso.nome}: criado")
         self._caso.estado = EstadoCaso.INICIADO
-        self.callback_evento(TransicaoCaso.AGUARDANDO_SUBMISSAO)
 
-    def _trata_caso_aguardando(self):
-        Log.log().info(f"Caso {self._caso.nome}: aguardando submissão")
+    def _handler_prepara_execucao_solicitada(self):
+        Log.log().info(f"Caso {self._caso.nome}: iniciando preparação do caso")
+        self._caso.estado = EstadoCaso.PREPARANDO
+
+    def _handler_prepara_execucao_sucesso(self):
+        Log.log().info(f"Caso {self._caso.nome}: caso preparado com sucesso")
+        self._caso.estado = EstadoCaso.PREPARADO
+        self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
+
+    def _handler_prepara_execucao_erro(self):
+        Log.log().info(f"Caso {self._caso.nome}: erro na preparação do caso")
+        self._caso.estado = EstadoCaso.ERRO_PREPARACAO
+        self.callback_evento(TransicaoCaso.ERRO)
+
+    def _handler_inicio_execucao_solicitada(self):
+        Log.log().info(f"Caso {self._caso.nome}: solicitada execução do caso")
+        self._caso.estado = EstadoCaso.INICIANDO_EXECUCAO
         self.submete()
 
-    def _trata_entrada_fila(self):
-        Log.log().info(f"Caso {self._caso.nome}: esperando na fila")
-        self._caso.atualiza(EstadoCaso.ESPERANDO_FILA)
+    def _handler_inicio_execucao_sucesso(self):
+        Log.log().info(
+            f"Caso {self._caso.nome}: início da execução com sucesso"
+        )
+        # Nada a fazer, visto que agora existe o job na fila e as transições
+        # acontecem escutando os eventos do Job, até ser finalizado.
 
-    def _trata_inicio_execucao(self):
+    def _handler_inicio_execucao_erro(self):
+        Log.log().info(
+            f"Caso {self._caso.nome}: erro no início da execução do caso"
+        )
+        self._caso.estado = EstadoCaso.ERRO_EXECUCAO
+        self.callback_evento(TransicaoCaso.ERRO)
+
+    def _handler_submissao_sucesso(self):
+        Log.log().info(f"Caso {self._caso.nome}: sucesso na submissão do caso")
+        self._caso.estado = EstadoCaso.ESPERANDO_FILA
+
+    def _handler_inicio_execucao(self):
         Log.log().info(f"Caso {self._caso.nome}: iniciou execução")
-        self._caso.atualiza(EstadoCaso.EXECUTANDO)
+        self._caso.estado = EstadoCaso.EXECUTANDO
 
-    def _trata_comando_del_job(self):
+    def _handler_delecao_solicitada(self):
         # Aguarda o job ser deletado completamente
         Log.log().info(f"Caso {self._caso.nome}: deleção solicitada")
-        self._caso.atualiza(EstadoCaso.ESPERANDO_DEL_JOB)
 
-    def _trata_erro_dados(self):
+    def _handler_delecao_erro(self):
+        Log.log().info(
+            f"Caso {self._caso.nome}: erro na deleção de um caso com timeout"
+        )
+        self._caso.estado = EstadoCaso.ERRO_COMUNICACAO
+        self.callback_evento(TransicaoCaso.ERRO)
+
+    def _handler_delecao_sucesso(self):
+        Log.log().info(f"Caso {self._caso.nome}: caso com timeout deletado")
+        self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
+
+    def _handler_erro_dados(self):
         Log.log().info(f"Caso {self._caso.nome}: erro de dados")
-        self._caso.atualiza(EstadoCaso.ERRO_DADOS)
+        self._caso.estado = EstadoCaso.ERRO_DADOS
 
-    def _trata_timeout_execucao(self):
+    def _handler_timeout_execucao(self):
         Log.log().info(f"Caso {self._caso.nome}: timeout durante a execução")
         self._monitor_job_atual.deleta()
 
     @abstractmethod
-    def _trata_fim_execucao(self):
+    def _handler_fim_execucao(self):
         raise NotImplementedError()
 
     @abstractmethod
-    def _trata_caso_inviavel(self):
+    def _handler_caso_inviavel(self):
         raise NotImplementedError()
 
     @abstractmethod
-    def _trata_caso_flexibilizando(self):
+    def _handler_caso_concluido(self):
         raise NotImplementedError()
 
-    def _trata_erro(self):
-        Log.log().info(
-            f"Caso {self._caso.nome}: erro de comunicação. "
-            + "Submetendo novamente (retry)..."
-        )
-        if not self.submete(True):
-            Log.log().info(f"Caso {self._caso.nome}: erro durante o retry")
-            self._transicao_caso(TransicaoCaso.ERRO)
-            self._caso.atualiza(EstadoCaso.ERRO)
-            raise RuntimeError()
-        self._caso.atualiza(EstadoCaso.ESPERANDO_FILA)
+    def _handler_erro(self):
+        Log.log().error(f"Caso {self._caso.nome}: Erro. ")
+        if not self._armazenador.armazena_caso():
+            Log.log().error(
+                f"Caso {self._caso.nome}: Erro no armazenamento do caso"
+            )
+        self._transicao_caso(TransicaoCaso.ERRO)
+        raise RuntimeError()
 
     @property
     def caso(self) -> Caso:
@@ -230,15 +297,10 @@ class MonitorNEWAVE(MonitorCaso):
         return f"NW{self.caso.ano}{self.caso.mes}"
 
     # Override
-    def inicializa(
-        self,
-        casos_anteriores: List[Caso],
-        regras_operacao_reservatorios: List[RegraReservatorio],
-    ) -> bool:
+    def inicializa(self, casos_anteriores: List[Caso]) -> bool:
         """
-        Realiza a inicialização do caso, isto é, a preparação dos
-        arquivos para adequação às necessidades do estudo
-        encadeado e o encadeamento das variáveis selecionadas.
+        Realiza a inicialização do caso. Isto é, a extração e
+        renomeação de arquivos que podem ser necessários.
 
         :return: O sucesso ou não da inicialização do caso.
         :rtype: bool
@@ -254,18 +316,39 @@ class MonitorNEWAVE(MonitorCaso):
             if sint_ultimo.verifica_cortes_extraidos():
                 sint_ultimo.deleta_cortes()
 
-        self._caso.atualiza(EstadoCaso.INICIADO)
-        self._transicao_caso(TransicaoCaso.INICIOU)
+        self._transicao_caso(TransicaoCaso.CRIADO)
+        return True
+
+    # Override
+    def prepara(
+        self,
+        casos_anteriores: List[Caso],
+        regras_operacao_reservatorios: List[RegraReservatorio],
+    ) -> bool:
+        """
+        Realiza a preparação dos arquivos para adequação às
+        necessidades do estudo encadeado e o encadeamento das
+        variáveis selecionadas.
+
+        :return: O sucesso ou não da preparação do caso.
+        :rtype: bool
+        """
+        self._transicao_caso(TransicaoCaso.PREPARA_EXECUCAO_SOLICITADA)
         preparador = PreparadorCaso.factory(self._caso)
         sucesso_prepara = preparador.prepara_caso()
         sucesso_encadeia = preparador.encadeia_variaveis(casos_anteriores)
         sucesso_regras = preparador.aplica_regras_operacao_reservatorios(
             casos_anteriores, regras_operacao_reservatorios
         )
-        return sucesso_prepara and sucesso_encadeia and sucesso_regras
+        sucessos = all([sucesso_prepara, sucesso_encadeia, sucesso_regras])
+        if sucessos:
+            self._transicao_caso(TransicaoCaso.PREPARA_EXECUCAO_SUCESSO)
+        else:
+            self._transicao_caso(TransicaoCaso.PREPARA_EXECUCAO_ERRO)
+        return sucessos
 
     # Override
-    def _trata_fim_execucao(self):
+    def _handler_fim_execucao(self):
         def sintetiza():
             sintetizador = SintetizadorCaso.factory(self._caso)
             Log.log().info(f"Sintetizando caso...")
@@ -273,12 +356,14 @@ class MonitorNEWAVE(MonitorCaso):
                 Log.log().error(f"Erro na síntese do caso {self._caso.nome}")
                 raise RuntimeError()
 
+        # TODO - terminar de raciocinar aqui
+
         Log.log().info(f"Caso {self._caso.nome}: fim da execução")
         if not self._avaliador.avalia():
             Log.log().info(f"Caso {self._caso.nome}: erro de dados")
             sintetiza()
-            self._caso.atualiza(EstadoCaso.ERRO_DADOS)
-            self._transicao_caso(TransicaoCaso.ERRO_DADOS)
+            self._caso.estado = EstadoCaso.ERRO_DADOS
+            self.callback_evento(TransicaoCaso.ERRO_DADOS)
         else:
             sintetiza()
             self._caso.atualiza(EstadoCaso.CONCLUIDO)
@@ -287,11 +372,7 @@ class MonitorNEWAVE(MonitorCaso):
             self._transicao_caso(TransicaoCaso.SUCESSO)
 
     # Override
-    def _trata_caso_inviavel(self):
-        raise NotImplementedError()
-
-    # Override
-    def _trata_caso_flexibilizando(self):
+    def _handler_caso_inviavel(self):
         raise NotImplementedError()
 
 
@@ -324,18 +405,32 @@ class MonitorDECOMP(MonitorCaso):
     def inicializa(
         self,
         casos_anteriores: List[Caso],
-        regras_operacao_reservatorios: List[RegraReservatorio],
     ) -> bool:
         """
-        Realiza a inicialização do caso, isto é, a preparação dos
-        arquivos para adequação às necessidades do estudo
-        encadeado e o encadeamento das variáveis selecionadas.
+        Realiza a inicialização do caso. Isto é, a extração e
+        renomeação de arquivos que podem ser necessários.
 
         :return: O sucesso ou não da inicialização do caso.
         :rtype: bool
         """
-        self._caso.atualiza(EstadoCaso.INICIADO)
-        self._transicao_caso(TransicaoCaso.INICIOU)
+        self._transicao_caso(TransicaoCaso.CRIADO)
+        return True
+
+    # Override
+    def prepara(
+        self,
+        casos_anteriores: List[Caso],
+        regras_operacao_reservatorios: List[RegraReservatorio],
+    ) -> bool:
+        """
+        Realiza a preparação dos arquivos para adequação às
+        necessidades do estudo encadeado e o encadeamento das
+        variáveis selecionadas.
+
+        :return: O sucesso ou não da preparação do caso.
+        :rtype: bool
+        """
+        self._transicao_caso(TransicaoCaso.PREPARA_EXECUCAO_SOLICITADA)
         preparador = PreparadorCaso.factory(self._caso)
         ultimo_newave = next(
             c
@@ -347,7 +442,12 @@ class MonitorDECOMP(MonitorCaso):
         sucesso_regras = preparador.aplica_regras_operacao_reservatorios(
             casos_anteriores, regras_operacao_reservatorios
         )
-        return sucesso_prepara and sucesso_encadeia and sucesso_regras
+        sucessos = all([sucesso_prepara, sucesso_encadeia, sucesso_regras])
+        if sucessos:
+            self._transicao_caso(TransicaoCaso.PREPARA_EXECUCAO_SUCESSO)
+        else:
+            self._transicao_caso(TransicaoCaso.PREPARA_EXECUCAO_ERRO)
+        return sucessos
 
     # Override
     def _trata_fim_execucao(self):

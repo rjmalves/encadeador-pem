@@ -29,36 +29,39 @@ class MonitorJob:
             (
                 EstadoJob.NAO_INICIADO,
                 EstadoJob.ESPERANDO,
-            ): self._trata_entrada_fila,
+            ): self._handler_submissao_sucesso,
             (
                 EstadoJob.ESPERANDO,
                 EstadoJob.DELETANDO,
-            ): self._trata_comando_deleta_job,
+            ): self._handler_delecao_solicitada,
             (
                 EstadoJob.NAO_INICIADO,
                 EstadoJob.EXECUTANDO,
-            ): self._trata_inicio_execucao_direto,
+            ): self._handler_inicio_execucao_direto,
             (
                 EstadoJob.ESPERANDO,
                 EstadoJob.EXECUTANDO,
-            ): self._trata_inicio_execucao,
+            ): self._handler_inicio_execucao,
             (
                 EstadoJob.EXECUTANDO,
                 EstadoJob.DELETANDO,
-            ): self._trata_comando_deleta_job,
+            ): self._handler_delecao_erro,
             (
                 EstadoJob.EXECUTANDO,
                 EstadoJob.FINALIZADO,
-            ): self._trata_fim_execucao,
+            ): self._handler_fim_execucao,
             (
                 EstadoJob.DELETANDO,
                 EstadoJob.FINALIZADO,
-            ): self._trata_job_deletado,
-            (EstadoJob.EXECUTANDO, EstadoJob.TIMEOUT): self._trata_timeout_job,
+            ): self._handler_delecao_sucesso,
+            (
+                EstadoJob.EXECUTANDO,
+                EstadoJob.TIMEOUT,
+            ): self._handler_timeout_execucao,
             (
                 EstadoJob.TIMEOUT,
                 EstadoJob.DELETANDO,
-            ): self._trata_comando_deleta_job,
+            ): self._handler_delecao_solicitada,
         }
 
     def callback_estado_job(self, novo_estado: EstadoJob):
@@ -77,12 +80,18 @@ class MonitorJob:
         # Executa a ação da transição de estado
         self._regras()[estado_atual, novo_estado]()
 
+    def inicializa(self) -> bool:
+        self._transicao_job(TransicaoJob.CRIADO)
+
     def submete(self, numero_processadores: int) -> bool:
         r = self._gerenciador.agenda_job(
             self._job.caminho, self._job.nome, numero_processadores
         )
         self._job.id = self._gerenciador.id_job
         self._job.numero_processadores = numero_processadores
+        self._transicao_job(TransicaoJob.SUBMISSAO_SOLICITADA)
+        if not r:
+            self._transicao_job(TransicaoJob.SUBMISSAO_ERRO)
         return r
 
     def deleta(self) -> bool:
@@ -94,42 +103,42 @@ class MonitorJob:
     def observa(self, f: Callable):
         self._transicao_job.append(f)
 
-    def _trata_entrada_fila(self):
+    def _handler_submissao_sucesso(self):
         Log.log().info(
             f"Job {self._job.id}[{self._job.nome}] inserido na fila"
         )
-        self._transicao_job(TransicaoJob.ENTRADA_FILA)
+        self._transicao_job(TransicaoJob.SUBMISSAO_SUCESSO)
 
-    def _trata_comando_deleta_job(self):
+    def _handler_delecao_solicitada(self):
         Log.log().info(
             f"Job {self._job.id}[{self._job.nome}] - solicitada deleção"
         )
-        self._transicao_job(TransicaoJob.COMANDO_DELETA_JOB)
+        self._transicao_job(TransicaoJob.DELECAO_SOLICITADA)
 
-    def _trata_job_deletado(self):
+    def _handler_delecao_sucesso(self):
         Log.log().info(f"Job {self._job.id}[{self._job.nome}] - deletado")
-        self._transicao_job(TransicaoJob.JOB_DELETADO)
+        self._transicao_job(TransicaoJob.DELECAO_SUCESSO)
 
-    def _trata_inicio_execucao(self):
+    def _handler_inicio_execucao(self):
         Log.log().info(
             f"Job {self._job.id}[{self._job.nome}] - início da execução"
         )
         self._transicao_job(TransicaoJob.INICIO_EXECUCAO)
 
-    def _trata_inicio_execucao_direto(self):
-        self._trata_entrada_fila()
-        self._trata_inicio_execucao()
+    def _handler_inicio_execucao_direto(self):
+        self._handler_submissao_sucesso()
+        self._handler_inicio_execucao()
 
-    def _trata_fim_execucao(self):
+    def _handler_fim_execucao(self):
         Log.log().info(f"Job {self._job.id}[{self._job.nome}] - finalizado")
         self._transicao_job(TransicaoJob.FIM_EXECUCAO)
 
-    def _trata_erro_delecao(self):
+    def _handler_delecao_erro(self):
         Log.log().info(
             f"Job {self._job.id}[{self._job.nome}] - erro de deleção"
         )
-        self._transicao_job(TransicaoJob.ERRO_DELECAO)
+        self._transicao_job(TransicaoJob.DELECAO_ERRO)
 
-    def _trata_timeout_job(self):
+    def _handler_timeout_execucao(self):
         Log.log().info(f"Job {self._job.id}[{self._job.nome}] - timeout")
         self._transicao_job(TransicaoJob.TIMEOUT_EXECUCAO)
