@@ -1,9 +1,10 @@
-from typing import Dict, Tuple, Callable
+from typing import Dict, Union, Callable
 
 from encadeador.modelos.caso import Caso
 from encadeador.modelos.estadoestudo import EstadoEstudo
 from encadeador.modelos.estudo import Estudo
 from encadeador.modelos.transicaocaso import TransicaoCaso
+from encadeador.modelos.transicaoestudo import TransicaoEstudo
 from encadeador.controladores.monitorcaso import MonitorCaso
 from encadeador.controladores.armazenadorestudo import ArmazenadorEstudo
 from encadeador.controladores.sintetizadorestudo import SintetizadorEstudo
@@ -46,28 +47,26 @@ class MonitorEstudo:
 
     def _regras(
         self,
-    ) -> Dict[Tuple[EstadoEstudo, TransicaoCaso], Callable]:
+    ) -> Dict[Union[TransicaoEstudo, TransicaoCaso], Callable]:
         return {
+            (TransicaoEstudo.CRIADO): self._handler_estudo_criado,
+            (TransicaoEstudo.INICIO_SOLICITADO): self._handler_estudo_criado,
+            (TransicaoEstudo.INICIO_SUCESSO): self._handler_estudo_criado,
+            (TransicaoEstudo.INICIO_ERRO): self._handler_estudo_criado,
+            (TransicaoEstudo.ERRO): self._handler_erro,
+            (TransicaoCaso.CRIADO): self._handler_criado_caso,
             (
-                EstadoEstudo.EXECUTANDO,
-                TransicaoCaso.INICIOU,
-            ): self._trata_inicio_caso,
+                TransicaoCaso.PREPARA_EXECUCAO_SOLICITADA
+            ): self._handler_caso_prepara_execucao_solicitada_caso,
             (
-                EstadoEstudo.EXECUTANDO,
-                TransicaoCaso.SUCESSO,
-            ): self._trata_fim_sucesso_caso,
+                TransicaoCaso.PREPARA_EXECUCAO_SUCESSO
+            ): self._handler_caso_prepara_execucao_sucesso_caso,
             (
-                EstadoEstudo.EXECUTANDO,
-                TransicaoCaso.ERRO,
-            ): self._trata_erro_caso,
-            (
-                EstadoEstudo.EXECUTANDO,
-                TransicaoCaso.ERRO_MAX_FLEX,
-            ): self._trata_erro_caso,
-            (
-                EstadoEstudo.EXECUTANDO,
-                TransicaoCaso.ERRO_DADOS,
-            ): self._trata_erro_caso,
+                TransicaoCaso.INICIO_EXECUCAO_SOLICITADA
+            ): self._handler_inicio_execucao_solicitada_caso,
+            (TransicaoCaso.INICIO_EXECUCAO_SUCESSO): self._trata_inicio_caso,
+            (TransicaoCaso.CONCLUIDO): self._trata_fim_sucesso_caso,
+            (TransicaoCaso.ERRO): self._trata_erro_caso,
         }
 
     def inicializa(self) -> bool:
