@@ -2,7 +2,7 @@ import subprocess
 import time
 from os import listdir
 from os.path import isfile
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 
 NUM_RETRY_DEFAULT = 3
@@ -32,7 +32,7 @@ def executa_terminal_retry(
 
 def executa_terminal(
     cmds: List[str], timeout: float = TIMEOUT_DEFAULT
-) -> Tuple[int, List[str]]:
+) -> Tuple[Optional[int], List[str]]:
     """
     Executa um comando no terminal e obtém as saídas e o código
     retornado pelo comando.

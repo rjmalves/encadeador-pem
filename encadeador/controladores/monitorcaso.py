@@ -58,7 +58,6 @@ class MonitorCaso:
         :param evento: O evento ocorrido com o job ou caso
         :type evento: Union[TransicaoJob, TransicaoCaso]
         """
-        # Executa a ação da transição de estado
         self._regras()[evento]()
 
     @property
@@ -105,31 +104,30 @@ class MonitorCaso:
             (
                 TransicaoCaso.FLEXIBILIZACAO_ERRO
             ): self._handler_flexibilizacao_erro,
-            (TransicaoJob.SUBMISSAO_SUCESSO): self._handler_submissao_sucesso,
-            (TransicaoJob.INICIO_EXECUCAO): self._handler_inicio_execucao,
-            (TransicaoJob.FIM_EXECUCAO): self._handler_fim_execucao,
+            (TransicaoCaso.CONCLUIDO): self._handler_caso_concluido,
+            (TransicaoCaso.INVIAVEL): self._handler_caso_inviavel,
+            (TransicaoCaso.ERRO): self._handler_erro,
+            (
+                TransicaoJob.SUBMISSAO_SUCESSO
+            ): self._handler_submissao_sucesso_job,
+            (TransicaoJob.INICIO_EXECUCAO): self._handler_inicio_execucao_job,
+            (TransicaoJob.FIM_EXECUCAO): self._handler_fim_execucao_job,
             (TransicaoJob.TIMEOUT_EXECUCAO): self._handler_timeout_execucao,
             (
                 TransicaoJob.DELECAO_SOLICITADA
             ): self._handler_delecao_solicitada,
             (TransicaoJob.DELECAO_ERRO): self._handler_delecao_erro,
             (TransicaoJob.DELECAO_SUCESSO): self._handler_delecao_sucesso,
-            (TransicaoCaso.CONCLUIDO): self._handler_caso_concluido,
-            (TransicaoCaso.INVIAVEL): self._handler_caso_inviavel,
-            (TransicaoCaso.ERRO): self._handler_erro,
         }
 
     @abstractmethod
     def inicializa(
         self,
         casos_anteriores: List[Caso],
-    ) -> bool:
+    ):
         """
         Realiza a inicialização do caso. Isto é, a extração e
         renomeação de arquivos que podem ser necessários.
-
-        :return: O sucesso ou não da inicialização do caso.
-        :rtype: bool
         """
         raise NotImplementedError()
 
@@ -138,18 +136,22 @@ class MonitorCaso:
         self,
         casos_anteriores: List[Caso],
         regras_operacao_reservatorios: List[RegraReservatorio],
-    ) -> bool:
+    ):
         """
         Realiza a preparação dos arquivos para adequação às
         necessidades do estudo encadeado e o encadeamento das
         variáveis selecionadas.
-
-        :return: O sucesso ou não da preparação do caso.
-        :rtype: bool
         """
         raise NotImplementedError()
 
-    def submete(self):
+    def inicia_execucao(self):
+        """
+        Inicia o processo de execução de um caso após as etapas
+        de inicialização e preparação.
+        """
+        self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
+
+    def __submete(self):
         """
         Cria um novo Job para o caso e o submete à fila.
         """
@@ -197,7 +199,6 @@ class MonitorCaso:
         Log.log().info(f"Caso {self._caso.nome}: caso preparado com sucesso")
         self._caso.estado = EstadoCaso.PREPARADO
         self._transicao_caso(TransicaoCaso.PREPARA_EXECUCAO_SUCESSO)
-        self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
 
     def _handler_prepara_execucao_erro(self):
         Log.log().info(f"Caso {self._caso.nome}: erro na preparação do caso")
@@ -210,7 +211,7 @@ class MonitorCaso:
         Log.log().info(f"Caso {self._caso.nome}: solicitada execução do caso")
         self._caso.estado = EstadoCaso.INICIANDO_EXECUCAO
         self._transicao_caso(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
-        self.submete()
+        self.__submete()
 
     def _handler_inicio_execucao_sucesso(self):
         Log.log().info(
@@ -229,11 +230,11 @@ class MonitorCaso:
         self.__sintetiza_caso()
         self.callback_evento(TransicaoCaso.ERRO)
 
-    def _handler_submissao_sucesso(self):
+    def _handler_submissao_sucesso_job(self):
         Log.log().info(f"Caso {self._caso.nome}: sucesso na submissão do caso")
         self._caso.estado = EstadoCaso.ESPERANDO_FILA
 
-    def _handler_inicio_execucao(self):
+    def _handler_inicio_execucao_job(self):
         Log.log().info(f"Caso {self._caso.nome}: iniciou execução")
         self._caso.estado = EstadoCaso.EXECUTANDO
 
@@ -275,7 +276,7 @@ class MonitorCaso:
         self._monitor_job_atual.deleta()
 
     @abstractmethod
-    def _handler_fim_execucao(self):
+    def _handler_fim_execucao_job(self):
         raise NotImplementedError()
 
     @abstractmethod
@@ -356,9 +357,6 @@ class MonitorNEWAVE(MonitorCaso):
         """
         Realiza a inicialização do caso. Isto é, a extração e
         renomeação de arquivos que podem ser necessários.
-
-        :return: O sucesso ou não da inicialização do caso.
-        :rtype: bool
         """
         # Se não é o primeiro NEWAVE, apaga os cortes do último
         ultimo_nw = None
@@ -378,14 +376,11 @@ class MonitorNEWAVE(MonitorCaso):
         self,
         casos_anteriores: List[Caso],
         regras_operacao_reservatorios: List[RegraReservatorio],
-    ) -> bool:
+    ):
         """
         Realiza a preparação dos arquivos para adequação às
         necessidades do estudo encadeado e o encadeamento das
         variáveis selecionadas.
-
-        :return: O sucesso ou não da preparação do caso.
-        :rtype: bool
         """
         self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_SOLICITADA)
         preparador = PreparadorCaso.factory(self._caso)
@@ -399,15 +394,26 @@ class MonitorNEWAVE(MonitorCaso):
             self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_SUCESSO)
         else:
             self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_ERRO)
-        return sucessos
 
     # Override
-    def _handler_fim_execucao(self):
+    def _handler_fim_execucao_job(self):
         Log.log().info(f"Caso {self._caso.nome}: fim da execução")
         if not self._avaliador.avalia():
             self.callback_evento(TransicaoCaso.ERRO_DADOS)
         else:
             self.callback_evento(TransicaoCaso.CONCLUIDO)
+
+    def _handler_caso_inviavel(self):
+        raise NotImplementedError()
+
+    def _handler_flexibilizacao_solicitada(self):
+        raise NotImplementedError()
+
+    def _handler_flexibilizacao_sucesso(self):
+        raise NotImplementedError()
+
+    def _handler_flexibilizacao_erro(self):
+        raise NotImplementedError()
 
 
 class MonitorDECOMP(MonitorCaso):
@@ -443,9 +449,6 @@ class MonitorDECOMP(MonitorCaso):
         """
         Realiza a inicialização do caso. Isto é, a extração e
         renomeação de arquivos que podem ser necessários.
-
-        :return: O sucesso ou não da inicialização do caso.
-        :rtype: bool
         """
         self.callback_evento(TransicaoCaso.CRIADO)
 
@@ -459,9 +462,6 @@ class MonitorDECOMP(MonitorCaso):
         Realiza a preparação dos arquivos para adequação às
         necessidades do estudo encadeado e o encadeamento das
         variáveis selecionadas.
-
-        :return: O sucesso ou não da preparação do caso.
-        :rtype: bool
         """
         self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_SOLICITADA)
         preparador = PreparadorCaso.factory(self._caso)
@@ -481,7 +481,7 @@ class MonitorDECOMP(MonitorCaso):
             self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_ERRO)
 
     # Override
-    def _handler_fim_execucao(self):
+    def _handler_fim_execucao_job(self):
         Log.log().info(f"Caso {self._caso.nome}: fim da execução")
         if not self._avaliador.avalia():
             self.callback_evento(TransicaoCaso.INVIAVEL)

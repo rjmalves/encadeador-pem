@@ -80,7 +80,7 @@ class MonitorJob:
         # Executa a ação da transição de estado
         self._regras()[estado_atual, novo_estado]()
 
-    def inicializa(self) -> bool:
+    def inicializa(self):
         self._transicao_job(TransicaoJob.CRIADO)
 
     def submete(self, numero_processadores: int) -> bool:

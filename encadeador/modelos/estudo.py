@@ -17,7 +17,7 @@ class Estudo:
         self,
         dados: DadosEstudo,
         casos: List[Caso],
-        regras_reservatorio: List[RegraReservatorio],
+        regras_reservatorio: List[RegraReservatorio] = [],
         estado: EstadoEstudo = EstadoEstudo.NAO_INICIADO,
     ):
         self._dados = dados
@@ -108,12 +108,6 @@ class Estudo:
                 ret = __le_caso(c)
                 casos.append(ret)
         return casos
-
-    def atualiza(self, estado: EstadoEstudo):
-        Log.log().info(f"Estudo: {self._estado} -> {estado.value}")
-        self._estado = estado
-        self._dados.resume_casos(self._casos)
-        self._dados.resume_dados_casos(self._casos)
 
     @property
     def nome(self) -> str:
@@ -242,3 +236,10 @@ class Estudo:
     @property
     def estado(self) -> EstadoEstudo:
         return self._estado
+
+    @estado.setter
+    def estado(self, e: EstadoEstudo):
+        Log.log().info(f"Estudo: {self._estado} -> {e.value}")
+        self._estado = e
+        self._dados.resume_casos(self._casos)
+        self._dados.resume_dados_casos(self._casos)
