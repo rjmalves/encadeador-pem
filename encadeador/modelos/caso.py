@@ -3,6 +3,7 @@ from typing import Dict, List, Any
 
 from encadeador.modelos.dadoscaso import DadosCaso
 from encadeador.modelos.configuracoes import Configuracoes
+from encadeador.modelos.estadojob import EstadoJob
 from encadeador.modelos.job import Job
 from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.utils.log import Log
@@ -54,7 +55,11 @@ class Caso:
         }
 
     def adiciona_job(self, job: Job):
-        self._jobs.append(job)
+        if len(self._jobs) > 0:
+            if self._jobs[-1].estado != EstadoJob.FINALIZADO:
+                self._jobs[-1] = job
+        else:
+            self._jobs.append(job)
 
     @staticmethod
     @abstractmethod
