@@ -108,8 +108,12 @@ class MonitorCaso:
             (TransicaoCaso.INVIAVEL): self._handler_caso_inviavel,
             (TransicaoCaso.ERRO): self._handler_erro,
             (
+                TransicaoJob.SUBMISSAO_SOLICITADA
+            ): self._handler_submissao_solicitada_job,
+            (
                 TransicaoJob.SUBMISSAO_SUCESSO
             ): self._handler_submissao_sucesso_job,
+            (TransicaoJob.SUBMISSAO_ERRO): self._handler_submissao_erro_job,
             (TransicaoJob.INICIO_EXECUCAO): self._handler_inicio_execucao_job,
             (TransicaoJob.FIM_EXECUCAO): self._handler_fim_execucao_job,
             (TransicaoJob.TIMEOUT_EXECUCAO): self._handler_timeout_execucao,
@@ -231,9 +235,23 @@ class MonitorCaso:
         self.__sintetiza_caso()
         self.callback_evento(TransicaoCaso.ERRO)
 
+    def _handler_submissao_solicitada_job(self):
+        Log.log().info(
+            f"Caso {self._caso.nome}: submissão do job do caso solicitada"
+        )
+
     def _handler_submissao_sucesso_job(self):
         Log.log().info(f"Caso {self._caso.nome}: sucesso na submissão do caso")
         self._caso.estado = EstadoCaso.ESPERANDO_FILA
+
+    def _handler_submissao_erro_job(self):
+        Log.log().info(
+            f"Caso {self._caso.nome}: erro na submissão do job do caso"
+        )
+        self._caso.estado = EstadoCaso.ERRO_COMUNICACAO
+        self.__armazena_caso()
+        self.__sintetiza_caso()
+        self.callback_evento(TransicaoCaso.ERRO)
 
     def _handler_inicio_execucao_job(self):
         Log.log().info(f"Caso {self._caso.nome}: iniciou execução")
