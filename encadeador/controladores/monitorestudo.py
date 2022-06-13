@@ -148,6 +148,7 @@ class MonitorEstudo:
             f"Estudo {self._estudo.nome}: estudo preparado com sucesso"
         )
         self._estudo.estado = EstadoEstudo.NAO_INICIADO
+        self._transicao_estudo(TransicaoEstudo.PREPARA_EXECUCAO_SUCESSO)
 
     def _handler_prepara_execucao_erro(self):
         Log.log().info(
