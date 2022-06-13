@@ -162,14 +162,15 @@ class MonitorEstudo:
     def _handler_inicio_execucao_solicitada(self):
         self._transicao_estudo(TransicaoEstudo.INICIO_EXECUCAO_SOLICITADA)
         self._estudo.estado = EstadoEstudo.INICIADO
-        self.callback_evento(TransicaoEstudo.INICIO_PROXIMO_CASO)
+        self.callback_evento(TransicaoEstudo.INICIO_EXECUCAO_SUCESSO)
 
     def _handler_inicio_execucao_sucesso(self):
         Log.log().info(
             f"Estudo {self._estudo.nome}: iniciando execução do estudo"
         )
-        self._estudo.estado = EstadoEstudo.EXECUTANDO
         self._transicao_estudo(TransicaoEstudo.INICIO_EXECUCAO_SUCESSO)
+        self._estudo.estado = EstadoEstudo.EXECUTANDO
+        self.callback_evento(TransicaoEstudo.INICIO_PROXIMO_CASO)
 
     def _handler_inicio_execucao_erro(self):
         Log.log().info(
