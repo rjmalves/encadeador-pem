@@ -133,7 +133,7 @@ class MonitorEstudo:
         Realiza o monitoramento do estado do estudo e também do
         caso atual em execução.
         """
-        Log.log().info("Monitorando - estudo...")
+        Log.log().debug("Monitorando - estudo...")
         self._monitor_atual.monitora()
         if not self._armazenador.armazena_estudo():
             Log.log().error("Erro no armazenamento do estudo")
@@ -192,7 +192,7 @@ class MonitorEstudo:
         self._transicao_estudo(TransicaoEstudo.ERRO)
 
     def _handler_criado_caso(self):
-        Log.log().info(f"Estudo {self._estudo.nome}: caso criado")
+        Log.log().debug(f"Estudo {self._estudo.nome}: caso criado")
         self._monitor_atual.prepara(
             self._estudo.casos_concluidos, self._estudo._regras_reservatorio
         )
@@ -204,20 +204,20 @@ class MonitorEstudo:
             self.callback_evento(TransicaoEstudo.CONCLUIDO)
 
     def _handler_prepara_execucao_solicitada_caso(self):
-        Log.log().info(
+        Log.log().debug(
             f"Estudo {self._estudo.nome}: preparação da execução"
             + " do caso solicitada"
         )
 
     def _handler_prepara_execucao_sucesso_caso(self):
-        Log.log().info(
+        Log.log().debug(
             f"Estudo {self._estudo.nome}: caso preparado com sucesso."
             + " Iniciando execução."
         )
         self._monitor_atual.inicia_execucao()
 
     def _handler_inicio_execucao_solicitada_caso(self):
-        Log.log().info(
+        Log.log().debug(
             f"Estudo {self._estudo.nome}: início da execução"
             + " do caso solicitada"
         )

@@ -118,7 +118,7 @@ class Caso:
 
     @estado.setter
     def estado(self, e: EstadoCaso):
-        Log.log().info(f"Caso: {self._dados.nome} - estado -> {e.value}")
+        Log.log().debug(f"Caso: {self._dados.nome} - estado -> {e.value}")
         self._estado = e
 
     @property

@@ -179,7 +179,7 @@ class MonitorCaso:
         job associado.
         """
         chdir(self._caso.caminho)
-        Log.log().info("Monitorando - caso...")
+        Log.log().debug("Monitorando - caso...")
         self._monitor_job_atual.monitora()
         if not self._armazenador.armazena_caso():
             Log.log().error(f"Erro ao armazenar caso {self._caso.nome}")
@@ -259,7 +259,7 @@ class MonitorCaso:
 
     def _handler_delecao_solicitada(self):
         # Aguarda o job ser deletado completamente
-        Log.log().info(f"Caso {self._caso.nome}: deleção solicitada")
+        Log.log().debug(f"Caso {self._caso.nome}: deleção solicitada")
 
     def _handler_delecao_erro(self):
         Log.log().info(
@@ -271,7 +271,7 @@ class MonitorCaso:
         self.callback_evento(TransicaoCaso.ERRO)
 
     def _handler_delecao_sucesso(self):
-        Log.log().info(f"Caso {self._caso.nome}: caso com timeout deletado")
+        Log.log().debug(f"Caso {self._caso.nome}: caso com timeout deletado")
         self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
 
     def _handler_erro_dados(self):
@@ -291,7 +291,7 @@ class MonitorCaso:
         self.callback_evento(TransicaoCaso.ERRO)
 
     def _handler_timeout_execucao(self):
-        Log.log().info(f"Caso {self._caso.nome}: timeout durante a execução")
+        Log.log().debug(f"Caso {self._caso.nome}: timeout durante a execução")
         self._monitor_job_atual.deleta()
 
     @abstractmethod

@@ -239,7 +239,7 @@ class Estudo:
 
     @estado.setter
     def estado(self, e: EstadoEstudo):
-        Log.log().info(f"Estudo: {self._estado} -> {e.value}")
+        Log.log().debug(f"Estudo: {self._estado} -> {e.value}")
         self._estado = e
         self._dados.resume_casos(self._casos)
         self._dados.resume_dados_casos(self._casos)

@@ -77,8 +77,8 @@ class App:
         while True:
             chdir(Configuracoes().caminho_base_estudo)
             time.sleep(INTERVALO_POLL)
-            Log.log().info("Tentando monitorar...")
+            Log.log().debug("Tentando monitorar...")
             if not self._executando:
                 continue
-            Log.log().info("Monitorando...")
+            Log.log().debug("Monitorando...")
             self._monitor.monitora()

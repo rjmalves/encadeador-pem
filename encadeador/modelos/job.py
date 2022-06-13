@@ -36,7 +36,7 @@ class Job:
         }
 
     def atualiza(self, estado: EstadoJob):
-        Log.log().info(f"Job: {self._dados.nome} - estado -> {estado.value}")
+        Log.log().debug(f"Job: {self._dados.nome} - estado -> {estado.value}")
         self.estado = estado
         t = time()
         if self.estado == EstadoJob.ESPERANDO:

@@ -98,7 +98,7 @@ class MonitorJob:
         return self._gerenciador.deleta_job()
 
     def monitora(self):
-        Log.log().info("Monitorando - job...")
+        Log.log().debug("Monitorando - job...")
         self._gerenciador.monitora_estado_job()
 
     def observa(self, f: Callable):
