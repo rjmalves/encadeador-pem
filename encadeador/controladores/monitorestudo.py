@@ -95,10 +95,10 @@ class MonitorEstudo:
         das saídas são criados, a conferência da existência dos casos a
         serem executados é feita, etc.
         """
-        self.callback_evento(TransicaoEstudo.PREPARA_EXECUCAO_SOLICITADA)
         self._estudo = ArmazenadorEstudo.gera_estudo()
         self._armazenador = ArmazenadorEstudo(self._estudo)
         self._sintetizador = SintetizadorEstudo(self._estudo)
+        self.callback_evento(TransicaoEstudo.PREPARA_EXECUCAO_SOLICITADA)
         preparador = PreparadorEstudo(self._estudo)
         if preparador.prepara_estudo():
             self.callback_evento(TransicaoEstudo.PREPARA_EXECUCAO_SUCESSO)
