@@ -79,4 +79,5 @@ class App:
             time.sleep(INTERVALO_POLL)
             if not self._executando:
                 continue
+            Log.log().info("Monitorando...")
             self._monitor.monitora()

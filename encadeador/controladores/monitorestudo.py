@@ -133,6 +133,7 @@ class MonitorEstudo:
         Realiza o monitoramento do estado do estudo e também do
         caso atual em execução.
         """
+        Log.log().info("Monitorando - estudo...")
         self._monitor_atual.monitora()
         if not self._armazenador.armazena_estudo():
             Log.log().error("Erro no armazenamento do estudo")

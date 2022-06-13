@@ -175,6 +175,7 @@ class MonitorCaso:
         job associado.
         """
         chdir(self._caso.caminho)
+        Log.log().info("Monitorando - caso...")
         self._monitor_job_atual.monitora()
         if not self._armazenador.armazena_caso():
             Log.log().error(f"Erro ao armazenar caso {self._caso.nome}")
