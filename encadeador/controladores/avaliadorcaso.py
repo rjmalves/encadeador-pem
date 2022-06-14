@@ -1,4 +1,6 @@
 from abc import abstractmethod
+import pandas as pd  # type: ignore
+from typing import Optional
 from inewave.newave import PMO  # type: ignore
 from idecomp.decomp.sumario import Sumario
 from idecomp.decomp.inviabunic import InviabUnic
@@ -30,73 +32,84 @@ class AvaliadorNEWAVE(AvaliadorCaso):
     def __init__(self, caso: CasoNEWAVE) -> None:
         super().__init__(caso)
 
-    def avalia(self) -> bool:
+    def __avalia_pmo(self) -> bool:
         try:
-            Log.log().info(f"Verificando saídas do {self._caso.nome}")
             pmo = PMO.le_arquivo(self._caso.caminho)
-            custos = pmo.custo_operacao_series_simuladas
-            if custos.empty:
-                Log.log().error(
-                    "Erro no processamento do " + f"{self._caso.nome}"
-                )
-                return False
-            Log.log().info(f"Caso concluído com sucesso: {self._caso.nome}")
-            return True
-        except FileNotFoundError:
-            Log.log().error(
-                "Arquivo pmo.dat não encontrado"
-                + f" no diretório do {self._caso.nome}"
-            )
-            raise RuntimeError()
-        except Exception as e:
+            return pmo.custo_operacao_series_simuladas is not None
+        except (Exception, FileNotFoundError) as e:
             Log.log().error(
                 "Erro na avaliação das saídas" + f" do {self._caso.nome}: {e}"
             )
             return False
+
+    def avalia(self) -> bool:
+        Log.log().info(f"Verificando saídas do {self._caso.nome}")
+        sucesso_pmo = self.__avalia_pmo()
+        if sucesso_pmo:
+            Log.log().info(f"Caso concluído com sucesso: {self._caso.nome}")
+        else:
+            Log.log().error("Erro no processamento do " + f"{self._caso.nome}")
+        return sucesso_pmo
 
 
 class AvaliadorDECOMP(AvaliadorCaso):
     def __init__(self, caso: CasoDECOMP) -> None:
         super().__init__(caso)
 
-    def avalia(self) -> bool:
+    def __avalia_sumario(self) -> bool:
         try:
             arq = f"sumario.rv{self._caso.revisao}"
-            arq_inv = f"inviab_unic.rv{self._caso.revisao}"
-            Log.log().info(f"Verificando saídas do {self._caso.nome}")
             sumario = Sumario.le_arquivo(self._caso.caminho, arq)
-            sumario.cmo_medio_subsistema
-            Log.log().info(f"Verificando inviabilidades do {self._caso.nome}")
-            inviab = InviabUnic.le_arquivo(self._caso.caminho, arq_inv)
-            if not inviab.inviabilidades_simulacao_final.empty:
-                Log.log().warning(
-                    f"{self._caso.nome} convergiu com"
-                    + " inviabilidades na simulação final"
-                )
-                cmo = sumario.cmo_medio_subsistema
-                n_estagios = (
-                    len([c for c in list(cmo.columns) if "Estágio" in c]) + 1
-                )
-                invs = inviab.inviabilidades_simulacao_final
-                inviabs_primeiro_mes = invs.loc[
-                    invs["Estágio"] != n_estagios, :
-                ]
-                if (
-                    Configuracoes().flexibiliza_deficit
-                    and not inviabs_primeiro_mes.empty
-                ):
-                    return False
-            Log.log().info(f"Caso concluído com sucesso: {self._caso.nome}")
-            return True
-        except FileNotFoundError:
+            return sumario.cmo_medio_subsistema is not None
+        except (Exception, FileNotFoundError) as e:
             Log.log().error(
-                f"Arquivo {arq} ou {arq_inv} não encontrados"
-                + f" no diretório do {self._caso.nome}"
-            )
-            raise RuntimeError()
-        except Exception as e:
-            Log.log().warning(
-                "Erro na avaliação das saídas"
-                + f" do {self._caso.nome}: caso não convergiu: {e}"
+                "Erro na avaliação das saídas" + f" do {self._caso.nome}: {e}"
             )
             return False
+
+    def __avalia_inviab(self) -> Optional[pd.DataFrame]:
+        Log.log().info(f"Verificando inviabilidades do {self._caso.nome}")
+        try:
+            arq_inv = f"inviab_unic.rv{self._caso.revisao}"
+            inviab = InviabUnic.le_arquivo(self._caso.caminho, arq_inv)
+            return inviab.inviabilidades_simulacao_final
+        except (Exception, FileNotFoundError) as e:
+            Log.log().error(
+                "Erro na avaliação das saídas" + f" do {self._caso.nome}: {e}"
+            )
+            return None
+
+    def __avalia_inviab_primeiro_mes(
+        self, inviabs_sim_final: pd.DataFrame
+    ) -> bool:
+        inviabs_primeiro_mes = pd.DataFrame()
+        if not inviabs_sim_final.empty:
+            Log.log().warning(
+                f"{self._caso.nome} convergiu com"
+                + " inviabilidades na simulação final"
+            )
+            ultimo_estagio = sorted(
+                inviabs_sim_final["Estágio"].unique().tolist()
+            )[-1]
+            inviabs_primeiro_mes = inviabs_sim_final.loc[
+                inviabs_sim_final["Estágio"] != ultimo_estagio, :
+            ]
+        return not all(
+            [
+                Configuracoes().flexibiliza_deficit,
+                not inviabs_primeiro_mes.empty,
+            ]
+        )
+
+    def avalia(self) -> bool:
+        Log.log().info(f"Verificando saídas do {self._caso.nome}")
+        if self.__avalia_sumario():
+            inviabs_sim_final = self.__avalia_inviab()
+            if inviabs_sim_final is None:
+                Log.log().info(
+                    f"Caso concluído com sucesso: {self._caso.nome}"
+                )
+                return True
+            else:
+                return self.__avalia_inviab_primeiro_mes(inviabs_sim_final)
+        return False
