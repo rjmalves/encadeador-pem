@@ -10,7 +10,6 @@
 # responsabilidade do modelo):
 
 # - Criado novo job para executar um caso
-# - Inicializado com atributos default
 # - Submetido à fila
 # - Atualização de estado
 # - Possivel timeout
