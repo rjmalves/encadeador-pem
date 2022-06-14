@@ -33,6 +33,10 @@ class AbstractJobRepository(ABC):
     def list(self) -> List[Job]:
         raise NotImplementedError
 
+    @abstractmethod
+    def list_by_caso(self, id_caso: int) -> List[Job]:
+        raise NotImplementedError
+
 
 class SQLJobRepository(AbstractJobRepository):
     def __init__(self, session: Session):
@@ -70,6 +74,10 @@ class SQLJobRepository(AbstractJobRepository):
 
     def list(self) -> List[Job]:
         statement = select(Job)
+        return [j[0] for j in self.__session.execute(statement).all()]
+
+    def list_by_caso(self, id_caso: int) -> List[Job]:
+        statement = select(Job).where(Job._id_caso == id_caso)
         return [j[0] for j in self.__session.execute(statement).all()]
 
 
@@ -155,6 +163,9 @@ class JSONJobRepository(AbstractJobRepository):
 
     def list(self) -> List[Job]:
         return self.__read_file()
+
+    def list_by_caso(self, id_caso: int) -> List[Job]:
+        return [j for j in self.__read_file() if j._id_caso == id_caso]
 
 
 def factory(kind: str, *args, **kwargs) -> AbstractJobRepository:

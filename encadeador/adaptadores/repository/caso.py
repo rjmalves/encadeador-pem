@@ -12,6 +12,9 @@ from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.modelos.programa import Programa
 
 
+from encadeador.adaptadores.repository.job import JSONJobRepository
+
+
 class AbstractCasoRepository(ABC):
     @abstractmethod
     def create(self, caso: Caso):
@@ -31,6 +34,10 @@ class AbstractCasoRepository(ABC):
 
     @abstractmethod
     def list(self) -> List[Caso]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def list_by_estudo(self, id_estudo: int) -> List[Caso]:
         raise NotImplementedError
 
 
@@ -69,10 +76,15 @@ class SQLCasoRepository(ABC):
         statement = select(Caso)
         return [j[0] for j in self.__session.execute(statement).all()]
 
+    def list_by_estudo(self, id_estudo: int) -> List[Caso]:
+        statement = select(Caso).where(Caso._id_estudo == id_estudo)
+        return [j[0] for j in self.__session.execute(statement).all()]
+
 
 class JSONCasoRepository(AbstractCasoRepository):
     def __init__(self, path: str):
         self.__path = Path(path) / "casos.json"
+        self.__jobs_repository = JSONJobRepository(path)
 
     @staticmethod
     def __to_json(caso: Caso) -> dict:
@@ -116,7 +128,10 @@ class JSONCasoRepository(AbstractCasoRepository):
     def __read_file(self) -> List[Caso]:
         self.__create_directory_if_not_exists()
         with open(self.__path, "r") as file:
-            return [JSONCasoRepository.__from_json(c) for c in load(file)]
+            casos = [JSONCasoRepository.__from_json(c) for c in load(file)]
+            for c in casos:
+                c._jobs = self.__jobs_repository.list_by_caso(c._id)
+            return casos
 
     def __write_file(self, casos: List[Caso]):
         self.__create_directory_if_not_exists()
@@ -150,6 +165,9 @@ class JSONCasoRepository(AbstractCasoRepository):
 
     def list(self) -> List[Caso]:
         return self.__read_file()
+
+    def list_by_estudo(self, id_estudo: int) -> List[Caso]:
+        return [j for j in self.__read_file() if j._id_estudo == id_estudo]
 
 
 def factory(kind: str, *args, **kwargs) -> AbstractCasoRepository:

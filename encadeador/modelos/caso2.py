@@ -2,7 +2,6 @@ from abc import abstractmethod
 from typing import List, Optional
 
 from encadeador.modelos.programa import Programa
-from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.estadojob import EstadoJob
 from encadeador.modelos.job import Job
 from encadeador.modelos.estadocaso import EstadoCaso
@@ -26,6 +25,7 @@ class Caso:
         _revisao: int,
         _programa: Programa,
         _estado: EstadoCaso,
+        _id_estudo: int,
     ) -> None:
         self._id = None
         self._caminho = str(_caminho)
@@ -35,6 +35,7 @@ class Caso:
         self._revisao = _revisao
         self._programa = _programa
         self._estado = _estado
+        self._id_estudo = _id_estudo
         self._jobs: List[Job] = []
 
     def adiciona_job(self, job: Job):
@@ -98,83 +99,9 @@ class Caso:
         self._estado = e
 
     @property
-    @abstractmethod
-    def numero_processadores(self) -> int:
-        raise NotImplementedError
+    def jobs(self) -> List[Job]:
+        return self._jobs
 
-    @abstractmethod
-    def _constroi_nome_caso(self, ano: int, mes: int, revisao: int) -> str:
-        raise NotImplementedError
-
-
-class CasoNEWAVE(Caso):
-    def __init__(self, caso: Caso):
-        self._id = caso._id
-        self._caminho = caso._caminho
-        self._nome = caso._nome
-        self._ano = caso._ano
-        self._mes = caso._mes
-        self._revisao = caso._revisao
-        self._programa = caso._programa
-        self._estado = caso._estado
-        self._jobs = caso._jobs
-
-    # Override
     @property
-    def numero_processadores(self) -> int:
-        # TODO - Ler o dger.dat e conferir as restrições de número
-        # de processadores (séries forward)
-        minimo = Configuracoes().processadores_minimos_newave
-        maximo = Configuracoes().processadores_maximos_newave
-        ajuste = Configuracoes().ajuste_processadores_newave
-        num_proc = minimo
-        if ajuste:
-            num_proc = maximo
-        return num_proc
-
-    # Override
-    @staticmethod
-    def _constroi_nome_caso(ano: int, mes: int, revisao: int) -> str:
-        return f"{Configuracoes().nome_estudo} - NW {mes}/{ano}"
-
-
-class CasoDECOMP(Caso):
-    def __init__(self, caso: Caso):
-        self._id = caso._id
-        self._caminho = caso._caminho
-        self._nome = caso._nome
-        self._ano = caso._ano
-        self._mes = caso._mes
-        self._revisao = caso._revisao
-        self._programa = caso._programa
-        self._estado = caso._estado
-        self._jobs = caso._jobs
-
-    # Override
-    @property
-    def numero_processadores(self) -> int:
-        # TODO - Ler o dadger.rvX e conferir as restrições de número
-        # de processadores (séries do 2º mês)
-        minimo = Configuracoes().processadores_minimos_decomp
-        maximo = Configuracoes().processadores_maximos_decomp
-        ajuste = Configuracoes().ajuste_processadores_decomp
-        num_proc = minimo
-        if ajuste:
-            num_proc = maximo
-        return num_proc
-
-    # Override
-    @staticmethod
-    def _constroi_nome_caso(ano: int, mes: int, revisao: int) -> str:
-        return (
-            f"{Configuracoes().nome_estudo} - DC" + f" {mes}/{ano} rv{revisao}"
-        )
-
-
-def factory(caso: Caso) -> Caso:
-    if caso.programa == Programa.NEWAVE:
-        return CasoNEWAVE(caso)
-    elif caso.programa == Programa.DECOMP:
-        return CasoDECOMP(caso)
-    else:
-        raise ValueError(f"Programa {caso.programa} não suportado")
+    def id_estudo(self) -> int:
+        return self._id_estudo

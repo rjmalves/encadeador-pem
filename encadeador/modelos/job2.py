@@ -33,6 +33,23 @@ class Job:
         self._estado = _estado
         self._id_caso = _id_caso
 
+    def __eq__(self, o: object):
+        if not isinstance(o, Job):
+            return False
+        return all(
+            [
+                self.id == o.id,
+                self.nome == o.nome,
+                self.caminho == o.caminho,
+                self._instante_entrada_fila == o._instante_entrada_fila,
+                self._instante_inicio_execucao == o._instante_inicio_execucao,
+                self._instante_saida_fila == o._instante_saida_fila,
+                self.numero_processadores == o.numero_processadores,
+                self.estado == o.estado,
+                self._id_caso == o._id_caso,
+            ]
+        )
+
     def atualiza(self, estado: EstadoJob):
         print(f"Job: {self.nome} - estado -> {estado.value}")
         self.estado = estado
