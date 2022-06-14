@@ -1,4 +1,3 @@
-from abc import abstractmethod
 from typing import List, Optional
 
 from encadeador.modelos.programa import Programa
@@ -37,6 +36,23 @@ class Caso:
         self._estado = _estado
         self._id_estudo = _id_estudo
         self._jobs: List[Job] = []
+
+    def __eq__(self, o: object):
+        if not isinstance(o, Caso):
+            return False
+        return all(
+            [
+                self.id == o.id,
+                self.caminho == o.caminho,
+                self.nome == o.nome,
+                self.ano == o.ano,
+                self.mes == o.mes,
+                self.revisao == o.revisao,
+                self.programa == o.programa,
+                self.estado == o.estado,
+                self._id_estudo == o._id_estudo,
+            ]
+        )
 
     def adiciona_job(self, job: Job):
         if len(self._jobs) > 0:

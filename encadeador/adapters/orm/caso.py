@@ -1,5 +1,5 @@
 from sqlalchemy import Table, Column, Integer, ForeignKey, String, Enum
-from encadeador.adaptadores.orm import registry
+from encadeador.adapters.orm import registry
 from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.modelos.programa import Programa
 

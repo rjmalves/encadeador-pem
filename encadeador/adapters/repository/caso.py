@@ -12,7 +12,7 @@ from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.modelos.programa import Programa
 
 
-from encadeador.adaptadores.repository.job import JSONJobRepository
+from encadeador.adapters.repository.job import JSONJobRepository
 
 
 class AbstractCasoRepository(ABC):
@@ -97,6 +97,7 @@ class JSONCasoRepository(AbstractCasoRepository):
             "_revisao": caso.revisao,
             "_programa": caso.programa.value,
             "_estado": caso.estado.value,
+            "_id_estudo": caso.id_estudo,
         }
 
     @staticmethod
@@ -109,6 +110,7 @@ class JSONCasoRepository(AbstractCasoRepository):
             caso_data["_revisao"],
             Programa.factory(caso_data["_programa"]),
             EstadoCaso.factory(caso_data["_estado"]),
+            caso_data["_id_estudo"],
         )
         caso._id = caso_data["_id"]
         return caso

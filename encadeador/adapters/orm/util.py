@@ -1,8 +1,8 @@
 from sqlalchemy.orm import relationship
-from encadeador.adaptadores.orm import registry
-from encadeador.adaptadores.orm.job import tabela_jobs
-from encadeador.adaptadores.orm.caso import tabela_casos
-from encadeador.adaptadores.orm.estudo import tabela_estudos
+from encadeador.adapters.orm import registry
+from encadeador.adapters.orm.job import tabela_jobs
+from encadeador.adapters.orm.caso import tabela_casos
+from encadeador.adapters.orm.estudo import tabela_estudos
 
 from encadeador.modelos.job2 import Job
 from encadeador.modelos.caso2 import Caso

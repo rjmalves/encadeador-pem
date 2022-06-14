@@ -25,6 +25,18 @@ class Estudo:
         self._regras_reservatorio: List[RegraReservatorio] = []
         self._casos: List[Caso] = []
 
+    def __eq__(self, o: object):
+        if not isinstance(o, Estudo):
+            return False
+        return all(
+            [
+                self.id == o.id,
+                self.caminho == o.caminho,
+                self.nome == o.nome,
+                self.estado == o.estado,
+            ]
+        )
+
     @staticmethod
     def le_arquivo_lista_casos() -> Tuple[List[str], List[str]]:
         def __cria_caminhos_casos(dirs_revisoes: List[str]) -> List[str]:
@@ -117,6 +129,14 @@ class Estudo:
     @casos.setter
     def casos(self, c: List[Caso]):
         self._casos = c
+
+    @property
+    def regras_reservatorio(self) -> List[RegraReservatorio]:
+        return self._regras_reservatorio
+
+    @regras_reservatorio.setter
+    def regras_reservatorio(self, r: List[RegraReservatorio]):
+        self._regras_reservatorio = r
 
     def indice_caso(self, caso: Optional[Caso]) -> int:
         if caso is None:

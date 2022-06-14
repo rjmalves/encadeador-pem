@@ -6,7 +6,7 @@ from pathlib import Path
 from os.path import exists
 from os import makedirs
 from json import dump, load
-
+from datetime import datetime
 
 from encadeador.modelos.job2 import Job
 from encadeador.modelos.estadojob import EstadoJob
@@ -91,9 +91,9 @@ class JSONJobRepository(AbstractJobRepository):
             "_id": job.id,
             "_nome": job.nome,
             "_caminho": job.caminho,
-            "_instante_entrada_fila": job._instante_entrada_fila,
-            "_instante_inicio_execucao": job._instante_inicio_execucao,
-            "_instante_saida_fila": job._instante_saida_fila,
+            "_instante_entrada_fila": job._instante_entrada_fila.isoformat(),
+            "_instante_inicio_execucao": job._instante_inicio_execucao.isoformat(),
+            "_instante_saida_fila": job._instante_saida_fila.isoformat(),
             "_numero_processadores": job.numero_processadores,
             "_estado": job.estado.value,
             "_id_caso": job._id_caso,
@@ -104,9 +104,9 @@ class JSONJobRepository(AbstractJobRepository):
         job = Job(
             job_data["_nome"],
             job_data["_caminho"],
-            job_data["_instante_entrada_fila"],
-            job_data["_instante_inicio_execucao"],
-            job_data["_instante_saida_fila"],
+            datetime.fromisoformat(job_data["_instante_entrada_fila"]),
+            datetime.fromisoformat(job_data["_instante_inicio_execucao"]),
+            datetime.fromisoformat(job_data["_instante_saida_fila"]),
             job_data["_numero_processadores"],
             EstadoJob.factory(job_data["_estado"]),
             job_data["_id_caso"],

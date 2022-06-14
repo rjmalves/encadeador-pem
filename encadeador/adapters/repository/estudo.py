@@ -11,7 +11,7 @@ from encadeador.modelos.estudo2 import Estudo
 from encadeador.modelos.estadoestudo import EstadoEstudo
 
 
-from encadeador.adaptadores.repository.caso import JSONCasoRepository
+from encadeador.adapters.repository.caso import JSONCasoRepository
 
 
 class AbstractEstudoRepository(ABC):

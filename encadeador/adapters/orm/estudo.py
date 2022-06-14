@@ -1,6 +1,6 @@
 from sqlalchemy import Table, Column, Integer, String, Enum
 
-from encadeador.adaptadores.orm import registry
+from encadeador.adapters.orm import registry
 from encadeador.modelos.estadoestudo import EstadoEstudo
 
 

@@ -1,7 +1,8 @@
-from time import time
+from datetime import datetime, timedelta
 from typing import Optional
 
 from encadeador.modelos.estadojob import EstadoJob
+from encadeador.utils.log import Log
 
 
 class Job:
@@ -16,9 +17,9 @@ class Job:
         self,
         _nome: str,
         _caminho: str,
-        _instante_entrada_fila: float,
-        _instante_inicio_execucao: float,
-        _instante_saida_fila: float,
+        _instante_entrada_fila: datetime,
+        _instante_inicio_execucao: datetime,
+        _instante_saida_fila: datetime,
         _numero_processadores: int,
         _estado: EstadoJob,
         _id_caso: int,
@@ -50,10 +51,15 @@ class Job:
             ]
         )
 
+    def __gt__(self, o: object):
+        if not isinstance(o, Job):
+            raise TypeError
+        return self._instante_entrada_fila > o._instante_entrada_fila
+
     def atualiza(self, estado: EstadoJob):
-        print(f"Job: {self.nome} - estado -> {estado.value}")
+        Log.log().debug(f"Job: {self.nome} - estado -> {estado.value}")
         self.estado = estado
-        t = time()
+        t = datetime.now()
         if self.estado == EstadoJob.ESPERANDO:
             self._instante_entrada_fila = t
         elif self.estado == EstadoJob.EXECUTANDO:
@@ -90,19 +96,19 @@ class Job:
         self._estado = e
 
     @property
-    def tempo_fila(self) -> float:
+    def tempo_fila(self) -> timedelta:
         if self._estado == EstadoJob.NAO_INICIADO:
-            return 0.0
+            return timedelta()
         elif self._estado == EstadoJob.ESPERANDO:
-            return time() - self._instante_entrada_fila
+            return datetime.now() - self._instante_entrada_fila
         else:
             return self._instante_inicio_execucao - self._instante_entrada_fila
 
     @property
-    def tempo_execucao(self) -> float:
+    def tempo_execucao(self) -> timedelta:
         if self._estado in [EstadoJob.NAO_INICIADO, EstadoJob.ESPERANDO]:
-            return 0.0
-        elif self._estado in [EstadoJob.EXECUTANDO, EstadoJob.ERRO]:
-            return time() - self._instante_entrada_fila
+            return timedelta()
+        elif self._estado in [EstadoJob.EXECUTANDO]:
+            return datetime.now() - self._instante_entrada_fila
         else:
             return self._instante_saida_fila - self._instante_inicio_execucao

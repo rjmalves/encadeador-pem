@@ -2,8 +2,11 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, clear_mappers
 
-from encadeador.adaptadores.orm import registry
-from encadeador.adaptadores.orm.util import start_mappers
+from encadeador.adapters.orm import registry
+from encadeador.adapters.orm.util import start_mappers
+
+
+JSON_WRITING_FIRST_INDEX = 6
 
 
 @pytest.fixture
