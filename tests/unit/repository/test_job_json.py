@@ -30,6 +30,7 @@ def test_get_job(mock_exists):
     with patch("builtins.open", m):
         job_repo = JSONJobRepository(".")
         job_teste = Job(
+            1,
             "teste",
             "/home/teste",
             datetime.now(),
@@ -58,6 +59,7 @@ def test_update_job(mock_exists):
     with patch("builtins.open", m):
         job_repo = JSONJobRepository(".")
         job_teste = Job(
+            1,
             "teste",
             "/home/teste",
             datetime.now(),
@@ -100,6 +102,7 @@ def test_delete_job(mock_exists):
     with patch("builtins.open", m):
         job_repo = JSONJobRepository(".")
         job_teste = Job(
+            1,
             "teste",
             "/home/teste",
             datetime.now(),

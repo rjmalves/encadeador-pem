@@ -15,6 +15,7 @@ tabela_jobs = Table(
     "jobs",
     registry.metadata,
     Column("_id", Integer, primary_key=True, autoincrement=True),
+    Column("_codigo", Integer),
     Column("_nome", String(255)),
     Column("_caminho", String(255), nullable=False),
     Column("_instante_entrada_fila", DateTime),

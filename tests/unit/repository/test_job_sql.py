@@ -40,6 +40,7 @@ def test_get_job(sqlite_session_factory):
         )
     )
     job_teste = Job(
+        1,
         "teste",
         "/home/teste",
         datetime.now(),
@@ -73,6 +74,7 @@ def test_update_job(sqlite_session_factory):
         )
     )
     job_teste = Job(
+        1,
         "teste",
         "/home/teste",
         datetime.now(),
@@ -110,6 +112,7 @@ def test_delete_job(sqlite_session_factory):
         )
     )
     job_teste = Job(
+        1,
         "teste",
         "/home/teste",
         datetime.now(),

@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from encadeador.modelos.estadojob import EstadoJob
-from encadeador.utils.log import Log
 
 
 class Job:
@@ -15,6 +14,7 @@ class Job:
 
     def __init__(
         self,
+        _codigo: int,
         _nome: str,
         _caminho: str,
         _instante_entrada_fila: datetime,
@@ -25,6 +25,7 @@ class Job:
         _id_caso: int,
     ):
         self._id = None
+        self._codigo = _codigo
         self._nome = _nome
         self._caminho = str(_caminho)
         self._instante_entrada_fila = _instante_entrada_fila
@@ -40,6 +41,7 @@ class Job:
         return all(
             [
                 self.id == o.id,
+                self.codigo == o.codigo,
                 self.nome == o.nome,
                 self.caminho == o.caminho,
                 self._instante_entrada_fila == o._instante_entrada_fila,
@@ -56,20 +58,23 @@ class Job:
             raise TypeError
         return self._instante_entrada_fila > o._instante_entrada_fila
 
-    def atualiza(self, estado: EstadoJob):
-        Log.log().debug(f"Job: {self.nome} - estado -> {estado.value}")
+    def atualiza(self, estado: EstadoJob, t: Optional[datetime] = None):
         self.estado = estado
-        t = datetime.now()
+        t = datetime.now() if t is None else t
         if self.estado == EstadoJob.ESPERANDO:
             self._instante_entrada_fila = t
         elif self.estado == EstadoJob.EXECUTANDO:
             self._instante_inicio_execucao = t
-        elif self.estado in [EstadoJob.FINALIZADO, EstadoJob.ERRO]:
+        elif self.estado == EstadoJob.FINALIZADO:
             self._instante_saida_fila = t
 
     @property
     def id(self) -> Optional[int]:
         return self._id
+
+    @property
+    def codigo(self) -> int:
+        return self._codigo
 
     @property
     def nome(self) -> str:
@@ -108,7 +113,17 @@ class Job:
     def tempo_execucao(self) -> timedelta:
         if self._estado in [EstadoJob.NAO_INICIADO, EstadoJob.ESPERANDO]:
             return timedelta()
-        elif self._estado in [EstadoJob.EXECUTANDO]:
+        elif self._estado == EstadoJob.EXECUTANDO:
             return datetime.now() - self._instante_entrada_fila
         else:
             return self._instante_saida_fila - self._instante_inicio_execucao
+
+    @property
+    def ativo(self) -> bool:
+        return self.estado in [
+            EstadoJob.ESPERANDO,
+            EstadoJob.EXECUTANDO,
+            EstadoJob.ERRO,
+            EstadoJob.TIMEOUT,
+            EstadoJob.DELETANDO,
+        ]

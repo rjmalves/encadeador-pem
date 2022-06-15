@@ -89,6 +89,7 @@ class JSONJobRepository(AbstractJobRepository):
     def __to_json(job: Job) -> dict:
         return {
             "_id": job.id,
+            "_codigo": job.codigo,
             "_nome": job.nome,
             "_caminho": job.caminho,
             "_instante_entrada_fila": job._instante_entrada_fila.isoformat(),
@@ -102,6 +103,7 @@ class JSONJobRepository(AbstractJobRepository):
     @staticmethod
     def __from_json(job_data: dict) -> Job:
         job = Job(
+            job_data["_codigo"],
             job_data["_nome"],
             job_data["_caminho"],
             datetime.fromisoformat(job_data["_instante_entrada_fila"]),
