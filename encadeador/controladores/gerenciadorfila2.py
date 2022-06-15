@@ -16,6 +16,13 @@ class GerenciadorFila:
     para execução dos casos no estudo encadeado.
     """
 
+    # TODO - O gerenciador de fila hoje tem mais de uma responsabilidade.
+    # 1) Traduz os comandos desejados do job para o ambiente
+    # em que ele é executado (submetes, conferir estado, etc.) - OK
+    # 2) Guarda a configuração de tempo de timeout - N OK
+    # 3) Publica o evento de transicao de caso - N OK
+    # 4) ...
+
     TIMEOUT_COMUNICACAO = timedelta(minutes=30)
 
     def __init__(self):
