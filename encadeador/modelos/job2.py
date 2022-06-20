@@ -76,9 +76,17 @@ class Job:
     def codigo(self) -> int:
         return self._codigo
 
+    @codigo.setter
+    def codigo(self, c: int):
+        self._codigo = c
+
     @property
     def nome(self) -> str:
         return self._nome
+
+    @nome.setter
+    def nome(self, n: str):
+        self._nome = n
 
     @property
     def caminho(self) -> str:

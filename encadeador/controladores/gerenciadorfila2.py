@@ -1,13 +1,12 @@
 from abc import abstractmethod
 from os.path import getmtime, isfile
-from typing import Callable, List, Optional
+from typing import List
 from datetime import datetime, timedelta
 
 from encadeador.modelos.estadojob import EstadoJob
 from encadeador.modelos.job2 import Job
 from encadeador.utils.log import Log
 from encadeador.utils.terminal import executa_terminal_retry
-from encadeador.utils.event import Event
 
 
 class GerenciadorFila:
@@ -16,93 +15,61 @@ class GerenciadorFila:
     para execução dos casos no estudo encadeado.
     """
 
-    # TODO - O gerenciador de fila hoje tem mais de uma responsabilidade.
-    # 1) Traduz os comandos desejados do job para o ambiente
-    # em que ele é executado (submetes, conferir estado, etc.) - OK
-    # 2) Guarda a configuração de tempo de timeout - N OK
-    # 3) Publica o evento de transicao de caso - N OK
-    # 4) ...
-
     TIMEOUT_COMUNICACAO = timedelta(minutes=30)
 
-    def __init__(self):
-        self.__job: Optional[Job] = None
-        self._arquivo_stdout: Optional[str] = None
-        self._arquivo_stderr: Optional[str] = None
-        self._mudou_estado = Event()
+    def __init__(self, job: Job):
+        self._job = job
 
     # Factory Method
     @staticmethod
-    def factory(ger: str) -> "GerenciadorFila":
+    def factory(ger: str, job: Job) -> "GerenciadorFila":
         if ger == "SGE":
-            return GerenciadorFilaSGE()
+            return GerenciadorFilaSGE(job)
         else:
             raise ValueError(f"Gerenciador de fila '{ger}' não suportado")
 
-    def observa(self, f: Callable):
-        self._mudou_estado.append(f)
-
     @property
-    def id_job(self) -> int:
-        return self.__job.codigo
-
-    @property
-    def nome_job(self) -> str:
-        return self.__job.nome
-
-    @property
+    @abstractmethod
     def arquivo_stdout(self) -> str:
         """
         Nome do arquivo de saída padrão que o gerenciador de
         filas utiliza para escrita.
-
-        :return: Nome do arquivo.
-        :rtype: str
         """
-        return self._arquivo_stdout
+        raise NotImplementedError
 
-    @property
-    def arquivo_stderr(self) -> str:
-        """
-        Nome do arquivo de saída de erro que o gerenciador de
-        filas utiliza para escrita.
-
-        :return: Nome do arquivo.
-        :rtype: str
-        """
-        return self._arquivo_stderr
+    @staticmethod
+    def _ultima_modificacao_arquivo(arquivo: str) -> datetime:
+        if not isfile(arquivo):
+            return datetime.now()
+        else:
+            return datetime.fromtimestamp(getmtime(arquivo))
 
     @property
     def tempo_job_idle(self) -> timedelta:
         """
         A diferença entre o instante de tempo atual e o instante
         da última escrita feita pelo job no arquivo de saída padrão.
-
-        :return: Tempo desde a última escrita de saída do job.
-        :rtype: timedelta
         """
-        if not isfile(self.arquivo_stdout):
-            return 0.0
-        else:
-            return datetime.now() - datetime.fromtimestamp(
-                getmtime(self.arquivo_stdout)
-            )
+        return datetime.now() - GerenciadorFila._ultima_modificacao_arquivo(
+            self.arquivo_stdout
+        )
 
+    @property
     @abstractmethod
-    def comando_qsub(self) -> List[str]:
+    def _comando_qsub(self) -> List[str]:
         raise NotImplementedError
 
+    @property
     @abstractmethod
-    def comando_qstat(self) -> List[str]:
+    def _comando_qstat(self) -> List[str]:
         raise NotImplementedError
 
+    @property
     @abstractmethod
-    def comando_qdel(self) -> List[str]:
+    def _comando_qdel(self) -> List[str]:
         raise NotImplementedError
 
-    def inicia(
-        self, caminho_job: str, nome_job: str, num_processadores: int
-    ) -> bool:
+    def inicia(self) -> bool:
         """
         Solicita a inclusão de um job no gerenciamento
         de filas.
@@ -110,24 +77,19 @@ class GerenciadorFila:
         :return: Sucesso ou não da inclusão.
         :rtype: bool
         """
-        self._comandos = self.comando_qsub(
-            caminho_job, nome_job, num_processadores
-        )
-        cod, self._respostas = executa_terminal_retry(self._comandos)
-        if cod != 0:
-            self._inicializa_gerenciador()
-        return cod == 0
+        comandos = self._comando_qsub
+        cod, respostas = executa_terminal_retry(comandos)
+        sucesso = cod == 0
+        if sucesso:
+            self._processa_sucesso_submissao(respostas)
+        return sucesso
 
-    def deleta_job(self) -> bool:
-        cod, _ = executa_terminal_retry(self.comando_qdel())
+    def deleta(self) -> bool:
+        cod, _ = executa_terminal_retry(self._comando_qdel)
         return cod == 0
 
     @abstractmethod
-    def _inicializa_gerenciador(self):
-        """
-        Interpreta as saídas do comando de agendamento do job
-        e inicializa os atributos do gerenciador de fila.
-        """
+    def _processa_sucesso_submissao(self, respostas: List[str]):
         raise NotImplementedError
 
     @abstractmethod
@@ -155,44 +117,25 @@ class GerenciadorFila:
         raise NotImplementedError
 
     @abstractmethod
-    def _extrai_estado_job(self):
+    def _extrai_caracteres_estado(self):
         raise NotImplementedError
 
-    def monitora_estado_job(self):
-        Log.log().info("Monitorando - fila...")
-        estado = self._extrai_estado_job()
-        if self._estado_timeout(estado):
-            self.estado_job = EstadoJob.TIMEOUT
-        elif self._estado_erro(estado):
-            self.estado_job = EstadoJob.ERRO
-        elif self._estado_finalizado(estado):
-            self.estado_job = EstadoJob.FINALIZADO
-        elif self._estado_esperando(estado):
-            self.estado_job = EstadoJob.ESPERANDO
-        elif self._estado_executando(estado):
-            self.estado_job = EstadoJob.EXECUTANDO
-        elif self._estado_deletando(estado):
-            self.estado_job = EstadoJob.DELETANDO
-        else:
-            raise ValueError(f"Estado não reconhecido: {estado}")
-
-    @property
-    def estado_job(self) -> EstadoJob:
-        """
-        Retorna uma interpretação do estado do job
-        no gerenciador de filas.
-
-        :return: Estado do job no gerenciador de filas.
-        :rtype: EstadoJob
-        """
-        return self.__job.estado
-
-    @estado_job.setter
-    def estado_job(self, e: EstadoJob):
-        if self.__job.estado == e:
-            return
-        self.__job.estado = e
-        self._mudou_estado(e)
+    def monitora(self) -> EstadoJob:
+        e = EstadoJob.NAO_INICIADO
+        c = self._extrai_caracteres_estado()
+        if self._estado_timeout(c):
+            e = EstadoJob.TIMEOUT
+        elif self._estado_erro(c):
+            e = EstadoJob.ERRO
+        elif self._estado_finalizado(c):
+            e = EstadoJob.FINALIZADO
+        elif self._estado_esperando(c):
+            e = EstadoJob.ESPERANDO
+        elif self._estado_executando(c):
+            e = EstadoJob.EXECUTANDO
+        elif self._estado_deletando(c):
+            e = EstadoJob.DELETANDO
+        return e
 
 
 class GerenciadorFilaSGE(GerenciadorFila):
@@ -201,46 +144,43 @@ class GerenciadorFilaSGE(GerenciadorFila):
     para gerenciar casos.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, job: Job):
+        super().__init__(job)
 
-    def _inicializa_gerenciador(self):
-        if self._respostas is None:
-            raise ValueError("Gerenciador de filas não inicializado!")
-        resposta = self._respostas[0]
-        # id_job
-        self._id_job = int(resposta.split("Your job")[1].split("(")[0].strip())
-        # nome_job
-        self._nome_job = resposta.split("(")[1].split(")")[0].strip('"')
-        # arquivos stdout e stderr
-        self._arquivo_stdout = f"{self.nome_job}.o{self.id_job}"
-        self._arquivo_stderr = f"{self.nome_job}.e{self.id_job}"
+    @property
+    def arquivo_stdout(self) -> str:
+        """
+        Nome do arquivo de saída padrão que o gerenciador de
+        filas utiliza para escrita.
+        """
+        return f"{self._job.nome}.o{self._job.codigo}"
 
-    def comando_qstat(self) -> List[str]:
+    @property
+    def _comando_qstat(self) -> List[str]:
         return ["qstat"]
 
-    def comando_qsub(
-        self, caminho_job: str, nome_job: str, num_processadores: int
-    ) -> List[str]:
+    @property
+    def _comando_qsub(self) -> List[str]:
         return [
             "qsub",
             "-cwd",
             "-V",
             "-N",
-            nome_job,
+            self._job.nome,
             "-pe",
             "orte",
-            str(num_processadores),
-            caminho_job,
-            str(num_processadores),
+            str(self._job.numero_processadores),
+            self._job.caminho,
+            str(self._job.numero_processadores),
         ]
 
-    def comando_qdel(self) -> List[str]:
-        return ["qdel", str(self.id_job)]
+    @property
+    def _comando_qdel(self) -> List[str]:
+        return ["qdel", str(self._job.id)]
 
     # Override
-    def _extrai_estado_job(self):
-        cod, saidas = executa_terminal_retry(self.comando_qstat())
+    def _extrai_caracteres_estado(self) -> str:
+        cod, saidas = executa_terminal_retry(self._comando_qstat)
         if cod != 0:
             raise ValueError(f"Erro na execução do qstat: código {cod}")
         estado = ""
@@ -248,10 +188,19 @@ class GerenciadorFilaSGE(GerenciadorFila):
             lin = linha.strip()
             if lin.split(" ")[0] == "":
                 break
-            if int(lin.split(" ")[0]) == self.id_job:
-                estado = linha[34:38].strip()
+            if int(lin.split(" ")[0]) == self._job.codigo:
+                dados = [d for d in linha.split(" ") if len(d) > 0]
+                if len(dados[4]) < 4:
+                    estado = dados[4].strip()
                 break
         return estado
+
+    def _processa_sucesso_submissao(self, respostas: List[str]):
+        resposta = respostas[0]
+        self._job.codigo = int(
+            resposta.split("Your job")[1].split("(")[0].strip()
+        )
+        self._job.nome = resposta.split("(")[1].split(")")[0].strip('"')
 
     def _estado_timeout(self, e: str) -> bool:
         return (
@@ -275,4 +224,4 @@ class GerenciadorFilaSGE(GerenciadorFila):
         return "e" in e
 
     def _estado_finalizado(self, e: str) -> bool:
-        return self.estado_job != EstadoJob.NAO_INICIADO and e == ""
+        return self._job.estado != EstadoJob.NAO_INICIADO and e == ""
