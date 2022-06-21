@@ -3,6 +3,7 @@ from typing import Dict, List, Any
 
 from encadeador.modelos.dadoscaso import DadosCaso
 from encadeador.modelos.configuracoes import Configuracoes
+from encadeador.modelos.estadojob import EstadoJob
 from encadeador.modelos.job import Job
 from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.utils.log import Log
@@ -53,13 +54,10 @@ class Caso:
             "_estado": str(self._estado.value),
         }
 
-    def atualiza(self, estado: EstadoCaso):
-        Log.log().info(f"Caso: {self._dados.nome} - estado -> {estado.value}")
-        self._estado = estado
-
-    def adiciona_job(self, job: Job, retry: bool):
-        if retry:
-            self._jobs[-1] = job
+    def adiciona_job(self, job: Job):
+        if len(self._jobs) > 0:
+            if self._jobs[-1].estado != EstadoJob.FINALIZADO:
+                self._jobs[-1] = job
         else:
             self._jobs.append(job)
 
@@ -122,6 +120,11 @@ class Caso:
     @property
     def estado(self) -> EstadoCaso:
         return self._estado
+
+    @estado.setter
+    def estado(self, e: EstadoCaso):
+        Log.log().debug(f"Caso: {self._dados.nome} - estado -> {e.value}")
+        self._estado = e
 
     @property
     @abstractmethod

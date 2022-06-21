@@ -3,6 +3,7 @@ from enum import Enum
 
 class EstadoEstudo(Enum):
     NAO_INICIADO = "NAO_INICIADO"
+    INICIADO = "INICIADO"
     EXECUTANDO = "EXECUTANDO"
     CONCLUIDO = "CONCLUIDO"
     ERRO = "ERRO"

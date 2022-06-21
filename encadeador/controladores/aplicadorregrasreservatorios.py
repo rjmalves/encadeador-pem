@@ -214,7 +214,7 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         # 2 primeiros meses. Se não existir, procura VAZMIN. Por último,
         # procura no HIDR
         data_caso = date(self._caso.ano, self._caso.mes, 1)
-        ultima_vazao = 0
+        ultima_vazao = 0.0
         if len(vazmint_existentes) > 0:
             for m in vazmint_existentes:
                 data_inicio = date(m.ano, m.mes, 1)

@@ -202,7 +202,7 @@ class DadosEstudo:
         resumo_defluencias: pd.DataFrame,
         caso: CasoDECOMP,
         primeiro: bool,
-    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         # Faz o resumo do estado dos casos
         arq_resumo = join(caso.caminho, NOME_ARQUIVO_ESTADO)
         df_resumo = pd.read_csv(arq_resumo, index_col=0)
