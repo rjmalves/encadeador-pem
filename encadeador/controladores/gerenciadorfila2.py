@@ -69,7 +69,7 @@ class GerenciadorFila:
     def _comando_qdel(self) -> List[str]:
         raise NotImplementedError
 
-    def inicia(self) -> bool:
+    def submete(self) -> bool:
         """
         Solicita a inclusão de um job no gerenciamento
         de filas.

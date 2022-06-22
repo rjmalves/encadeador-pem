@@ -47,6 +47,7 @@ class Configuracoes(metaclass=Singleton):
         self._fator_aumento_gap_decomp = None
         self._gap_maximo_decomp = None
         self._script_converte_codificacao = None
+        self._modo_armazenamento_dados = None
         self._arquivo_regras_operacao_reservatorios = None
         self._arquivo_regras_flexibilizacao_inviabilidades = None
 
@@ -86,6 +87,7 @@ class Configuracoes(metaclass=Singleton):
             .fator_aumento_gap_decomp("FATOR_AUMENTO_GAP_DECOMP")
             .gap_maximo_decomp("GAP_MAXIMO_DECOMP")
             .script_converte_codificacao("SCRIPT_CONVERTE_CODIFICACAO")
+            .modo_armazenamento_dados("MODO_ARMAZENAMENTO_DADOS")
             .arquivo_regras_operacao_reservatorios(
                 "ARQUIVO_REGRAS_OPERACAO_RESERVATORIOS"
             )
@@ -351,6 +353,13 @@ class Configuracoes(metaclass=Singleton):
         return self._script_converte_codificacao
 
     @property
+    def modo_armazenamento_dados(self) -> str:
+        """
+        Configuração do modo de armazenamento de dados utilizado.
+        """
+        return self._modo_armazenamento_dados
+
+    @property
     def arquivo_regras_operacao_reservatorios(self) -> str:
         """
         Caminho do arquivo com as regras de operação dos reservatórios.
@@ -496,6 +505,10 @@ class BuilderConfiguracoes:
 
     @abstractmethod
     def script_converte_codificacao(self, variavel: str):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def modo_armazenamento_dados(self, variavel: str):
         raise NotImplementedError()
 
     @abstractmethod
@@ -882,6 +895,20 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         if not re.match(BuilderConfiguracoesENV.regex_alfanum, valor):
             raise ValueError(f"Nome de arquivo {valor} inválido.")
         self._configuracoes._script_converte_codificacao = valor
+        # Fluent method
+        return self
+
+    def modo_armazenamento_dados(self, variavel: str):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        # Confere se as variáveis está dentro das: JSON, SQL
+        variaveis_validas = set(["", "JSON", "SQL"])
+        if valor in variaveis_validas:
+            raise ValueError(
+                f"Modo de armazenamento informado {valor}"
+                + " é inválido. "
+                + " Válidos: JSON, SQL"
+            )
+        self._configuracoes._modo_armazenamento_dados = valor
         # Fluent method
         return self
 
