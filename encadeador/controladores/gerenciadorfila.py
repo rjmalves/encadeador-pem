@@ -167,7 +167,7 @@ class GerenciadorFila:
         pass
 
     def monitora_estado_job(self):
-        Log.log().info("Monitorando - fila...")
+        Log.log().debug("Monitorando - fila...")
         estado = self._extrai_estado_job()
         if self._estado_timeout(estado):
             self.estado_job = EstadoJob.TIMEOUT
