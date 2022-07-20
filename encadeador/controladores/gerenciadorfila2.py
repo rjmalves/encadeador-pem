@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 
 from encadeador.modelos.estadojob import EstadoJob
 from encadeador.modelos.job2 import Job
-from encadeador.utils.log import Log
 from encadeador.utils.terminal import executa_terminal_retry
 
 

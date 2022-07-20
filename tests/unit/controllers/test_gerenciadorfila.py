@@ -44,7 +44,7 @@ def test_inicia_gerenciador_fila_sge():
         1,
     )
     g = GerenciadorFilaSGE(j)
-    r = g.inicia()
+    r = g.submete()
     assert r
     assert j.nome == "certo"
     assert j.codigo == 5
