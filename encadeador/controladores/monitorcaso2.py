@@ -142,18 +142,15 @@ class MonitorCaso:
         """
         Cria um novo Job para o caso e o submete à fila.
         """
-        # TODO - O CAMINHO DO JOB TEM QUE SER O DO ARQUIVO .JOB
-        # TEM QUE VER COMO FAZER A CONTA DOS PROCESSADORES
         comando = commands.SubmeteCaso(
-            self._caso_id, Configuracoes().processadores_minimos_newave
+            self._caso_id,
+            Configuracoes().gerenciador_fila,
         )
         self._monitor_job_atual = MonitorJob()
         self._monitor_job_atual.observa(self.callback_evento)
-        if self._monitor_job_atual.submete(self._caso.numero_processadores):
-            chdir(Configuracoes().caminho_base_estudo)
+        if handlers.submete(comando, self._uow, self._monitor_job_atual):
             self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SUCESSO)
         else:
-            chdir(Configuracoes().caminho_base_estudo)
             self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_ERRO)
 
     def monitora(self):
@@ -161,17 +158,10 @@ class MonitorCaso:
         Realiza o monitoramento do estado do caso e também do
         job associado.
         """
-        # TODO - mesma coisa do anterior...
-        # TODO - porém, não precisa desse chdir. ele só era usado
-        # para escrever o status no arquivo .csv dentro da pasta do caso
-        chdir(self._caso.caminho)
-        Log.log().debug("Monitorando - caso...")
-        self._monitor_job_atual.monitora()
-        if not self._armazenador.armazena_caso():
-            Log.log().error(f"Erro ao armazenar caso {self._caso.nome}")
-            chdir(Configuracoes().caminho_base_estudo)
-            self.callback_evento(TransicaoCaso.ERRO)
-        chdir(Configuracoes().caminho_base_estudo)
+        comando = commands.MonitoraCaso(
+            self._caso_id, Configuracoes().gerenciador_fila
+        )
+        handlers.monitora(comando, self._uow, self._monitor_job_atual)
 
     def observa(self, f: Callable):
         self._transicao_caso.append(f)

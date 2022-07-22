@@ -71,7 +71,9 @@ class MonitorJob:
             ): self._handler_delecao_solicitada,
         }
 
-    def callback_estado_job(self, estado_atual: EstadoJob, novo_estado: EstadoJob):
+    def callback_estado_job(
+        self, estado_atual: EstadoJob, novo_estado: EstadoJob
+    ):
         """
         Esta função é usada para implementar o Observer Pattern.
         Quando chamada, significa que o estado de um Job foi alterado
@@ -90,12 +92,13 @@ class MonitorJob:
     def submete(
         self,
         caminho: str,
+        nome: str,
         numero_processadores: int,
         id_caso: int,
         gerenciador: str = Configuracoes().gerenciador_fila,
     ) -> bool:
         comando = commands.SubmeteJob(
-            gerenciador, caminho, numero_processadores, id_caso
+            gerenciador, caminho, nome, numero_processadores, id_caso
         )
         job = handlers.submete(comando, self._uow)
 

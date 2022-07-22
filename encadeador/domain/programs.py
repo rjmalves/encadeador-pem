@@ -6,7 +6,7 @@ from os.path import join
 from os import listdir
 
 
-class NamingRules:
+class ProgramRules:
     @staticmethod
     def program_from_folder(dir: str) -> Optional[Programa]:
         mapping: Dict[str, Programa] = {
@@ -24,7 +24,7 @@ class NamingRules:
         ano = int(case_data[0])
         mes = int(case_data[1])
         rv = int(case_data[2].split("rv")[1])
-        programa = NamingRules.program_from_folder(p.stem)
+        programa = ProgramRules.program_from_folder(p.stem)
         if programa is None:
             return None
         return ano, mes, rv, programa
@@ -42,8 +42,8 @@ class NamingRules:
         year: int, month: int, rv: int, program: Programa
     ) -> Optional[str]:
         mapping: Dict[Programa, str] = {
-            Programa.NEWAVE: NamingRules.newave_case_name(year, month),
-            Programa.DECOMP: NamingRules.decomp_case_name(year, month, rv),
+            Programa.NEWAVE: ProgramRules.newave_case_name(year, month),
+            Programa.DECOMP: ProgramRules.decomp_case_name(year, month, rv),
         }
         return mapping.get(program)
 
@@ -68,25 +68,41 @@ class NamingRules:
     @staticmethod
     def program_job_path(program: Programa) -> Optional[str]:
         mapping: Dict[Programa, str] = {
-            Programa.NEWAVE: NamingRules.newave_job_path(),
-            Programa.DECOMP: NamingRules.decomp_job_path(),
+            Programa.NEWAVE: ProgramRules.newave_job_path(),
+            Programa.DECOMP: ProgramRules.decomp_job_path(),
         }
         return mapping.get(program)
 
     @staticmethod
     def newave_job_name(year: int, month: int) -> str:
-        f"NW{year}{str(month).zfill(2)}"
+        return f"NW{year}{str(month).zfill(2)}"
 
     @staticmethod
     def decomp_job_name(year: int, month: int, rv: int) -> str:
-        f"DC{year}{str(month).zfill(2)}{rv}"
+        return f"DC{year}{str(month).zfill(2)}{rv}"
 
     @staticmethod
     def program_job_name(
         year: int, month: int, rv: int, program: Programa
     ) -> Optional[str]:
         mapping: Dict[Programa, str] = {
-            Programa.NEWAVE: NamingRules.newave_job_name(year, month),
-            Programa.DECOMP: NamingRules.decomp_job_name(year, month, rv),
+            Programa.NEWAVE: ProgramRules.newave_job_name(year, month),
+            Programa.DECOMP: ProgramRules.decomp_job_name(year, month, rv),
+        }
+        return mapping.get(program)
+
+    @staticmethod
+    def newave_processor_count() -> int:
+        return Configuracoes().processadores_minimos_newave
+
+    @staticmethod
+    def decomp_processor_count() -> int:
+        return Configuracoes().processadores_minimos_decomp
+
+    @staticmethod
+    def program_processor_count(program: Programa) -> Optional[int]:
+        mapping: Dict[Programa, int] = {
+            Programa.NEWAVE: ProgramRules.newave_processor_count(),
+            Programa.DECOMP: ProgramRules.decomp_processor_count(),
         }
         return mapping.get(program)

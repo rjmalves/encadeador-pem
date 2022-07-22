@@ -6,7 +6,7 @@ from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.services.unitofwork.caso import AbstractCasoUnitOfWork
 from encadeador.modelos.caso2 import Caso
 import encadeador.domain.commands as commands
-from encadeador.domain.naming import NamingRules
+from encadeador.domain.programs import ProgramRules
 from encadeador.services.unitofwork.job import AbstractJobUnitOfWork
 
 
@@ -19,10 +19,10 @@ def cria(
     command: commands.CriaCaso, uow: AbstractCasoUnitOfWork
 ) -> Optional[Caso]:
     with uow:
-        case_data = NamingRules.case_from_path(command.caminho)
+        case_data = ProgramRules.case_from_path(command.caminho)
         if case_data is None:
             return None
-        case_name = NamingRules.case_name_from_data(*case_data)
+        case_name = ProgramRules.case_name_from_data(*case_data)
         if case_name is None:
             return None
         caso = Caso(
@@ -80,10 +80,32 @@ def submete(
         # Extrai o caso
         caso = caso_uow.casos.read(command.id_caso)
         if caso is None:
-            return None
+            return False
+        caminho = ProgramRules.program_job_path(caso.programa)
+        nome = ProgramRules.program_job_name(
+            caso.ano, caso.mes, caso.revisao, caso.programa
+        )
+        processadores = ProgramRules.program_processor_count(caso.programa)
+        if caminho is None or nome is None:
+            return False
         return monitor.submete(
-            caso.caminho,
-            command.numero_processadores,
+            caminho,
+            nome,
+            processadores,
             command.id_caso,
             command.gerenciador,
         )
+
+
+def monitora(
+    command: commands.MonitoraCaso,
+    caso_uow: AbstractCasoUnitOfWork,
+    monitor: MonitorJob,
+) -> bool:
+    with caso_uow:
+        monitor.monitora(command.gerenciador)
+        # TODO - conferir se as informações atualizadas do caso
+        # serão escritas. Senão, aqui é o lugar.
+        # Provavelmente não. As handlers do monitorCaso que
+        # eram responsáveis por atualizar o estado do caso.
+        # Conferir como isso está sendo feito pro job e copiar.

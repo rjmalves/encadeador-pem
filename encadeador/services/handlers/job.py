@@ -18,7 +18,7 @@ def submete(
     with uow:
         job = Job(
             None,
-            None,
+            command.nome,
             command.caminho,
             None,
             None,

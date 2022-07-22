@@ -13,6 +13,7 @@ class Command:
 class SubmeteJob(Command):
     gerenciador: str
     caminho: str
+    nome: str
     numero_processadores: int
     id_caso: int
 
@@ -50,5 +51,10 @@ class PreparaCaso(Command):
 @dataclass
 class SubmeteCaso(Command):
     id_caso: str
-    numero_processadores: int
+    gerenciador: str
+
+
+@dataclass
+class MonitoraCaso(Command):
+    id_caso: str
     gerenciador: str
