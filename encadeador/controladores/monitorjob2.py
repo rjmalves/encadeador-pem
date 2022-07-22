@@ -71,9 +71,7 @@ class MonitorJob:
             ): self._handler_delecao_solicitada,
         }
 
-    def callback_estado_job(
-        self, estado_atual: EstadoJob, novo_estado: EstadoJob
-    ):
+    def callback_estado_job(self, estado_atual: EstadoJob, novo_estado: EstadoJob):
         """
         Esta função é usada para implementar o Observer Pattern.
         Quando chamada, significa que o estado de um Job foi alterado
@@ -106,7 +104,7 @@ class MonitorJob:
             self._transicao_job(TransicaoJob.SUBMISSAO_ERRO)
         else:
             self._job_id = job.id
-        return job is None
+        return job is not None
 
     def deleta(
         self,

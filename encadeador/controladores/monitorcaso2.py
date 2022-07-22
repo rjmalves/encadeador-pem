@@ -1,12 +1,12 @@
 from abc import abstractmethod
-from typing import Dict, List, Callable, Union
+from typing import Dict, List, Callable, Union, Optional
 from os.path import join
 from os import chdir, listdir
-from encadeador.controladores.avaliadorcaso import AvaliadorCaso
 from encadeador.controladores.flexibilizadorcaso import Flexibilizador
-from encadeador.controladores.monitorjob import MonitorJob
+from encadeador.controladores.monitorjob2 import MonitorJob
+from encadeador.services.unitofwork.caso import AbstractCasoUnitOfWork
 
-from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
+from encadeador.modelos.caso2 import Caso
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.dadosjob import DadosJob
 from encadeador.modelos.estadocaso import EstadoCaso
@@ -14,12 +14,12 @@ from encadeador.modelos.job import Job
 from encadeador.modelos.regrareservatorio import RegraReservatorio
 from encadeador.modelos.transicaocaso import TransicaoCaso
 from encadeador.modelos.transicaojob import TransicaoJob
-from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
-from encadeador.controladores.preparadorcaso import PreparadorCaso
-from encadeador.controladores.sintetizadorcaso import SintetizadorCaso
+from encadeador.controladores.preparadorcaso2 import PreparadorCaso
 from encadeador.controladores.sintetizadorcaso import SintetizadorNEWAVE
 from encadeador.utils.log import Log
 from encadeador.utils.event import Event
+import encadeador.domain.commands as commands
+import encadeador.services.handlers.caso as handlers
 
 
 class MonitorCaso:
@@ -30,37 +30,13 @@ class MonitorCaso:
     adquirindo informações do estado dos jobs por meio do Observer Pattern.
     """
 
-    def __init__(self, caso: Caso):
+    def __init__(self, _caso_id: int, uow: AbstractCasoUnitOfWork):
         # TODO - não deve mais receber o caso, pois o caso será
         # criado aqui dentro, via chamadas de handlers.
-        self._caso = caso
-        # TODO - não são necessários mais armazenadores, tudo
-        # é gerenciado dentro dos handlers.
-        self._armazenador = ArmazenadorCaso(caso)
-        # TODO - avaliar a melhor estrutura para lidar com os
-        # problemas de avaliação e síntese... além disso,
-        # como fica a relação dos dados específicos de saída de
-        # cada caso? repository pra eles também?
-        self._avaliador = AvaliadorCaso.factory(caso)
-        self._sintetizador = SintetizadorCaso.factory(caso)
-        # TODO - não faz mais sentido guardar dados do job atual
-        # e do monitor job atual aqui... talvez só do monitor.
-        # será? Tem que pensar melhor nas consequências.
-        self._job_atual: Job = None  # type: ignore
+        self._caso_id = _caso_id
+        self._uow = uow
         self._monitor_job_atual: MonitorJob = None  # type: ignore
         self._transicao_caso = Event()
-
-    @staticmethod
-    def factory(caso: Caso) -> "MonitorCaso":
-        # TODO - pensando em um modelo único para o caso,
-        # o factory poderia ser em função do enum Programa
-        # ao invés da subclasse de Caso.
-        if isinstance(caso, CasoNEWAVE):
-            return MonitorNEWAVE(caso)
-        elif isinstance(caso, CasoDECOMP):
-            return MonitorDECOMP(caso)
-        else:
-            raise ValueError(f"Caso do tipo {type(caso)} não suportado")
 
     def callback_evento(self, evento: Union[TransicaoJob, TransicaoCaso]):
         """
@@ -74,25 +50,11 @@ class MonitorCaso:
         """
         self._regras()[evento]()
 
-    @property
-    @abstractmethod
-    def caminho_job(self) -> str:
-        # TODO - Precisa mesmo de um método estático no monitor caso pra
-        # decidir o caminho do job?
-        pass
-
-    @property
-    @abstractmethod
-    def nome_job(self) -> str:
-        # TODO - Precisa mesmo de um método estático no monitor caso pra
-        # decidir o nome do job?
-        pass
-
     def _regras(
         self,
     ) -> Dict[Union[TransicaoJob, TransicaoCaso], Callable]:
         return {
-            TransicaoCaso.CRIADO: self._handler_criado,
+            TransicaoCaso.INICIALIZADO: self._handler_inicializado,
             (
                 TransicaoCaso.PREPARA_EXECUCAO_SOLICITADA
             ): self._handler_prepara_execucao_solicitada,
@@ -142,23 +104,17 @@ class MonitorCaso:
             (TransicaoJob.DELECAO_SUCESSO): self._handler_delecao_sucesso,
         }
 
-    @abstractmethod
-    def inicializa(
-        self,
-        casos_anteriores: List[Caso],
-    ):
+    def inicializa(self):
         """
-        Realiza a inicialização do caso. Isto é, a extração e
-        renomeação de arquivos que podem ser necessários.
+        Realiza a inicialização do caso, lidando com identificação e
+        extração de arquivos.
         """
-        # TODO - não precisa mais passar os casos anteriores para
-        # a função, só o id do estudo em questão (para essa versão, nem isso)
-        raise NotImplementedError()
+        comando = commands.InicializaCaso(self._caso_id)
+        if handlers.inicializa(comando, self._uow) is not None:
+            self.callback_evento(TransicaoCaso.INICIALIZADO)
 
-    @abstractmethod
     def prepara(
         self,
-        casos_anteriores: List[Caso],
         regras_operacao_reservatorios: List[RegraReservatorio],
     ):
         """
@@ -166,13 +122,14 @@ class MonitorCaso:
         necessidades do estudo encadeado e o encadeamento das
         variáveis selecionadas.
         """
-        # TODO - não precisa mais passar os casos anteriores para
-        # a função, só o id do estudo em questão (para essa versão, nem isso)
-        # TODO - as regras de operação dos reservatórios, a priori, são
-        # dados "sempre" fornecidos via arquivo de texto.
-        # Também merecem um repository, mas com default no disco.
-        # TODO - falando nisso, as configurações se encontram na mesma situação
-        raise NotImplementedError()
+        self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_SOLICITADA)
+        comando = commands.PreparaCaso(
+            self._caso_id, regras_operacao_reservatorios
+        )
+        if handlers.prepara(comando, self._uow):
+            self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_SUCESSO)
+        else:
+            self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_ERRO)
 
     def inicia_execucao(self):
         """
@@ -185,18 +142,12 @@ class MonitorCaso:
         """
         Cria um novo Job para o caso e o submete à fila.
         """
-        # TODO - caso não é mais atributo de self. tem que pegar no banco.
-        # TODO - não precisa criar o job aqui. passa somente os atributos
-        # que forem necessários.
-        # TODO - lembrar de lidar com a DI para os unitofworks de caso e job
-        # TODO - Esse chdir pode estar na própria unitofwork ( ou só no
-        # handler de submissão do caso.
-        chdir(self._caso.caminho)
-        self._job_atual = Job(
-            DadosJob("", self.nome_job, self.caminho_job, 0.0, 0.0, 0.0, 0)
+        # TODO - O CAMINHO DO JOB TEM QUE SER O DO ARQUIVO .JOB
+        # TEM QUE VER COMO FAZER A CONTA DOS PROCESSADORES
+        comando = commands.SubmeteCaso(
+            self._caso_id, Configuracoes().processadores_minimos_newave
         )
-        self._caso.adiciona_job(self._job_atual)
-        self._monitor_job_atual = MonitorJob(self._job_atual)
+        self._monitor_job_atual = MonitorJob()
         self._monitor_job_atual.observa(self.callback_evento)
         if self._monitor_job_atual.submete(self._caso.numero_processadores):
             chdir(Configuracoes().caminho_base_estudo)
@@ -225,10 +176,8 @@ class MonitorCaso:
     def observa(self, f: Callable):
         self._transicao_caso.append(f)
 
-    def _handler_criado(self):
-        Log.log().info(f"Caso {self._caso.nome}: criado")
-        self._caso.estado = EstadoCaso.INICIADO
-        self._transicao_caso(TransicaoCaso.CRIADO)
+    def _handler_inicializado(self):
+        Log.log().info(f"Caso {self._caso_id}: inicializado")
 
     def _handler_prepara_execucao_solicitada(self):
         Log.log().info(f"Caso {self._caso.nome}: iniciando preparação do caso")
@@ -392,40 +341,6 @@ class MonitorNEWAVE(MonitorCaso):
         return self._caso
 
     # Override
-    @property
-    def caminho_job(self) -> str:
-        dir_base = Configuracoes().diretorio_instalacao_newaves
-        versao = Configuracoes().versao_newave
-        dir_versao = join(dir_base, versao)
-        arquivos_versao = listdir(dir_versao)
-        arq_job = [a for a in arquivos_versao if ".job" in a]
-        return join(dir_versao, arq_job[0])
-
-    # Override
-    @property
-    def nome_job(self) -> str:
-        return f"NW{self.caso.ano}{self.caso.mes}"
-
-    # Override
-    def inicializa(self, casos_anteriores: List[Caso]):
-        """
-        Realiza a inicialização do caso. Isto é, a extração e
-        renomeação de arquivos que podem ser necessários.
-        """
-        # Se não é o primeiro NEWAVE, apaga os cortes do último
-        ultimo_nw = None
-        for c in reversed(casos_anteriores):
-            if isinstance(c, CasoNEWAVE):
-                ultimo_nw = c
-                break
-        if ultimo_nw is not None:
-            sint_ultimo = SintetizadorNEWAVE(ultimo_nw)
-            if sint_ultimo.verifica_cortes_extraidos():
-                sint_ultimo.deleta_cortes()
-
-        self.callback_evento(TransicaoCaso.CRIADO)
-
-    # Override
     def prepara(
         self,
         casos_anteriores: List[Caso],
@@ -437,6 +352,16 @@ class MonitorNEWAVE(MonitorCaso):
         variáveis selecionadas.
         """
         self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_SOLICITADA)
+        # Se não é o primeiro NEWAVE, apaga os cortes do último
+        ultimo_nw = None
+        for c in reversed(casos_anteriores):
+            if isinstance(c, CasoNEWAVE):
+                ultimo_nw = c
+                break
+        if ultimo_nw is not None:
+            sint_ultimo = SintetizadorNEWAVE(ultimo_nw)
+            if sint_ultimo.verifica_cortes_extraidos():
+                sint_ultimo.deleta_cortes()
         preparador = PreparadorCaso.factory(self._caso)
         sucesso_prepara = preparador.prepara_caso()
         sucesso_encadeia = preparador.encadeia_variaveis(casos_anteriores)
@@ -504,7 +429,7 @@ class MonitorDECOMP(MonitorCaso):
         Realiza a inicialização do caso. Isto é, a extração e
         renomeação de arquivos que podem ser necessários.
         """
-        self.callback_evento(TransicaoCaso.CRIADO)
+        self.callback_evento(TransicaoCaso.INICIALIZADO)
 
     # Override
     def prepara(

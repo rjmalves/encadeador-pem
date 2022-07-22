@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional
 
 from encadeador.modelos.programa import Programa
@@ -53,6 +54,11 @@ class Caso:
                 self._id_estudo == o._id_estudo,
             ]
         )
+
+    def __ge__(self, o: object):
+        if not isinstance(o, Caso):
+            return False
+        return datetime(self.ano, self.mes, 1) >= datetime(o.ano, o.mes, 1)
 
     def adiciona_job(self, job: Job):
         if len(self._jobs) > 0:

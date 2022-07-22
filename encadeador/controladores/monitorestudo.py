@@ -71,7 +71,7 @@ class MonitorEstudo:
             ): self._handler_inicio_proximo_caso,
             (TransicaoEstudo.CONCLUIDO): self._handler_concluido,
             (TransicaoEstudo.ERRO): self._handler_erro,
-            (TransicaoCaso.CRIADO): self._handler_criado_caso,
+            (TransicaoCaso.INICIALIZADO): self._handler_inicializado_caso,
             (
                 TransicaoCaso.PREPARA_EXECUCAO_SOLICITADA
             ): self._handler_prepara_execucao_solicitada_caso,
@@ -191,8 +191,8 @@ class MonitorEstudo:
         self._estudo.estado = EstadoEstudo.ERRO
         self._transicao_estudo(TransicaoEstudo.ERRO)
 
-    def _handler_criado_caso(self):
-        Log.log().debug(f"Estudo {self._estudo.nome}: caso criado")
+    def _handler_inicializado_caso(self):
+        Log.log().debug(f"Estudo {self._estudo.nome}: caso inicializado")
         self._monitor_atual.prepara(
             self._estudo.casos_concluidos, self._estudo._regras_reservatorio
         )

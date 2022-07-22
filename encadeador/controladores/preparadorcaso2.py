@@ -2,14 +2,16 @@ from abc import abstractmethod
 from os.path import join
 from typing import List
 
-from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
+from encadeador.modelos.caso2 import Caso
 from encadeador.controladores.encadeadorcaso import Encadeador
 from encadeador.controladores.sintetizadorcaso import SintetizadorNEWAVE
 from encadeador.modelos.configuracoes import Configuracoes
+from encadeador.modelos.programa import Programa
 from encadeador.modelos.regrareservatorio import RegraReservatorio
 from encadeador.controladores.aplicadorregrasreservatorios import (
     AplicadorRegrasReservatorios,
 )
+from encadeador.services.unitofwork.newave import FSNewaveUnitOfWork
 from encadeador.utils.terminal import converte_codificacao
 from encadeador.utils.log import Log
 from inewave.newave import DGer, Arquivos, CVAR  # type: ignore
@@ -18,30 +20,30 @@ from idecomp.decomp.modelos.dadger import RT
 
 
 class PreparadorCaso:
-    def __init__(self, caso: Caso) -> None:
+    def __init__(self, caso: Caso, casos_anteriores: List[Caso]) -> None:
         self._caso = caso
+        self._casos_anteriores = casos_anteriores
 
     @staticmethod
-    def factory(caso: Caso) -> "PreparadorCaso":
-        if isinstance(caso, CasoNEWAVE):
-            return PreparadorNEWAVE(caso)
-        elif isinstance(caso, CasoDECOMP):
-            return PreparadorDECOMP(caso)
+    def factory(caso: Caso, casos_anteriores: List[Caso]) -> "PreparadorCaso":
+        if caso.programa == Programa.NEWAVE:
+            return PreparadorNEWAVE(caso, casos_anteriores)
+        elif caso.programa == Programa.DECOMP:
+            return PreparadorDECOMP(caso, casos_anteriores)
         else:
             raise ValueError(f"Caso do tipo {type(caso)} não suportado")
 
     @abstractmethod
-    def prepara_caso(self, **kwargs) -> bool:
+    def prepara(self, **kwargs) -> bool:
         pass
 
     @abstractmethod
-    def encadeia_variaveis(self, casos_anteriores: List[Caso]) -> bool:
+    def encadeia(self) -> bool:
         pass
 
     @abstractmethod
     def aplica_regras_operacao_reservatorios(
         self,
-        casos_anteriores: List[Caso],
         regras_operacao: List[RegraReservatorio],
     ) -> bool:
         pass
@@ -52,65 +54,63 @@ class PreparadorCaso:
 
 
 class PreparadorNEWAVE(PreparadorCaso):
-    def __init__(self, caso: CasoNEWAVE) -> None:
-        super().__init__(caso)
+    def __init__(self, caso: Caso, casos_anteriores: List[Caso]) -> None:
+        super().__init__(caso, casos_anteriores)
 
-    def __adequa_nome_caso(self, dger: DGer):
+    def __deleta_cortes_ultimo_newave(self):
+        for c in reversed(self._casos_anteriores):
+            if c.programa == Programa.NEWAVE:
+                uow = FSNewaveUnitOfWork(c.caminho)
+                with uow:
+                    Log.log().info(
+                        "Deletando cortes do último NEWAVE: " + f"{c.caminho}"
+                    )
+                    uow.deleta_cortes()
+
+    def __adequa_dger(self, dger: DGer):
         nome_estudo = Configuracoes().nome_estudo
         ano = self.caso.ano
         mes = self.caso.mes
         dger.nome_caso = f"{nome_estudo} - NW {mes}/{ano}"
-
-    def __adequa_parametros_dger(self, dger: DGer):
-        Log.log().info(f"Adequando caso do NEWAVE: {self.caso.nome}")
-        # Adequa parâmetros de CVAR
-        cvar = CVAR.le_arquivo(self.caso.caminho)
-        Log.log().info("CVAR lido com sucesso")
-        par_cvar = Configuracoes().cvar
-        Log.log().info(f"Valores de CVAR alterados: {par_cvar}")
-        cvar.valores_constantes = par_cvar
-        cvar.escreve_arquivo(self.caso.caminho)
-        # Adequa opção do PAR(p)-A
         opcao_parpa = Configuracoes().opcao_parpa
-        dger.afluencia_anual_parp = opcao_parpa  # type: ignore
+        dger.consideracao_media_anual_afluencias = opcao_parpa
         Log.log().info(f"Opção do PAR(p)-A alterada: {opcao_parpa}")
 
-    def prepara_caso(
-        self, regras_reservatorio: List[RegraReservatorio]
-    ) -> bool:
-        script = Configuracoes().script_converte_codificacao
-        converte_codificacao(self.caso.caminho, script)
+    def __adequa_cvar(self, cvar: CVAR):
+        par_cvar = Configuracoes().cvar
+        cvar.valores_constantes = par_cvar
+        Log.log().info(f"Valores de CVAR alterados: {par_cvar}")
+
+    def prepara(self) -> bool:
         Log.log().info(f"Preparando caso do NEWAVE: {self.caso.nome}")
-        try:
-            # Adequa o nome do caso
-            dger = DGer.le_arquivo(self.caso.caminho)
-            Log.log().info("DGer lido com sucesso")
-            self.__adequa_nome_caso(dger)
+        self.__deleta_cortes_ultimo_newave()
+        uow = FSNewaveUnitOfWork(self.caso.caminho)
+        with uow:
             if Configuracoes().adequa_decks_newave:
-                self.__adequa_parametros_dger(dger)
-            # Salva o dger de entrada
-            dger.escreve_arquivo(self.caso.caminho)
+                dger = uow.newave.get_dger()
+                self.__adequa_dger(dger)
+                uow.newave.set_dger(dger)
+                cvar = uow.newave.get_cvar()
+                self.__adequa_cvar(cvar)
+                uow.newave.set_cvar(cvar)
             Log.log().info("Adequação do caso concluída com sucesso")
             return True
-        except FileNotFoundError as e:
-            Log.log().error(f"Erro na leitura do deck de entrada: {e}")
-            return False
 
-    def encadeia_variaveis(self, casos_anteriores: List[Caso]) -> bool:
-        if len(casos_anteriores) == 0:
+    def encadeia(self) -> bool:
+        if len(self._casos_anteriores) == 0:
             Log.log().info(f"Primeiro: {self.caso.nome} - sem encadeamentos")
             return True
-        elif isinstance(casos_anteriores[-1], CasoDECOMP):
+        elif self._casos_anteriores[-1].programa == Programa.DECOMP:
             Log.log().info(
                 "Encadeando variáveis dos casos "
-                + f"{casos_anteriores[-1].nome} -> {self.caso.nome}"
+                + f"{self._casos_anteriores[-1].nome} -> {self.caso.nome}"
             )
-            encadeador = Encadeador.factory(casos_anteriores, self.caso)
+            encadeador = Encadeador.factory(self._casos_anteriores, self.caso)
             return encadeador.encadeia()
         else:
             Log.log().error(
                 "Encadeamento NW com NW não suportado. Casos: "
-                + f"{casos_anteriores[-1].nome} -> {self.caso.nome}"
+                + f"{self._casos_anteriores[-1].nome} -> {self.caso.nome}"
             )
             return False
 
@@ -124,8 +124,8 @@ class PreparadorNEWAVE(PreparadorCaso):
 
 
 class PreparadorDECOMP(PreparadorCaso):
-    def __init__(self, caso: CasoDECOMP) -> None:
-        super().__init__(caso)
+    def __init__(self, caso: Caso, casos_anteriores: List[Caso]) -> None:
+        super().__init__(caso, casos_anteriores)
 
     def __adequa_titulo_estudo(self, dadger: Dadger):
         nome_estudo = Configuracoes().nome_estudo
@@ -169,9 +169,7 @@ class PreparadorDECOMP(PreparadorCaso):
                 rt.restricao = "CRISTA"
                 dadger.cria_registro(dadger.te, rt)
 
-    def prepara_caso(
-        self, regras_reservatorio: List[RegraReservatorio]
-    ) -> bool:
+    def prepara(self, **kwargs) -> bool:
         Log.log().info(f"Preparando caso do DECOMP: {self.caso.nome}")
         try:
             script = Configuracoes().script_converte_codificacao
@@ -200,7 +198,7 @@ class PreparadorDECOMP(PreparadorCaso):
             Log.log().error(f"Erro na leitura do dadger: {e}")
             return False
 
-    def encadeia_variaveis(self, casos_anteriores: List[Caso]) -> bool:
+    def encadeia(self, casos_anteriores: List[Caso]) -> bool:
         def __decomps_anteriores():
             return [
                 c

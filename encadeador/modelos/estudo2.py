@@ -4,9 +4,10 @@ from os.path import isdir, join, normpath
 
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.controladores.armazenadorcaso import ArmazenadorCaso
-from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
+from encadeador.modelos.caso2 import Caso
 from encadeador.modelos.estadoestudo import EstadoEstudo
 from encadeador.modelos.estadocaso import EstadoCaso
+from encadeador.modelos.programa import Programa
 from encadeador.modelos.regrareservatorio import RegraReservatorio
 from encadeador.utils.log import Log
 
@@ -65,42 +66,42 @@ class Estudo:
         dirs = [c.strip("\n").strip() for c in dirs]
         return dirs, __cria_caminhos_casos(dirs)
 
-    @staticmethod
-    def constroi_casos(dirs: List[str]) -> List[Caso]:
-        def __le_caso(c: str) -> Caso:
-            pastas = normpath(c).split(sep)
-            # Extrai as características do caso
-            diretorio_caso = pastas[-2]
-            componentes_caso = diretorio_caso.split("_")
-            ano = int(componentes_caso[0])
-            mes = int(componentes_caso[1])
-            rv = int(componentes_caso[2].split("rv")[1])
-            # Identifica o programa
-            diretorio_prog = pastas[-1]
-            if Configuracoes()._nome_diretorio_newave == diretorio_prog:
-                dados = CasoNEWAVE.gera_dados_caso(c, ano, mes, rv)
-                caso_nw = CasoNEWAVE(dados, [])
-                return caso_nw
-            elif Configuracoes()._nome_diretorio_decomp == diretorio_prog:
-                dados = CasoDECOMP.gera_dados_caso(c, ano, mes, rv)
-                caso_dcp = CasoDECOMP(dados, [])
-                return caso_dcp
-            else:
-                Log.log().error(f"Diretório inválido: {diretorio_prog}")
-                raise RuntimeError()
+    # @staticmethod
+    # def constroi_casos(dirs: List[str]) -> List[Caso]:
+    #     def __le_caso(c: str) -> Caso:
+    #         pastas = normpath(c).split(sep)
+    #         # Extrai as características do caso
+    #         diretorio_caso = pastas[-2]
+    #         componentes_caso = diretorio_caso.split("_")
+    #         ano = int(componentes_caso[0])
+    #         mes = int(componentes_caso[1])
+    #         rv = int(componentes_caso[2].split("rv")[1])
+    #         # Identifica o programa
+    #         diretorio_prog = pastas[-1]
+    #         if Configuracoes()._nome_diretorio_newave == diretorio_prog:
+    #             dados = CasoNEWAVE.gera_dados_caso(c, ano, mes, rv)
+    #             caso_nw = CasoNEWAVE(dados, [])
+    #             return caso_nw
+    #         elif Configuracoes()._nome_diretorio_decomp == diretorio_prog:
+    #             dados = CasoDECOMP.gera_dados_caso(c, ano, mes, rv)
+    #             caso_dcp = CasoDECOMP(dados, [])
+    #             return caso_dcp
+    #         else:
+    #             Log.log().error(f"Diretório inválido: {diretorio_prog}")
+    #             raise RuntimeError()
 
-        casos: List[Caso] = []
-        for c in dirs:
-            try:
-                caso = ArmazenadorCaso.recupera_caso(c)
-                # TODO - Pensar em como permitir mudanças de diretório
-                # do estudo encadeado, uma vez já concluído.
-                caso.caminho = c
-                casos.append(caso)
-            except FileNotFoundError:
-                ret = __le_caso(c)
-                casos.append(ret)
-        return casos
+    #     casos: List[Caso] = []
+    #     for c in dirs:
+    #         try:
+    #             caso = ArmazenadorCaso.recupera_caso(c)
+    #             # TODO - Pensar em como permitir mudanças de diretório
+    #             # do estudo encadeado, uma vez já concluído.
+    #             caso.caminho = c
+    #             casos.append(caso)
+    #         except FileNotFoundError:
+    #             ret = __le_caso(c)
+    #             casos.append(ret)
+    #     return casos
 
     @property
     def id(self) -> Optional[int]:
@@ -155,30 +156,30 @@ class Estudo:
         return None
 
     @property
-    def proximo_newave(self) -> Optional[CasoNEWAVE]:
+    def proximo_newave(self) -> Optional[Caso]:
         for c in self.casos:
             try:
                 if (
-                    isinstance(c, CasoNEWAVE)
+                    c.programa == Programa.NEWAVE
                     and c.estado != EstadoCaso.CONCLUIDO
                 ):
                     return c
             except ValueError:
-                if isinstance(c, CasoNEWAVE):
+                if c.programa == Programa.NEWAVE:
                     return c
         return None
 
     @property
-    def proximo_decomp(self) -> Optional[CasoDECOMP]:
+    def proximo_decomp(self) -> Optional[Caso]:
         for c in self.casos:
             try:
                 if (
-                    isinstance(c, CasoDECOMP)
+                    c.programa == Programa.DECOMP
                     and c.estado != EstadoCaso.CONCLUIDO
                 ):
                     return c
             except ValueError:
-                if isinstance(c, CasoDECOMP):
+                if c.programa == Programa.DECOMP:
                     return c
         return None
 
@@ -194,12 +195,12 @@ class Estudo:
         return c_convergido
 
     @property
-    def ultimo_newave(self) -> Optional[CasoNEWAVE]:
+    def ultimo_newave(self) -> Optional[Caso]:
         c_convergido = None
         for c in self.casos:
             try:
                 if (
-                    isinstance(c, CasoNEWAVE)
+                    c.programa == Programa.NEWAVE
                     and c.estado == EstadoCaso.CONCLUIDO
                 ):
                     c_convergido = c
@@ -208,12 +209,12 @@ class Estudo:
         return c_convergido
 
     @property
-    def ultimo_decomp(self) -> Optional[CasoDECOMP]:
+    def ultimo_decomp(self) -> Optional[Caso]:
         c_convergido = None
         for c in self.casos:
             try:
                 if (
-                    isinstance(c, CasoDECOMP)
+                    c.programa == Programa.DECOMP
                     and c.estado == EstadoCaso.CONCLUIDO
                 ):
                     c_convergido = c

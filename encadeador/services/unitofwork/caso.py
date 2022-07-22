@@ -4,15 +4,15 @@ from sqlalchemy.orm import sessionmaker, Session
 from typing import Dict
 
 from encadeador.modelos.configuracoes import Configuracoes
-from encadeador.adapters.repository.job import (
-    AbstractJobRepository,
-    JSONJobRepository,
-    SQLJobRepository,
+from encadeador.adapters.repository.caso import (
+    AbstractCasoRepository,
+    JSONCasoRepository,
+    SQLCasoRepository,
 )
 
 
-class AbstractJobUnitOfWork(ABC):
-    def __enter__(self) -> "AbstractJobUnitOfWork":
+class AbstractCasoUnitOfWork(ABC):
+    def __enter__(self) -> "AbstractCasoUnitOfWork":
         return self
 
     def __exit__(self, *args):
@@ -23,7 +23,7 @@ class AbstractJobUnitOfWork(ABC):
 
     @property
     @abstractmethod
-    def jobs(self) -> AbstractJobRepository:
+    def casos(self) -> AbstractCasoRepository:
         raise NotImplementedError
 
     @abstractmethod
@@ -35,20 +35,20 @@ class AbstractJobUnitOfWork(ABC):
         raise NotImplementedError
 
 
-class JSONJobUnitOfWork(AbstractJobUnitOfWork):
+class JSONCasoUnitOfWork(AbstractCasoUnitOfWork):
     def __init__(self, path: str):
         self._path = path
 
-    def __enter__(self) -> "JSONJobUnitOfWork":
-        self._jobs = JSONJobRepository(self._path)
+    def __enter__(self) -> "JSONCasoUnitOfWork":
+        self._casos = JSONCasoRepository(self._path)
         return super().__enter__()
 
     def __exit__(self, *args):
         super().__exit__(*args)
 
     @property
-    def jobs(self) -> JSONJobRepository:
-        return self._jobs
+    def casos(self) -> JSONCasoRepository:
+        return self._casos
 
     def commit(self):
         self._commit()
@@ -67,13 +67,13 @@ DEFAULT_SESSION_FACTORY = sessionmaker(
 )
 
 
-class SQLJobUnitOfWork(AbstractJobUnitOfWork):
+class SQLCasoUnitOfWork(AbstractCasoUnitOfWork):
     def __init__(self, session_factory: sessionmaker = DEFAULT_SESSION_FACTORY):
         self._session_factory = session_factory
 
-    def __enter__(self) -> "SQLJobUnitOfWork":
+    def __enter__(self) -> "SQLCasoUnitOfWork":
         self._session: Session = self._session_factory()
-        self._jobs = SQLJobRepository(self._session)
+        self._casos = SQLCasoRepository(self._session)
         return super().__enter__()
 
     def __exit__(self, *args):
@@ -81,8 +81,8 @@ class SQLJobUnitOfWork(AbstractJobUnitOfWork):
         self._session.close()
 
     @property
-    def jobs(self) -> SQLJobRepository:
-        return self._jobs
+    def casos(self) -> SQLCasoRepository:
+        return self._casos
 
     def commit(self):
         self._commit()
@@ -94,9 +94,9 @@ class SQLJobUnitOfWork(AbstractJobUnitOfWork):
         self._session.rollback()
 
 
-def factory(kind: str, *args, **kwargs) -> AbstractJobUnitOfWork:
-    mappings: Dict[str, AbstractJobUnitOfWork] = {
-        "SQL": SQLJobUnitOfWork,
-        "JSON": JSONJobUnitOfWork,
+def factory(kind: str, *args, **kwargs) -> AbstractCasoUnitOfWork:
+    mappings: Dict[str, AbstractCasoUnitOfWork] = {
+        "SQL": SQLCasoUnitOfWork,
+        "JSON": SQLCasoUnitOfWork,
     }
     return mappings[kind](*args, **kwargs)
