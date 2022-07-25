@@ -1,20 +1,20 @@
 from abc import abstractmethod
 from os.path import join
-from typing import List
+from typing import List, Optional
 
 from encadeador.modelos.caso2 import Caso
 from encadeador.controladores.encadeadorcaso import Encadeador
-from encadeador.controladores.sintetizadorcaso import SintetizadorNEWAVE
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.programa import Programa
 from encadeador.modelos.regrareservatorio import RegraReservatorio
 from encadeador.controladores.aplicadorregrasreservatorios import (
     AplicadorRegrasReservatorios,
 )
-from encadeador.services.unitofwork.newave import FSNewaveUnitOfWork
-from encadeador.utils.terminal import converte_codificacao
+from encadeador.services.unitofwork.newave import factory as nw_factory
+from encadeador.services.unitofwork.decomp import factory as dc_factory
+from encadeador.domain.programs import ProgramRules
 from encadeador.utils.log import Log
-from inewave.newave import DGer, Arquivos, CVAR  # type: ignore
+from inewave.newave import DGer, CVAR  # type: ignore
 from idecomp.decomp.dadger import Dadger
 from idecomp.decomp.modelos.dadger import RT
 
@@ -60,7 +60,7 @@ class PreparadorNEWAVE(PreparadorCaso):
     def __deleta_cortes_ultimo_newave(self):
         for c in reversed(self._casos_anteriores):
             if c.programa == Programa.NEWAVE:
-                uow = FSNewaveUnitOfWork(c.caminho)
+                uow = nw_factory("FS", c.caminho)
                 with uow:
                     Log.log().info(
                         "Deletando cortes do último NEWAVE: " + f"{c.caminho}"
@@ -68,10 +68,9 @@ class PreparadorNEWAVE(PreparadorCaso):
                     uow.deleta_cortes()
 
     def __adequa_dger(self, dger: DGer):
-        nome_estudo = Configuracoes().nome_estudo
         ano = self.caso.ano
         mes = self.caso.mes
-        dger.nome_caso = f"{nome_estudo} - NW {mes}/{ano}"
+        dger.nome_caso = ProgramRules.newave_case_name(ano, mes)
         opcao_parpa = Configuracoes().opcao_parpa
         dger.consideracao_media_anual_afluencias = opcao_parpa
         Log.log().info(f"Opção do PAR(p)-A alterada: {opcao_parpa}")
@@ -84,7 +83,7 @@ class PreparadorNEWAVE(PreparadorCaso):
     def prepara(self) -> bool:
         Log.log().info(f"Preparando caso do NEWAVE: {self.caso.nome}")
         self.__deleta_cortes_ultimo_newave()
-        uow = FSNewaveUnitOfWork(self.caso.caminho)
+        uow = nw_factory("FS", self.caso.caminho)
         with uow:
             if Configuracoes().adequa_decks_newave:
                 dger = uow.newave.get_dger()
@@ -127,100 +126,105 @@ class PreparadorDECOMP(PreparadorCaso):
     def __init__(self, caso: Caso, casos_anteriores: List[Caso]) -> None:
         super().__init__(caso, casos_anteriores)
 
-    def __adequa_titulo_estudo(self, dadger: Dadger):
-        nome_estudo = Configuracoes().nome_estudo
-        ano = self.caso.ano
-        mes = self.caso.mes
-        rv = self.caso.revisao
-        dadger.te.titulo = f"{nome_estudo} - DC {mes}/{ano} RV{rv}"
+    def __ultimo_newave(self) -> Optional[Caso]:
+        for c in reversed(self._casos_anteriores):
+            if c.programa == Programa.NEWAVE:
+                return c
 
-    def __adequa_caminho_fcf(self, dadger: Dadger, caso_cortes: CasoNEWAVE):
+    def __extrai_cortes_ultimo_newave(self, c: Optional[Caso]):
+        if c is not None:
+            uow = nw_factory("FS", c.caminho)
+            with uow:
+                Log.log().info(
+                    "Extraindo cortes do último NEWAVE: " + f"{c.caminho}"
+                )
+                uow.extrai_cortes()
+
+    def __adequa_caminho_fcf(self, dadger: Dadger, caso_cortes: Caso):
         # Verifica se é necessário e extrai os cortes
-        sintetizador = SintetizadorNEWAVE(caso_cortes)
-        if not sintetizador.verifica_cortes_extraidos():
-            sintetizador.extrai_cortes()
+        self.__extrai_cortes_ultimo_newave(caso_cortes)
         # Altera os registros FC
-        arq = Arquivos.le_arquivo(caso_cortes.caminho)
+        nw_uow = nw_factory("FS", caso_cortes.caminho)
+        with nw_uow:
+            arq = nw_uow.newave.arquivos
         dadger.fc("NEWV21").caminho = join(caso_cortes.caminho, arq.cortesh)
         dadger.fc("NEWCUT").caminho = join(caso_cortes.caminho, arq.cortes)
         return True
 
-    def __adequa_decks_decomp(self, dadger: Dadger):
-        Log.log().info(f"Adequando caso do DECOMP: {self.caso.nome}")
-        # Adequa registro NI
-        n_iter = Configuracoes().maximo_iteracoes_decomp
-        dadger.ni.iteracoes = n_iter
+    def __adequa_titulo_estudo(self, dadger: Dadger):
+        ano = self.caso.ano
+        mes = self.caso.mes
+        rv = self.caso.revisao
+        dadger.te.titulo = ProgramRules.decomp_case_name(ano, mes, rv)
+
+    def __previne_gap_negativo(self, dadger: Dadger):
+        if dadger.rt(restricao="CRISTA") is None:
+            rt = RT()
+            rt.restricao = "CRISTA"
+            dadger.cria_registro(dadger.te, rt)
+        if dadger.rt(restricao="DESVIO") is None:
+            rt = RT()
+            rt.restricao = "DESVIO"
+            dadger.cria_registro(dadger.te, rt)
+
+    def __adequa_parametros_convergencia(self, dadger: Dadger):
+        dadger.ni.iteracoes = ProgramRules.decomp_processor_count()
         # Adequa registro GP
         # TODO
+
+    def __adequa_dadger(self, dadger: Dadger):
+        Log.log().info(f"Adequando caso do DECOMP: {self.caso.nome}")
+        self.__adequa_titulo_estudo(dadger)
+        self.__adequa_parametros_convergencia(dadger)
         # Prevenção de Gap Negativo
         if Configuracoes().previne_gap_negativo:
-            # Se não tem RT DESVIO, cria
-            try:
-                dadger.rt("DESVIO")
-            except ValueError:
-                rt = RT()
-                rt.restricao = "DESVIO"
-                dadger.cria_registro(dadger.te, rt)
-            # Se não tem RT CRISTA, cria
-            try:
-                dadger.rt("CRISTA")
-            except ValueError:
-                rt = RT()
-                rt.restricao = "CRISTA"
-                dadger.cria_registro(dadger.te, rt)
+            self.__previne_gap_negativo(dadger)
 
-    def prepara(self, **kwargs) -> bool:
+    def prepara(self) -> bool:
         Log.log().info(f"Preparando caso do DECOMP: {self.caso.nome}")
-        try:
-            script = Configuracoes().script_converte_codificacao
-            converte_codificacao(self.caso.caminho, script)
-            dadger = Dadger.le_arquivo(
-                self.caso.caminho, f"dadger.rv{self.caso.revisao}"
-            )
-            Log.log().info("Dadger lido com sucesso")
-            # Adequa registro TE
-            self.__adequa_titulo_estudo(dadger)
+        dc_uow = dc_factory("FS", self.caso.caminho)
+        with dc_uow:
+            dadger = dc_uow.decomp.get_dadger()
             # Adequa os registros FC (cortes e cortesh)
-            caso_cortes = kwargs.get("caso_cortes")
-            if caso_cortes is None or not isinstance(caso_cortes, CasoNEWAVE):
+            caso_cortes = self.__ultimo_newave()
+            if (
+                caso_cortes is None
+                or not caso_cortes.programa == Programa.NEWAVE
+            ):
                 Log.log().error("Erro na especificação dos cortes da FCF")
-                raise RuntimeError()
+                return False
             self.__adequa_caminho_fcf(dadger, caso_cortes)
             if Configuracoes().adequa_decks_decomp:
-                self.__adequa_decks_decomp(dadger)
-            # Salva o dadger
-            dadger.escreve_arquivo(
-                self.caso.caminho, f"dadger.rv{self.caso.revisao}"
-            )
+                self.__adequa_dadger(dadger)
+
+            dc_uow.decomp.set_dadger(dadger)
             Log.log().info("Adequação do caso concluída com sucesso")
-            return True
-        except FileNotFoundError as e:
-            Log.log().error(f"Erro na leitura do dadger: {e}")
-            return False
+        return True
 
-    def encadeia(self, casos_anteriores: List[Caso]) -> bool:
-        def __decomps_anteriores():
-            return [
-                c
-                for c in reversed(casos_anteriores)
-                if isinstance(c, CasoDECOMP)
-            ]
+    def __decomps_anteriores(self):
+        return [
+            c
+            for c in reversed(self._casos_anteriores)
+            if c.programa == Programa.DECOMP
+        ]
 
-        if len(__decomps_anteriores()) == 0:
+    def encadeia(self) -> bool:
+
+        if len(self.__decomps_anteriores()) == 0:
             Log.log().info(f"Primeiro: {self.caso.nome} - sem encadeamentos")
             return True
-        elif isinstance(__decomps_anteriores()[0], CasoDECOMP):
+        elif self.__decomps_anteriores()[0].programa == Programa.DECOMP:
             Log.log().info(
                 "Encadeando variáveis dos casos "
-                + f"{__decomps_anteriores()[0].nome}"
+                + f"{self.__decomps_anteriores()[0].nome}"
                 + f" -> {self.caso.nome}"
             )
-            encadeador = Encadeador.factory(casos_anteriores, self.caso)
+            encadeador = Encadeador.factory(self._casos_anteriores, self.caso)
             return encadeador.encadeia()
         else:
             Log.log().error(
                 "Encadeamento NW com DC não suportado. Casos: "
-                + f"{__decomps_anteriores()[0].nome}"
+                + f"{self.__decomps_anteriores()[0].nome}"
                 + f" -> {self.caso.nome}"
             )
             return False

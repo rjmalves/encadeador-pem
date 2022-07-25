@@ -1,21 +1,13 @@
-from abc import abstractmethod
-from typing import Dict, List, Callable, Union, Optional
-from os.path import join
-from os import chdir, listdir
-from encadeador.controladores.flexibilizadorcaso import Flexibilizador
+from typing import Dict, List, Callable, Union
 from encadeador.controladores.monitorjob2 import MonitorJob
+from encadeador.services.unitofwork.job import AbstractJobUnitOfWork
 from encadeador.services.unitofwork.caso import AbstractCasoUnitOfWork
 
-from encadeador.modelos.caso2 import Caso
 from encadeador.modelos.configuracoes import Configuracoes
-from encadeador.modelos.dadosjob import DadosJob
 from encadeador.modelos.estadocaso import EstadoCaso
-from encadeador.modelos.job import Job
 from encadeador.modelos.regrareservatorio import RegraReservatorio
 from encadeador.modelos.transicaocaso import TransicaoCaso
 from encadeador.modelos.transicaojob import TransicaoJob
-from encadeador.controladores.preparadorcaso2 import PreparadorCaso
-from encadeador.controladores.sintetizadorcaso import SintetizadorNEWAVE
 from encadeador.utils.log import Log
 from encadeador.utils.event import Event
 import encadeador.domain.commands as commands
@@ -30,11 +22,17 @@ class MonitorCaso:
     adquirindo informações do estado dos jobs por meio do Observer Pattern.
     """
 
-    def __init__(self, _caso_id: int, uow: AbstractCasoUnitOfWork):
+    def __init__(
+        self,
+        _caso_id: int,
+        caso_uow: AbstractCasoUnitOfWork,
+        job_uow: AbstractJobUnitOfWork,
+    ):
         # TODO - não deve mais receber o caso, pois o caso será
         # criado aqui dentro, via chamadas de handlers.
         self._caso_id = _caso_id
-        self._uow = uow
+        self._caso_uow = caso_uow
+        self._job_uow = job_uow
         self._monitor_job_atual: MonitorJob = None  # type: ignore
         self._transicao_caso = Event()
 
@@ -110,7 +108,7 @@ class MonitorCaso:
         extração de arquivos.
         """
         comando = commands.InicializaCaso(self._caso_id)
-        if handlers.inicializa(comando, self._uow) is not None:
+        if handlers.inicializa(comando, self._caso_uow) is not None:
             self.callback_evento(TransicaoCaso.INICIALIZADO)
 
     def prepara(
@@ -126,7 +124,7 @@ class MonitorCaso:
         comando = commands.PreparaCaso(
             self._caso_id, regras_operacao_reservatorios
         )
-        if handlers.prepara(comando, self._uow):
+        if handlers.prepara(comando, self._caso_uow):
             self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_SUCESSO)
         else:
             self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_ERRO)
@@ -146,9 +144,9 @@ class MonitorCaso:
             self._caso_id,
             Configuracoes().gerenciador_fila,
         )
-        self._monitor_job_atual = MonitorJob()
+        self._monitor_job_atual = MonitorJob(self._job_uow)
         self._monitor_job_atual.observa(self.callback_evento)
-        if handlers.submete(comando, self._uow, self._monitor_job_atual):
+        if handlers.submete(comando, self._caso_uow, self._monitor_job_atual):
             self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SUCESSO)
         else:
             self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_ERRO)
@@ -161,7 +159,7 @@ class MonitorCaso:
         comando = commands.MonitoraCaso(
             self._caso_id, Configuracoes().gerenciador_fila
         )
-        handlers.monitora(comando, self._uow, self._monitor_job_atual)
+        handlers.monitora(comando, self._caso_uow, self._monitor_job_atual)
 
     def observa(self, f: Callable):
         self._transicao_caso.append(f)
@@ -170,321 +168,153 @@ class MonitorCaso:
         Log.log().info(f"Caso {self._caso_id}: inicializado")
 
     def _handler_prepara_execucao_solicitada(self):
-        Log.log().info(f"Caso {self._caso.nome}: iniciando preparação do caso")
-        self._caso.estado = EstadoCaso.PREPARANDO
+        Log.log().info(f"Caso {self._caso_id}: iniciando preparação do caso")
+        comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.PREPARANDO)
+        handlers.atualiza(comando)
         self._transicao_caso(TransicaoCaso.PREPARA_EXECUCAO_SOLICITADA)
 
     def _handler_prepara_execucao_sucesso(self):
-        Log.log().info(f"Caso {self._caso.nome}: caso preparado com sucesso")
-        self._caso.estado = EstadoCaso.PREPARADO
+        Log.log().info(f"Caso {self._caso_id}: caso preparado com sucesso")
+        comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.PREPARADO)
+        handlers.atualiza(comando)
         self._transicao_caso(TransicaoCaso.PREPARA_EXECUCAO_SUCESSO)
 
     def _handler_prepara_execucao_erro(self):
-        Log.log().info(f"Caso {self._caso.nome}: erro na preparação do caso")
-        self._caso.estado = EstadoCaso.ERRO_PREPARACAO
-        self.__armazena_caso()
-        self.__sintetiza_caso()
+        Log.log().info(f"Caso {self._caso_id}: erro na preparação do caso")
+        comando = commands.AtualizaCaso(
+            self._caso_id, EstadoCaso.ERRO_PREPARACAO
+        )
+        handlers.atualiza(comando)
         self.callback_evento(TransicaoCaso.ERRO)
 
     def _handler_inicio_execucao_solicitada(self):
-        Log.log().info(f"Caso {self._caso.nome}: solicitada execução do caso")
-        self._caso.estado = EstadoCaso.INICIANDO_EXECUCAO
+        Log.log().info(f"Caso {self._caso_id}: solicitada execução do caso")
+        comando = commands.AtualizaCaso(
+            self._caso_id, EstadoCaso.INICIANDO_EXECUCAO
+        )
+        handlers.atualiza(comando)
         self._transicao_caso(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
         self.__submete()
 
     def _handler_inicio_execucao_sucesso(self):
-        Log.log().info(
-            f"Caso {self._caso.nome}: início da execução com sucesso"
-        )
+        Log.log().info(f"Caso {self._caso_id}: início da execução com sucesso")
         self._transicao_caso(TransicaoCaso.INICIO_EXECUCAO_SUCESSO)
         # Nada a fazer, visto que agora existe o job na fila e as transições
         # acontecem escutando os eventos do Job, até ser finalizado.
 
     def _handler_inicio_execucao_erro(self):
         Log.log().info(
-            f"Caso {self._caso.nome}: erro no início da execução do caso"
+            f"Caso {self._caso_id}: erro no início da execução do caso"
         )
-        self._caso.estado = EstadoCaso.ERRO_EXECUCAO
-        self.__armazena_caso()
-        self.__sintetiza_caso()
+        comando = commands.AtualizaCaso(
+            self._caso_id, EstadoCaso.ERRO_EXECUCAO
+        )
+        handlers.atualiza(comando)
         self.callback_evento(TransicaoCaso.ERRO)
 
     def _handler_submissao_solicitada_job(self):
         Log.log().info(
-            f"Caso {self._caso.nome}: submissão do job do caso solicitada"
+            f"Caso {self._caso_id}: submissão do job do caso solicitada"
         )
 
     def _handler_submissao_sucesso_job(self):
-        Log.log().info(f"Caso {self._caso.nome}: sucesso na submissão do caso")
-        self._caso.estado = EstadoCaso.ESPERANDO_FILA
+        Log.log().info(f"Caso {self._caso_id}: sucesso na submissão do caso")
+        comando = commands.AtualizaCaso(
+            self._caso_id, EstadoCaso.ESPERANDO_FILA
+        )
+        handlers.atualiza(comando)
 
     def _handler_submissao_erro_job(self):
         Log.log().info(
-            f"Caso {self._caso.nome}: erro na submissão do job do caso"
+            f"Caso {self._caso_id}: erro na submissão do job do caso"
         )
-        self._caso.estado = EstadoCaso.ERRO_COMUNICACAO
-        self.__armazena_caso()
-        self.__sintetiza_caso()
+        comando = commands.AtualizaCaso(
+            self._caso_id, EstadoCaso.ERRO_COMUNICACAO
+        )
+        handlers.atualiza(comando)
         self.callback_evento(TransicaoCaso.ERRO)
 
     def _handler_inicio_execucao_job(self):
-        Log.log().info(f"Caso {self._caso.nome}: iniciou execução")
-        self._caso.estado = EstadoCaso.EXECUTANDO
+        Log.log().info(f"Caso {self._caso_id}: iniciou execução")
+        comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.EXECUTANDO)
+        handlers.atualiza(comando)
 
     def _handler_delecao_solicitada(self):
         # Aguarda o job ser deletado completamente
-        Log.log().debug(f"Caso {self._caso.nome}: deleção solicitada")
+        Log.log().debug(f"Caso {self._caso_id}: deleção solicitada")
 
     def _handler_delecao_erro(self):
         Log.log().info(
-            f"Caso {self._caso.nome}: erro na deleção de um caso com timeout"
+            f"Caso {self._caso_id}: erro na deleção de um caso com timeout"
         )
-        self._caso.estado = EstadoCaso.ERRO_COMUNICACAO
-        self.__armazena_caso()
-        self.__sintetiza_caso()
+        comando = commands.AtualizaCaso(
+            self._caso_id, EstadoCaso.ERRO_COMUNICACAO
+        )
+        handlers.atualiza(comando)
         self.callback_evento(TransicaoCaso.ERRO)
 
     def _handler_delecao_sucesso(self):
-        Log.log().debug(f"Caso {self._caso.nome}: caso com timeout deletado")
+        Log.log().debug(f"Caso {self._caso_id}: caso com timeout deletado")
         self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
 
     def _handler_erro_dados(self):
-        Log.log().info(f"Caso {self._caso.nome}: erro de dados")
-        self._caso.estado = EstadoCaso.ERRO_DADOS
-        self.__armazena_caso()
-        self.__sintetiza_caso()
+        Log.log().info(f"Caso {self._caso_id}: erro de dados")
+        comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.ERRO_DADOS)
+        handlers.atualiza(comando)
         self.callback_evento(TransicaoCaso.ERRO)
 
     def _handler_erro_max_flex(self):
         Log.log().info(
-            f"Caso {self._caso.nome}: máximo de flexibilizações atingido"
+            f"Caso {self._caso_id}: máximo de flexibilizações atingido"
         )
-        self._caso.estado = EstadoCaso.ERRO_MAX_FLEX
-        self.__armazena_caso()
-        self.__sintetiza_caso()
+        comando = commands.AtualizaCaso(
+            self._caso_id, EstadoCaso.ERRO_MAX_FLEX
+        )
+        handlers.atualiza(comando)
         self.callback_evento(TransicaoCaso.ERRO)
 
     def _handler_timeout_execucao(self):
-        Log.log().debug(f"Caso {self._caso.nome}: timeout durante a execução")
+        Log.log().debug(f"Caso {self._caso_id}: timeout durante a execução")
         self._monitor_job_atual.deleta()
 
-    @abstractmethod
     def _handler_fim_execucao_job(self):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def _handler_caso_inviavel(self):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def _handler_flexibilizacao_solicitada(self):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def _handler_flexibilizacao_sucesso(self):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def _handler_flexibilizacao_erro(self):
-        raise NotImplementedError()
-
-    def _handler_caso_concluido(self):
-        Log.log().info(f"Caso {self._caso.nome}: caso concluído.")
-        self._caso.estado = EstadoCaso.CONCLUIDO
-        self.__armazena_caso()
-        self.__sintetiza_caso()
-        self._transicao_caso(TransicaoCaso.CONCLUIDO)
-
-    def _handler_erro(self):
-        Log.log().error(f"Caso {self._caso.nome}: Erro. ")
-        self._transicao_caso(TransicaoCaso.ERRO)
-
-    def __armazena_caso(self):
-        if not self._armazenador.armazena_caso():
-            Log.log().error(
-                f"Caso {self._caso.nome}: Erro no armazenamento do caso - "
-                + f"Estado: {self._caso.estado}."
-            )
+        Log.log().info(f"Caso {self._caso_id}: fim da execução")
+        comando = commands.AvaliaCaso(self._caso_id)
+        ret = handlers.avalia(comando, self._caso_uow)
+        if ret is None:
             self.callback_evento(TransicaoCaso.ERRO)
+        else:
+            self.callback_evento(ret)
 
-    def __sintetiza_caso(self):
-        if not self._sintetizador.sintetiza_caso():
-            Log.log().error(
-                f"Caso {self._caso.nome}: Erro na síntese do caso - "
-                + f"Estado: {self._caso.estado}."
-            )
+    def _handler_caso_inviavel(self):
+        Log.log().info(f"Caso {self._caso_id}: caso inviável")
+        comando = commands.FlexibilizaCaso(
+            self._caso_id, Configuracoes().maximo_flexibilizacoes_revisao
+        )
+        ret = handlers.flexibiliza(comando, self._caso_uow)
+        if ret is None:
             self.callback_evento(TransicaoCaso.ERRO)
-
-    @property
-    def caso(self) -> Caso:
-        return self._caso
-
-
-class MonitorNEWAVE(MonitorCaso):
-    def __init__(self, caso: CasoNEWAVE):
-        super().__init__(caso)
-
-    @property
-    def caso(self) -> CasoNEWAVE:
-        if not isinstance(self._caso, CasoNEWAVE):
-            raise ValueError("MonitorNEWAVE tem um caso não de NEWAVE")
-        return self._caso
-
-    # Override
-    def prepara(
-        self,
-        casos_anteriores: List[Caso],
-        regras_operacao_reservatorios: List[RegraReservatorio],
-    ):
-        """
-        Realiza a preparação dos arquivos para adequação às
-        necessidades do estudo encadeado e o encadeamento das
-        variáveis selecionadas.
-        """
-        self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_SOLICITADA)
-        # Se não é o primeiro NEWAVE, apaga os cortes do último
-        ultimo_nw = None
-        for c in reversed(casos_anteriores):
-            if isinstance(c, CasoNEWAVE):
-                ultimo_nw = c
-                break
-        if ultimo_nw is not None:
-            sint_ultimo = SintetizadorNEWAVE(ultimo_nw)
-            if sint_ultimo.verifica_cortes_extraidos():
-                sint_ultimo.deleta_cortes()
-        preparador = PreparadorCaso.factory(self._caso)
-        sucesso_prepara = preparador.prepara_caso()
-        sucesso_encadeia = preparador.encadeia_variaveis(casos_anteriores)
-        sucesso_regras = preparador.aplica_regras_operacao_reservatorios(
-            casos_anteriores, regras_operacao_reservatorios
-        )
-        sucessos = all([sucesso_prepara, sucesso_encadeia, sucesso_regras])
-        if sucessos:
-            self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_SUCESSO)
         else:
-            self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_ERRO)
-
-    # Override
-    def _handler_fim_execucao_job(self):
-        Log.log().info(f"Caso {self._caso.nome}: fim da execução")
-        if not self._avaliador.avalia():
-            self.callback_evento(TransicaoCaso.ERRO_DADOS)
-        else:
-            self.callback_evento(TransicaoCaso.CONCLUIDO)
-
-    def _handler_caso_inviavel(self):
-        raise NotImplementedError()
-
-    def _handler_flexibilizacao_solicitada(self):
-        raise NotImplementedError()
-
-    def _handler_flexibilizacao_sucesso(self):
-        raise NotImplementedError()
-
-    def _handler_flexibilizacao_erro(self):
-        raise NotImplementedError()
-
-
-class MonitorDECOMP(MonitorCaso):
-    def __init__(self, caso: CasoDECOMP):
-        super().__init__(caso)
-
-    @property
-    def caso(self) -> CasoDECOMP:
-        if not isinstance(self._caso, CasoDECOMP):
-            raise ValueError("MonitorDECOMP tem um caso não de DECOMP")
-        return self._caso
-
-    # Override
-    @property
-    def caminho_job(self) -> str:
-        dir_base = Configuracoes().diretorio_instalacao_decomps
-        versao = Configuracoes().versao_decomp
-        dir_versao = join(dir_base, versao)
-        arquivos_versao = listdir(dir_versao)
-        arq_job = [a for a in arquivos_versao if ".job" in a]
-        return join(dir_versao, arq_job[0])
-
-    # Override
-    @property
-    def nome_job(self) -> str:
-        return f"DC{self.caso.ano}{self.caso.mes}{self.caso.revisao}"
-
-    # Override
-    def inicializa(
-        self,
-        casos_anteriores: List[Caso],
-    ):
-        """
-        Realiza a inicialização do caso. Isto é, a extração e
-        renomeação de arquivos que podem ser necessários.
-        """
-        self.callback_evento(TransicaoCaso.INICIALIZADO)
-
-    # Override
-    def prepara(
-        self,
-        casos_anteriores: List[Caso],
-        regras_operacao_reservatorios: List[RegraReservatorio],
-    ):
-        """
-        Realiza a preparação dos arquivos para adequação às
-        necessidades do estudo encadeado e o encadeamento das
-        variáveis selecionadas.
-        """
-        self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_SOLICITADA)
-        preparador = PreparadorCaso.factory(self._caso)
-        ultimo_newave = next(
-            c
-            for c in reversed(casos_anteriores)
-            if (isinstance(c, CasoNEWAVE) and c.estado == EstadoCaso.CONCLUIDO)
-        )
-        sucesso_prepara = preparador.prepara_caso(caso_cortes=ultimo_newave)
-        sucesso_encadeia = preparador.encadeia_variaveis(casos_anteriores)
-        sucesso_regras = preparador.aplica_regras_operacao_reservatorios(
-            casos_anteriores, regras_operacao_reservatorios
-        )
-        if all([sucesso_prepara, sucesso_encadeia, sucesso_regras]):
-            self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_SUCESSO)
-        else:
-            self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_ERRO)
-
-    # Override
-    def _handler_fim_execucao_job(self):
-        Log.log().info(f"Caso {self._caso.nome}: fim da execução")
-        if not self._avaliador.avalia():
-            self.callback_evento(TransicaoCaso.INVIAVEL)
-        else:
-            self.callback_evento(TransicaoCaso.CONCLUIDO)
-
-    # Override
-    def _handler_caso_inviavel(self):
-        n_flex = self._caso.numero_flexibilizacoes
-        if n_flex >= Configuracoes().maximo_flexibilizacoes_revisao:
-            self.callback_evento(TransicaoCaso.ERRO_MAX_FLEX)
-        else:
-            self.callback_evento(TransicaoCaso.FLEXIBILIZACAO_SOLICITADA)
-
-    def _handler_flexibilizacao_solicitada(self):
-        Log.log().info(f"Caso {self._caso.nome}: flexibilização solicitada")
-        self._caso.estado = EstadoCaso.FLEXIBILIZANDO
-        self.__flexibiliza()
+            self.callback_evento(ret)
 
     def _handler_flexibilizacao_sucesso(self):
         Log.log().info(
-            f"Caso {self._caso.nome}: flexibilização realizada com sucesso."
+            f"Caso {self._caso_id}: flexibilização realizada com sucesso."
         )
         self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
 
     def _handler_flexibilizacao_erro(self):
-        Log.log().info(f"Caso {self._caso.nome}: erro na flexibilização.")
-        self._caso.estado = EstadoCaso.ERRO
+        Log.log().info(f"Caso {self._caso_id}: erro na flexibilização.")
+        comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.ERRO)
+        handlers.atualiza(comando)
         self.callback_evento(TransicaoCaso.ERRO)
 
-    # Override
-    def __flexibiliza(self):
-        flexibilizador = Flexibilizador.factory(self._caso)
-        if not flexibilizador.flexibiliza():
-            self.callback_evento(TransicaoCaso.FLEXIBILIZACAO_ERRO)
-        else:
-            self.callback_evento(TransicaoCaso.FLEXIBILIZACAO_SUCESSO)
+    def _handler_caso_concluido(self):
+        Log.log().info(f"Caso {self._caso_id}: caso concluído.")
+        comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.CONCLUIDO)
+        handlers.atualiza(comando)
+        # TODO - sintetizar
+        self._transicao_caso(TransicaoCaso.CONCLUIDO)
+
+    def _handler_erro(self):
+        Log.log().error(f"Caso {self._caso_id}: Erro. ")

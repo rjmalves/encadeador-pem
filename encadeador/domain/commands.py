@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 from encadeador.modelos.caso2 import Caso
+from encadeador.modelos.estadocaso import EstadoCaso
 
 from encadeador.modelos.regrareservatorio import RegraReservatorio
 
@@ -58,3 +59,20 @@ class SubmeteCaso(Command):
 class MonitoraCaso(Command):
     id_caso: str
     gerenciador: str
+
+
+@dataclass
+class AtualizaCaso(Command):
+    id_caso: str
+    estado: EstadoCaso
+
+
+@dataclass
+class AvaliaCaso(Command):
+    id_caso: str
+
+
+@dataclass
+class FlexibilizaCaso(Command):
+    id_caso: str
+    max_flex: int

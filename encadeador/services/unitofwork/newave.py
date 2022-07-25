@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from os import chdir, curdir, remove, listdir
 import re
-from typing import Optional
+from typing import Optional, Dict
 from os.path import isfile
 from zipfile import ZipFile
 from pathlib import Path
@@ -94,3 +94,10 @@ class FSNewaveUnitOfWork(AbstractNewaveUnitOfWork):
 
     def rollback(self):
         pass
+
+
+def factory(kind: str, *args, **kwargs) -> AbstractNewaveUnitOfWork:
+    mappings: Dict[str, AbstractNewaveUnitOfWork] = {
+        "FS": FSNewaveUnitOfWork,
+    }
+    return mappings[kind](*args, **kwargs)

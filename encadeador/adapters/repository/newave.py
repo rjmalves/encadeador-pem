@@ -1,20 +1,72 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Optional
+from typing import Dict
 from inewave.newave.caso import Caso as ArquivoCaso
 from inewave.newave.arquivos import Arquivos
 from inewave.newave.dger import DGer
 from inewave.newave.cvar import CVAR
-
-from encadeador.modelos.configuracoes import Configuracoes
-from encadeador.modelos.caso2 import Caso
-from encadeador.modelos.estadocaso import EstadoCaso
-from encadeador.modelos.programa import Programa
+from inewave.newave.confhd import Confhd
+from inewave.newave.eafpast import EafPast
+from inewave.newave.adterm import AdTerm
+from inewave.newave.term import Term
+from inewave.newave.pmo import PMO
 
 
 class AbstractNewaveRepository(ABC):
     @abstractmethod
     @property
     def arquivos(self) -> Arquivos:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_dger(self) -> DGer:
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_dger(self, d: DGer):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_cvar(self) -> CVAR:
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_cvar(self, d: CVAR):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_confhd(self) -> Confhd:
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_confhd(self, d: Confhd):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_eafpast(self) -> EafPast:
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_eafpast(self, d: EafPast):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_adterm(self) -> AdTerm:
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_adterm(self, d: AdTerm):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_term(self) -> Term:
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_term(self, d: Term):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_pmo(self) -> PMO:
         raise NotImplementedError
 
 
@@ -45,6 +97,33 @@ class FSNewaveRepository(ABC):
 
     def set_cvar(self, d: CVAR):
         d.escreve_arquivo(self.__path, self.__arquivos.cvar)
+
+    def get_confhd(self) -> Confhd:
+        return Confhd.le_arquivo(self.__path, self.arquivos.confhd)
+
+    def set_confhd(self, d: CVAR):
+        d.escreve_arquivo(self.__path, self.__arquivos.confhd)
+
+    def get_eafpast(self) -> EafPast:
+        return EafPast.le_arquivo(self.__path, self.arquivos.vazpast)
+
+    def set_eafpast(self, d: EafPast):
+        d.escreve_arquivo(self.__path, self.__arquivos.vazpast)
+
+    def get_adterm(self) -> AdTerm:
+        return AdTerm.le_arquivo(self.__path, self.arquivos.adterm)
+
+    def set_adterm(self, d: AdTerm):
+        d.escreve_arquivo(self.__path, self.__arquivos.adterm)
+
+    def get_term(self) -> Term:
+        return Term.le_arquivo(self.__path, self.arquivos.term)
+
+    def set_term(self, d: Term):
+        d.escreve_arquivo(self.__path, self.__arquivos.term)
+
+    def get_pmo(self) -> PMO:
+        return PMO.le_arquivo(self.__path, self.arquivos.pmo)
 
 
 # TODO

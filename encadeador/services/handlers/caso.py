@@ -1,13 +1,15 @@
-from typing import Callable, Optional
+from typing import Optional
+from encadeador.controladores.flexibilizadorcaso2 import Flexibilizador
 from encadeador.controladores.monitorjob2 import MonitorJob
 from encadeador.controladores.preparadorcaso2 import PreparadorCaso
+from encadeador.controladores.avaliadorcaso2 import AvaliadorCaso
 
 from encadeador.modelos.estadocaso import EstadoCaso
+from encadeador.modelos.transicaocaso import TransicaoCaso
 from encadeador.services.unitofwork.caso import AbstractCasoUnitOfWork
 from encadeador.modelos.caso2 import Caso
 import encadeador.domain.commands as commands
 from encadeador.domain.programs import ProgramRules
-from encadeador.services.unitofwork.job import AbstractJobUnitOfWork
 
 
 # TODO - no futuro, quando toda a aplicação for
@@ -99,13 +101,42 @@ def submete(
 
 def monitora(
     command: commands.MonitoraCaso,
-    caso_uow: AbstractCasoUnitOfWork,
+    uow: AbstractCasoUnitOfWork,
     monitor: MonitorJob,
 ) -> bool:
-    with caso_uow:
+    with uow:
         monitor.monitora(command.gerenciador)
-        # TODO - conferir se as informações atualizadas do caso
-        # serão escritas. Senão, aqui é o lugar.
-        # Provavelmente não. As handlers do monitorCaso que
-        # eram responsáveis por atualizar o estado do caso.
-        # Conferir como isso está sendo feito pro job e copiar.
+
+
+def atualiza(command: commands.AtualizaCaso, uow: AbstractCasoUnitOfWork):
+    with uow:
+        caso = uow.casos.read(command.id_caso)
+        if caso is not None:
+            caso.estado = command.estado
+            uow.casos.update(caso)
+            uow.commit()
+
+
+def avalia(
+    command: commands.AvaliaCaso, uow: AbstractCasoUnitOfWork
+) -> Optional[TransicaoCaso]:
+    with uow:
+        caso = uow.casos.read(command.id_caso)
+        if caso is not None:
+            avaliador = AvaliadorCaso.factory(caso)
+            return avaliador.avalia()
+
+
+def flexibiliza(
+    command: commands.FlexibilizaCaso, uow: AbstractCasoUnitOfWork
+) -> Optional[TransicaoCaso]:
+    with uow:
+        caso = uow.casos.read(command.id_caso)
+        if caso.numero_flexibilizacoes < command.max_flex:
+            flexibilizador = Flexibilizador.factory(caso)
+            if flexibilizador.flexibiliza():
+                return TransicaoCaso.FLEXIBILIZACAO_SUCESSO
+            else:
+                return TransicaoCaso.FLEXIBILIZACAO_ERRO
+        else:
+            return TransicaoCaso.ERRO_MAX_FLEX
