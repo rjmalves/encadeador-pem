@@ -2,7 +2,14 @@ from abc import abstractmethod
 from typing import List, Tuple
 import numpy as np  # type: ignore
 from idecomp.decomp.dadger import Dadger
-from idecomp.decomp.modelos.dadger import AC, ACVAZMIN, ACVERTJU, DP, FP, CM
+from idecomp.decomp.modelos.dadger import (
+    ACVAZMIN,
+    ACVERTJU,
+    ACNPOSNW,
+    DP,
+    FP,
+    CM,
+)
 
 from encadeador.modelos.inviabilidade import Inviabilidade
 from encadeador.modelos.inviabilidade import InviabilidadeEV
@@ -168,9 +175,9 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             max_viol = __inv_maxima_violacao_identificada(inviabilidades, inv)
             # Flexibiliza - Remove a consideração de evaporação na usina
             codigo = max_viol._codigo
-            dadger.uh(codigo).evaporacao = False
+            dadger.uh(codigo=codigo).evaporacao = False
             Log.log().info(
-                f"Flexibilizando EV {max_viol._codigo} "
+                f"Flexibilizando EV {codigo} "
                 + f" ({max_viol._nome_usina}) - "
                 + "Evaporação do registro UH desabilitada."
             )
@@ -207,14 +214,14 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             max_viol = __inv_maxima_violacao_identificada(inviabilidades, inv)
             # Flexibiliza
             idx = max_viol._estagio - 1
-            reg = dadger.ti(max_viol._codigo)
+            reg = dadger.ti(codigo=max_viol._codigo)
             valor_atual = reg.taxas[idx]
             deltas = RegraFlexibilizacao.deltas_inviabilidades
             valor_flex = max_viol._violacao + deltas[InviabilidadeTI]
             novo_valor = max([0, valor_atual - valor_flex])
             novas_taxas = reg.taxas
             novas_taxas[idx] = novo_valor
-            dadger.ti(max_viol._codigo).taxas = novas_taxas
+            dadger.ti(codigo=max_viol._codigo).taxas = novas_taxas
             Log.log().info(
                 f"Flexibilizando TI {max_viol._codigo} -"
                 + f" Estágio {max_viol._estagio}: "
@@ -243,9 +250,9 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
 
         def __assegura_existencia_registros(inv: InviabilidadeHV):
             # "Cria" todas as LVs até o último estágio da restrição HV
-            ef = dadger.hv(inv._codigo).estagio_final
+            ef = dadger.hv(codigo=inv._codigo).estagio_final
             for e in range(max_viol._estagio, ef + 1):
-                dadger.lv(max_viol._codigo, e)
+                dadger.lv(codigo=max_viol._codigo, estagio=e)
 
         # Estrutura para conter as tuplas
         # (código, estágio, limite) já flexibilizados
@@ -260,22 +267,22 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             max_viol = __inv_maxima_violacao_identificada(inviabilidades, inv)
             __assegura_existencia_registros(max_viol)
             # Flexibiliza
-            reg = dadger.lv(max_viol._codigo, max_viol._estagio)
+            reg = dadger.lv(codigo=max_viol._codigo, estagio=max_viol._estagio)
             deltas = RegraFlexibilizacao.deltas_inviabilidades
             if max_viol._limite == "L. INF":
                 valor_atual = reg.limite_inferior
                 valor_flex = max_viol._violacao + deltas[InviabilidadeHV]
                 novo_valor = max([0, valor_atual - valor_flex])
                 dadger.lv(
-                    max_viol._codigo, max_viol._estagio
+                    codigo=max_viol._codigo, estagio=max_viol._estagio
                 ).limite_inferior = novo_valor
             elif max_viol._limite == "L. SUP":
-                valor_atual = reg.limites_superior
+                valor_atual = reg.limite_superior
                 valor_flex = max_viol._violacao + deltas[InviabilidadeHV]
                 novo_valor = min([99999, valor_atual + valor_flex])
                 dadger.lv(
-                    max_viol._codigo, max_viol._estagio
-                ).limites_superior = novo_valor
+                    codigo=max_viol._codigo, estagio=max_viol._estagio
+                ).limite_superior = novo_valor
             Log.log().info(
                 f"Flexibilizando HV {max_viol._codigo} - Estágio"
                 + f" {max_viol._estagio} - {max_viol._limite}: "
@@ -286,7 +293,9 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
     def _flexibilizaHQ(
         self, dadger: Dadger, inviabilidades: List[InviabilidadeHQ]
     ):
-        def __identifica_inv(inv: InviabilidadeHQ) -> Tuple[int, int, str, int]:
+        def __identifica_inv(
+            inv: InviabilidadeHQ,
+        ) -> Tuple[int, int, str, int]:
             return (inv._codigo, inv._estagio, inv._limite, inv._patamar)
 
         def __inv_maxima_violacao_identificada(
@@ -304,9 +313,9 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
 
         def __assegura_existencia_registros(inv: InviabilidadeHQ):
             # "Cria" todas as LQs até o último estágio da restrição HQ
-            ef = dadger.hq(inv._codigo).estagio_final
+            ef = dadger.hq(codigo=inv._codigo).estagio_final
             for e in range(max_viol._estagio, ef + 1):
-                dadger.lq(max_viol._codigo, e)
+                dadger.lq(codigo=max_viol._codigo, estagio=e)
 
         # Estrutura para conter as tuplas
         # (código, estágio, limite, patamar) já flexibilizados
@@ -321,7 +330,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             max_viol = __inv_maxima_violacao_identificada(inviabilidades, inv)
             __assegura_existencia_registros(max_viol)
             # Flexibiliza
-            reg = dadger.lq(max_viol._codigo, max_viol._estagio)
+            reg = dadger.lq(codigo=max_viol._codigo, estagio=max_viol._estagio)
             deltas = RegraFlexibilizacao.deltas_inviabilidades
             idx = max_viol._patamar - 1
             if max_viol._limite == "L. INF":
@@ -331,7 +340,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 novos = reg.limites_inferiores
                 novos[idx] = novo_valor
                 dadger.lq(
-                    max_viol._codigo, max_viol._estagio
+                    codigo=max_viol._codigo, estagio=max_viol._estagio
                 ).limites_inferiores = novos
             elif max_viol._limite == "L. SUP":
                 valor_atual = reg.limites_superiores[idx]
@@ -340,7 +349,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 novos = reg.limites_superiores
                 novos[idx] = novo_valor
                 dadger.lq(
-                    max_viol._codigo, max_viol._estagio
+                    codigo=max_viol._codigo, estagio=max_viol._estagio
                 ).limites_superiores = novos
             Log.log().info(
                 f"Flexibilizando HQ {max_viol._codigo} - Estágio"
@@ -353,7 +362,9 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
     def _flexibilizaRE(
         self, dadger: Dadger, inviabilidades: List[InviabilidadeRE]
     ):
-        def __identifica_inv(inv: InviabilidadeRE) -> Tuple[int, int, str, int]:
+        def __identifica_inv(
+            inv: InviabilidadeRE,
+        ) -> Tuple[int, int, str, int]:
             return (inv._codigo, inv._estagio, inv._limite, inv._patamar)
 
         def __inv_maxima_violacao_identificada(
@@ -371,9 +382,9 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
 
         def __assegura_existencia_registros(inv: InviabilidadeRE):
             # "Cria" todas as LUs até o último estágio da restrição RE
-            ef = dadger.re(inv._codigo).estagio_final
+            ef = dadger.re(codigo=inv._codigo).estagio_final
             for e in range(max_viol._estagio, ef + 1):
-                dadger.lu(max_viol._codigo, e)
+                dadger.lu(codigo=max_viol._codigo, estagio=e)
 
         # Estrutura para conter as tuplas
         # (código, estágio, limite, patamar) já flexibilizados
@@ -388,7 +399,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             max_viol = __inv_maxima_violacao_identificada(inviabilidades, inv)
             __assegura_existencia_registros(max_viol)
             # Flexibiliza
-            reg = dadger.lu(max_viol._codigo, max_viol._estagio)
+            reg = dadger.lu(codigo=max_viol._codigo, estagio=max_viol._estagio)
             deltas = RegraFlexibilizacao.deltas_inviabilidades
             idx = max_viol._patamar - 1
             if max_viol._limite == "L. INF":
@@ -398,7 +409,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 novos = reg.limites_inferiores
                 novos[idx] = novo_valor
                 dadger.lu(
-                    max_viol._codigo, max_viol._estagio
+                    codigo=max_viol._codigo, estagio=max_viol._estagio
                 ).limites_inferiores = novos
             elif max_viol._limite == "L. SUP":
                 valor_atual = reg.limites_superiores[idx]
@@ -407,7 +418,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 novos = reg.limites_superiores
                 novos[idx] = novo_valor
                 dadger.lu(
-                    max_viol._codigo, max_viol._estagio
+                    codigo=max_viol._codigo, estagio=max_viol._estagio
                 ).limites_superiores = novos
             Log.log().info(
                 f"Flexibilizando RE {max_viol._codigo} - Estágio"
@@ -447,33 +458,28 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             flexibilizados.append(identificacao)
             max_viol = __inv_maxima_violacao_identificada(inviabilidades, inv)
             # Procura por um registro FP
-            try:
-                dadger.fp(max_viol._codigo, 1)
-                # Procura por um AC VERTJU
-                try:
-                    reg_ac = dadger.ac(max_viol._codigo, "VERTJU")
-                    Log.log().info(
-                        "Flexibilizando FP - "
-                        + "Registro AC VERTJU"
-                        + f" para a usina {max_viol._codigo} "
-                        + f" ({max_viol._usina}) = 0"
-                    )
-                    reg_ac._modificacao._dados = 0
-                except ValueError:
+            reg_fp = dadger.fp(codigo=max_viol._codigo, estagio=1)
+            if reg_fp is None:
+                reg_ac = dadger.ac(max_viol._codigo, ACVERTJU)
+                if reg_ac is None:
                     Log.log().warning(
                         "Flexibilizando FP - "
                         + "Não foi encontrado registro AC VERTJU"
                         + f" para a usina {max_viol._codigo} "
                         + f" ({max_viol._usina})"
                     )
-                    reg_ac_novo = AC()
+                    reg_ac_novo = ACVERTJU()
                     reg_ac_novo.uhe = max_viol._codigo
-                    reg_ac_novo.modificacao = "VERTJU"
-                    reg_ac_novo._modificacao = ACVERTJU("")
-                    reg_ac_novo._modificacao._dados = 0
-                    dadger.cria_registro(dadger.ac(169, "NPOSNW"), reg_ac_novo)
-
-            except ValueError:
+                    reg_ac_novo.influi = 0
+                    dadger.cria_registro(reg_ac_novo, dadger.ac(169, ACNPOSNW))
+                else:
+                    Log.log().info(
+                        "Flexibilizando FP - "
+                        + "Registro AC VERTJU"
+                        + f" para a usina {max_viol._codigo} "
+                        + f" ({max_viol._usina}) = 0"
+                    )
+                    reg_ac.influi = 0
                 Log.log().warning(
                     "Flexibilizando FP - "
                     + "Não foi encontrado registro FP"
@@ -491,7 +497,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
                 reg_fp_novo.numero_pontos_volume = 20
                 reg_fp_novo.limite_inferior_janela_volume = 100
                 reg_fp_novo.limite_superior_janela_volume = 100
-                dadger.cria_registro(dadger.fc("NEWCUT"), reg_fp_novo)
+                dadger.cria_registro(dadger.fc(tipo="NEWCUT"), reg_fp_novo)
 
     # Override
     def _flexibilizaDEFMIN(
@@ -524,33 +530,30 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             # Senão, procura dentre todas as outras pela maior violação
             flexibilizados.append(identificacao)
             max_viol = __inv_maxima_violacao_identificada(inviabilidades, inv)
-            # Procura por um registro AC de VAZMIN
-            try:
-                reg = dadger.ac(max_viol._codigo, "VAZMIN")
-            except ValueError:
+
+            reg_ac = dadger.ac(max_viol._codigo, ACVAZMIN)
+            if reg_ac is None:
                 Log.log().warning(
                     "Flexibilizando DEFMIN - "
                     + "Não foi encontrado registro AC VAZMIN"
                     + f" para a usina {max_viol._codigo} "
                     + f" ({max_viol._usina})"
                 )
-                reg_ac_novo = AC()
+                reg_ac_novo = ACVAZMIN()
                 reg_ac_novo.uhe = max_viol._codigo
-                reg_ac_novo.modificacao = "VAZMIN"
-                reg_ac_novo._modificacao = ACVAZMIN("")
-                reg_ac_novo._modificacao._dados = max_viol._vazmin_hidr
-                dadger.cria_registro(dadger.ac(169, "NPOSNW"), reg_ac_novo)
-                reg = reg_ac_novo
+                reg_ac_novo.vazao = max_viol._vazmin_hidr
+                dadger.cria_registro(dadger.ac(169, ACNPOSNW), reg_ac_novo)
+                reg_ac = reg_ac_novo
 
             # Flexibiliza
             valor_flex = int(np.ceil(max_viol._violacao))
-            novo_valor = np.max([0, reg._modificacao._dados - valor_flex])
+            novo_valor = np.max([0, reg_ac.vazao - valor_flex])
             Log.log().info(
                 f"Flexibilizando DEFMIN {max_viol._codigo} -"
                 + f" Estágio {max_viol._estagio}:"
-                + f" {reg._modificacao._dados} -> {novo_valor}"
+                + f" {reg_ac.vazao} -> {novo_valor}"
             )
-            reg._modificacao._dados = novo_valor
+            reg_ac.vazao = novo_valor
 
     # Override
     def _flexibilizaHE(
@@ -584,7 +587,7 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             flexibilizados.append(identificacao)
             max_viol = __inv_maxima_violacao_identificada(inviabilidades, inv)
             # Flexibiliza
-            reg = dadger.he(max_viol._codigo, max_viol._estagio)
+            reg = dadger.he(codigo=max_viol._codigo, estagio=max_viol._estagio)
             deltas = RegraFlexibilizacao.deltas_inviabilidades
             if max_viol._limite != "L. INF":
                 raise RuntimeError("Restrições RHE só aceitas para L. INF")
@@ -595,7 +598,9 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             valor_atual = reg.limite
             valor_flex = max_viol._violacao + delta
             novo_valor = max([0, valor_atual - valor_flex])
-            dadger.he(max_viol._codigo, max_viol._estagio).limite = novo_valor
+            dadger.he(
+                codigo=max_viol._codigo, estagio=max_viol._estagio
+            ).limite = novo_valor
             Log.log().info(
                 f"Flexibilizando HE {max_viol._codigo} - Estágio"
                 + f" {max_viol._estagio} - {max_viol._limite}: "
@@ -606,11 +611,6 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
     def _flexibiliza_deficit(
         self, dadger: Dadger, inviabilidades: List[InviabilidadeDeficit]
     ):
-        def __identifica_inv_pat(
-            inv: InviabilidadeDeficit,
-        ) -> Tuple[int, int, str]:
-            return (inv._estagio, inv._patamar, inv._subsistema)
-
         def __identifica_inv(inv: InviabilidadeDeficit) -> Tuple[int, str]:
             return (inv._estagio, inv._subsistema)
 
@@ -652,36 +652,40 @@ class RegraFlexibilizacaoAbsoluto(RegraFlexibilizacao):
             # restrições RHE
             for r in rees_subsistema[max_viol._subsistema]:
                 # Lista as restrições RHE
-                cms = dadger.lista_registros(CM)
-                # O atributo estagio na verdade é o REE
-                cms_ree = [c for c in cms if c.estagio == r]
+                cms: List[CM] = dadger.cm()
+                cms_ree = [c for c in cms if c.ree == r]
                 # Se tiver pelo menos um CM para o REE, flexibiliza os
                 # RHE que existirem, para os respectivos estágios
                 if len(cms_ree) > 0:
                     for cm in cms_ree:
-                        try:
-                            reg = dadger.he(cm.codigo, max_viol._estagio)
-                            valor_atual = reg.limite
-                            deltas = RegraFlexibilizacao.deltas_inviabilidades
-                            delta = deltas[InviabilidadeDeficit]
-                            valor_flex = max_viol._violacao_percentual + delta
-                            novo_valor = max([0.0, valor_atual - valor_flex])
-                            dadger.he(
-                                cm.codigo, max_viol._estagio
-                            ).limite = novo_valor
-                            msg = (
-                                f"Flexibilizando (DEFICIT) HE {reg.codigo} -"
-                                + f"Estágio {max_viol._estagio} -"
-                                + f"{reg.tipo_penalidade}: {valor_atual} ->"
-                                + f" {novo_valor}"
+                        reg = dadger.he(
+                            codigo=cm.codigo, estagio=max_viol._estagio
+                        )
+                        if reg is None:
+                            Log.log().warning(
+                                "Não encontrada restrição HE com"
+                                + f" código {cm.codigo} para "
+                                + f"o estágio {max_viol._estagio}."
                             )
-                            Log.log().info(msg)
-                            if novo_valor == 0:
-                                Log.log().warning(
-                                    f"Valor da HE {reg.codigo} chegou a"
-                                    + " 0. e deveria ser"
-                                    + f" {valor_atual - valor_flex}"
-                                    + " pelo déficit"
-                                )
-                        except ValueError:
-                            continue
+                        valor_atual = reg.limite
+                        deltas = RegraFlexibilizacao.deltas_inviabilidades
+                        delta = deltas[InviabilidadeDeficit]
+                        valor_flex = max_viol._violacao_percentual + delta
+                        novo_valor = max([0.0, valor_atual - valor_flex])
+                        dadger.he(
+                            codigo=cm.codigo, estagio=max_viol._estagio
+                        ).limite = novo_valor
+                        msg = (
+                            f"Flexibilizando (DEFICIT) HE {reg.codigo} -"
+                            + f"Estágio {max_viol._estagio} -"
+                            + f"{reg.tipo_penalidade}: {valor_atual} ->"
+                            + f" {novo_valor}"
+                        )
+                        Log.log().info(msg)
+                        if novo_valor == 0:
+                            Log.log().warning(
+                                f"Valor da HE {reg.codigo} chegou a"
+                                + " 0. e deveria ser"
+                                + f" {valor_atual - valor_flex}"
+                                + " pelo déficit"
+                            )

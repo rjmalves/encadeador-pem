@@ -49,7 +49,7 @@ class AbstractDecompRepository(ABC):
         raise NotImplementedError
 
 
-class FSDecompRepository(ABC):
+class FSDecompRepository(AbstractDecompRepository):
     def __init__(self, path: str):
         self.__path = path
         self.__caso = ArquivoCaso.le_arquivo(self.__path)

@@ -2,31 +2,28 @@ from abc import abstractmethod
 from typing import List
 import pandas as pd  # type: ignore
 import numpy as np  # type: ignore
-from idecomp.decomp.relato import Relato
 from idecomp.decomp.relgnl import RelGNL
 from idecomp.decomp.dadger import Dadger
-from idecomp.decomp.dadgnl import DadGNL
 from idecomp.decomp.modelos.dadgnl import NL, GL
-from inewave.newave import Confhd
-from inewave.newave import PMO
-from inewave.newave import EafPast
 from inewave.newave import AdTerm
 from inewave.newave import Term
 from inewave.config import MESES_DF
 
-from encadeador.modelos.caso import Caso, CasoNEWAVE, CasoDECOMP
+from encadeador.modelos.caso2 import Caso
 from encadeador.modelos.configuracoes import Configuracoes
-from encadeador.utils.terminal import converte_codificacao
+from encadeador.modelos.programa import Programa
+from encadeador.services.unitofwork.newave import factory as nw_uow_factory
+from encadeador.services.unitofwork.decomp import factory as dc_uow_factory
 from encadeador.utils.log import Log
 
-# TODO - continuar o refactor por aqui
+
 class Encadeador:
     def __init__(self, casos_anteriores: List[Caso], caso_atual: Caso):
         def __decomp_anterior():
             return [
                 c
                 for c in reversed(casos_anteriores)
-                if isinstance(c, CasoDECOMP)
+                if c.programa == Programa.DECOMP
             ][0]
 
         self._casos_anteriores = casos_anteriores
@@ -37,9 +34,9 @@ class Encadeador:
     def factory(
         casos_anteriores: List[Caso], caso_atual: Caso
     ) -> "Encadeador":
-        if isinstance(caso_atual, CasoDECOMP):
+        if caso_atual.programa == Programa.DECOMP:
             return EncadeadorDECOMPDECOMP(casos_anteriores, caso_atual)
-        elif isinstance(caso_atual, CasoNEWAVE):
+        elif caso_atual.programa == Programa.NEWAVE:
             return EncadeadorDECOMPNEWAVE(casos_anteriores, caso_atual)
         else:
             raise TypeError(
@@ -48,12 +45,16 @@ class Encadeador:
             )
 
     @property
-    def newaves_anteriores(self) -> List[CasoNEWAVE]:
-        return [c for c in self._casos_anteriores if isinstance(c, CasoNEWAVE)]
+    def newaves_anteriores(self) -> List[Caso]:
+        return [
+            c for c in self._casos_anteriores if c.programa == Programa.NEWAVE
+        ]
 
     @property
-    def decomps_anteriores(self) -> List[CasoDECOMP]:
-        return [c for c in self._casos_anteriores if isinstance(c, CasoDECOMP)]
+    def decomps_anteriores(self) -> List[Caso]:
+        return [
+            c for c in self._casos_anteriores if c.programa == Programa.DECOMP
+        ]
 
     @abstractmethod
     def encadeia(self) -> bool:
@@ -135,13 +136,13 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             pass
 
         Log.log().info("Encadeando EARM")
-        # Lê o relato do DC
-        # TODO - tratar casos de arquivos não encontrados
-        arq_relato = f"relato.rv{self._caso_anterior.revisao}"
-        relato = Relato.le_arquivo(self._caso_anterior.caminho, arq_relato)
+        dc_uow = dc_uow_factory("FS", self._caso_anterior.caminho)
+        with dc_uow:
+            relato = dc_uow.decomp.get_relato()
         volumes = relato.volume_util_reservatorios
-        # Lê o confhd do NW
-        confhd = Confhd.le_arquivo(self._caso_atual.caminho)
+        nw_uow = nw_uow_factory("FS", self._caso_atual.caminho)
+        with nw_uow:
+            confhd = nw_uow.newave.get_confhd()
         usinas = confhd.usinas
 
         # Atualiza cada armazenamento
@@ -171,8 +172,8 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         ):
             usinas = __encadeia_ilha_solteira_equiv(volumes, usinas)
 
-        # Escreve o confhd de saída
-        confhd.escreve_arquivo(self._caso_atual.caminho)
+        with nw_uow:
+            nw_uow.newave.set_confhd(confhd)
 
     def __encadeia_ena(self):
         def __interpola_mes_vigente():
@@ -223,27 +224,31 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
         mes_caso = self._caso_atual.mes
         ultimo_newave = self.newaves_anteriores[-1]
         ultimo_decomp = self.decomps_anteriores[-1]
-        # TODO - tratar casos de arquivos não encontrados
-        # Lê o pmo.dat do último NEWAVE
-        pmo = PMO.le_arquivo(ultimo_newave.caminho)
-        eafpast_pmo = pmo.eafpast_tendencia_hidrologica
-        # Lê o eafpast do próximo NEWAVE
-        eafpast = EafPast.le_arquivo(self._caso_atual.caminho)
+
+        last_nw_uow = nw_uow_factory("FS", ultimo_newave.caminho)
+        last_dc_uow = dc_uow_factory("FS", ultimo_decomp.caminho)
+        next_nw_uow = nw_uow_factory("FS", self._caso_atual.caminho)
+
+        with last_nw_uow:
+            pmo = last_nw_uow.newave.get_pmo()
+        with next_nw_uow:
+            eafpast = next_nw_uow.newave.get_eafpast()
+        with last_dc_uow:
+            relato = last_dc_uow.decomp.get_relato()
+
         # Substitui pelos valores do pmo.dat
+        eafpast_pmo = pmo.eafpast_tendencia_hidrologica
         eafpast.tendencia[MESES_DF] = eafpast_pmo[MESES_DF]
-        # Lê o relato.rvX do DECOMP
-        arq_relato = f"relato.rv{ultimo_decomp.revisao}"
-        relato = Relato.le_arquivo(ultimo_decomp.caminho, arq_relato)
         # Interpola o mês vigente e substitui no eafpast
         mes_eafpast = MESES_DF[mes_caso - 1]
         eafpast.tendencia[mes_eafpast] = __interpola_mes_vigente()
         # Escreve o Eafpast
         eafpast.escreve_arquivo(self._caso_atual.caminho)
 
-    def __ultimo_newave_rv0(self) -> CasoNEWAVE:
+    def __ultimo_newave_rv0(self) -> Caso:
         ultimo_rv0 = None
         for c in reversed(self._casos_anteriores):
-            if isinstance(c, CasoNEWAVE) and c.revisao == 0:
+            if c.programa == Programa.NEWAVE and c.revisao == 0:
                 ultimo_rv0 = c
                 break
         if ultimo_rv0 is None:
@@ -253,10 +258,10 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             raise RuntimeError()
         return ultimo_rv0
 
-    def __ultimo_decomp(self) -> CasoDECOMP:
+    def __ultimo_decomp(self) -> Caso:
         ultimo_dc = None
         for c in reversed(self._casos_anteriores):
-            if isinstance(c, CasoDECOMP):
+            if c.programa == Programa.DECOMP:
                 ultimo_dc = c
                 break
         if ultimo_dc is None:
@@ -266,11 +271,11 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             raise RuntimeError()
         return ultimo_dc
 
-    def __processa_adterm(self, adterm_caso_atual: AdTerm, term: Term):
-        ultimo_rv0 = self.__ultimo_newave_rv0()
-        adterm_rv0 = AdTerm.le_arquivo(ultimo_rv0.caminho)
+    def __processa_adterm(
+        self, adterm_ultimo_rv0: AdTerm, adterm_caso_atual: AdTerm, term: Term
+    ):
         d = adterm_caso_atual.despachos
-        d_rv0 = adterm_rv0.despachos
+        d_rv0 = adterm_ultimo_rv0.despachos
         indices_usinas = d["Índice UTE"].unique()
         cols_patamares = [f"Patamar {i}" for i in [1, 2, 3]]
         utes = term.usinas
@@ -287,10 +292,9 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
             valores = d_rv0.loc[filtro_d_rv0, cols_patamares].to_numpy()
             d.loc[filtro_d, cols_patamares] = np.clip(valores, gtmin, None)
 
-    def __processa_relgnl(self, adterm_caso_atual: AdTerm, term: Term):
-        ultimo_dc = self.__ultimo_decomp()
-        nome_rel = f"relgnl.rv{ultimo_dc.revisao}"
-        rel = RelGNL.le_arquivo(ultimo_dc.caminho, nome_rel)
+    def __processa_relgnl(
+        self, rel: RelGNL, adterm_caso_atual: AdTerm, term: Term
+    ):
         codigos = rel.usinas_termicas["Código"].unique()
         usinas = rel.usinas_termicas["Usina"].unique()
         mapa_codigo_usina = {c: u for c, u in zip(codigos, usinas)}
@@ -329,22 +333,27 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
     def __encadeia_gnl(self):
         Log.log().info("Encadeando GNL")
 
-        # Lê o AdTerm do caso atual
-        adterm = AdTerm.le_arquivo(self._caso_atual.caminho)
+        ultimo_rv0 = self.__ultimo_newave_rv0()
+        ultimo_dc = self.__ultimo_decomp()
+        last_nw_uow = nw_uow_factory("FS", ultimo_rv0.caminho)
+        last_dc_uow = dc_uow_factory("FS", ultimo_dc.caminho)
+        next_nw_uow = nw_uow_factory("FS", self._caso_atual.caminho)
+        with last_nw_uow:
+            adterm_rv0 = last_nw_uow.newave.get_adterm()
+        with next_nw_uow:
+            adterm = next_nw_uow.newave.get_adterm()
+            term = next_nw_uow.newave.get_term()
+        with last_dc_uow:
+            rel = last_dc_uow.decomp.get_relgnl()
 
-        # Lê o Term do newave atual
-        term = Term.le_arquivo(self._caso_atual.caminho)
+        # Faz o encadeamento com o despacho anterior
+        self.__processa_adterm(adterm_rv0, adterm, term)
 
-        # Lê o AdTerm do último NEWAVE rv0 e faz o encadeamento
-        # com o despacho anterior
-        self.__processa_adterm(adterm, term)
+        # Atribui o despacho determinado pelo decomp
+        self.__processa_relgnl(rel, adterm, term)
 
-        # Lê o RelGNL do último decomp e atribui o despacho
-        # determinado pelo decomp
-        self.__processa_relgnl(adterm, term)
-
-        # Escreve o arquivo de saída
-        adterm.escreve_arquivo(self._caso_atual.caminho)
+        with next_nw_uow:
+            next_nw_uow.newave.set_adterm(adterm)
 
     def encadeia(self) -> bool:
         Log.log().info(
@@ -364,6 +373,8 @@ class EncadeadorDECOMPNEWAVE(Encadeador):
 class EncadeadorDECOMPDECOMP(Encadeador):
     def __init__(self, casos_anteriores: List[Caso], caso_atual: Caso):
         super().__init__(casos_anteriores, caso_atual)
+        self._last_dc_uow = dc_uow_factory("FS", self._caso_anterior.caminho)
+        self._next_dc_uow = dc_uow_factory("FS", self._caso_atual.caminho)
 
     def __encadeia_earm(self):
         Log.log().info("Encadeando EARM")
@@ -408,16 +419,12 @@ class EncadeadorDECOMPDECOMP(Encadeador):
             dadger.uh(34).volume_inicial = vol
             dadger.uh(43).volume_inicial = vol
 
-        # Lê o relato do DC anterior
-        # TODO - tratar casos de arquivos não encontrados
-        arq_relato = f"relato.rv{self._caso_anterior.revisao}"
-        relato = Relato.le_arquivo(self._caso_anterior.caminho, arq_relato)
+        with self._last_dc_uow:
+            relato = self._last_dc_uow.decomp.get_relato()
+        with self._next_dc_uow:
+            dadger = self._next_dc_uow.decomp.get_dadger()
+
         volumes = relato.volume_util_reservatorios
-        # Lê o dadger do DC atual
-        conv = Configuracoes().script_converte_codificacao
-        converte_codificacao(self._caso_atual.caminho, conv)
-        arq_dadger = f"dadger.rv{self._caso_atual.revisao}"
-        dadger = Dadger.le_arquivo(self._caso_atual.caminho, arq_dadger)
         # Encadeia cada armazenamento
         for _, linha in volumes.iterrows():
             num = linha["Número"]
@@ -430,29 +437,21 @@ class EncadeadorDECOMPDECOMP(Encadeador):
             vol = float(volumes.loc[volumes["Número"] == num, "Estágio 1"])
             dadger.uh(num).volume_inicial = vol
 
-        # Escreve o dadger de saída
-        dadger.escreve_arquivo(self._caso_atual.caminho, arq_dadger)
+        with self._next_dc_uow:
+            self._next_dc_uow.decomp.set_dadger(dadger)
 
     def __encadeia_tviagem(self):
         def __codigos_usinas_tviagem() -> List[int]:
             return [156, 162]
 
         Log.log().info("Encadeando TVIAGEM")
-        # Lê o relato do DC anterior
-        # TODO - tratar casos de arquivos não encontrados
-        arq_relato = f"relato.rv{self._caso_anterior.revisao}"
-        relato = Relato.le_arquivo(self._caso_anterior.caminho, arq_relato)
+        with self._last_dc_uow:
+            dadger_ant = self._last_dc_uow.decomp.get_dadger()
+            relato = self._last_dc_uow.decomp.get_relato()
+        with self._next_dc_uow:
+            dadger = self._next_dc_uow.decomp.get_dadger()
+
         relatorio = relato.relatorio_operacao_uhe
-        # Lê o dadger do DC anterior
-        arq_dadger_ant = f"dadger.rv{self._caso_anterior.revisao}"
-        dadger_ant = Dadger.le_arquivo(
-            self._caso_anterior.caminho, arq_dadger_ant
-        )
-        # Lê o dadger do DC atual
-        conv = Configuracoes().script_converte_codificacao
-        converte_codificacao(self._caso_atual.caminho, conv)
-        arq_dadger = f"dadger.rv{self._caso_atual.revisao}"
-        dadger = Dadger.le_arquivo(self._caso_atual.caminho, arq_dadger)
         # Encadeia cada tempo de viagem
         for codigo in __codigos_usinas_tviagem():
             # Extrai o Qdef do relato
@@ -467,38 +466,26 @@ class EncadeadorDECOMPDECOMP(Encadeador):
             vi = dadger_ant.vi(codigo)
             dadger.vi(codigo).vazoes = [qdef] + vi.vazoes[:-1]
 
-        # Escreve o dadger de saída
-        dadger.escreve_arquivo(self._caso_atual.caminho, arq_dadger)
+        with self._next_dc_uow:
+            self._next_dc_uow.decomp.set_dadger(dadger)
 
     def __encadeia_gnl(self):
         Log.log().info("Encadeando GNL")
 
-        # Lê o DadGNL do decomp atual
-        nome_dad = f"dadgnl.rv{self._caso_atual.revisao}"
-        dad = DadGNL.le_arquivo(self._caso_atual.caminho, nome_dad)
-        # Lê o RelGNL e DadGNL do último decomp
-        ultimo_dc = None
-        for c in reversed(self._casos_anteriores):
-            if isinstance(c, CasoDECOMP):
-                ultimo_dc = c
-                break
-        if ultimo_dc is None:
-            Log.log().error(
-                "Último DC não encontrado para " + "encadeamento de GNL"
-            )
-            raise RuntimeError()
-        nome_rel = f"relgnl.rv{ultimo_dc.revisao}"
-        nome_dad_anterior = f"dadgnl.rv{ultimo_dc.revisao}"
-        rel = RelGNL.le_arquivo(ultimo_dc.caminho, nome_rel)
-        dad_anterior = DadGNL.le_arquivo(ultimo_dc.caminho, nome_dad_anterior)
+        with self._last_dc_uow:
+            dad_anterior = self._last_dc_uow.decomp.get_dadgnl()
+            rel = self._last_dc_uow.decomp.get_relgnl()
+        with self._next_dc_uow:
+            dad = self._next_dc_uow.decomp.get_dadgnl()
 
         cods = rel.usinas_termicas["Código"].unique()
         usinas = rel.usinas_termicas["Usina"].unique()
         mapa_codigo_usina = {c: u for c, u in zip(cods, usinas)}
 
-        codigos = [r.codigo for r in dad.lista_registros(NL)]
-        registros = dad.lista_registros(GL)
-        registros_anteriores = dad_anterior.lista_registros(GL)
+        registros_nl: List[NL] = dad.nl()
+        codigos = [r.codigo for r in registros_nl]
+        registros: List[GL] = dad.gl()
+        registros_anteriores: List[GL] = dad_anterior.gl()
         for c in codigos:
             # Para cada semana i (exceto a última), o registro GL do DadGNL do
             # caso atual deve ter o valor do respectivo registro GL do DadGNL
@@ -536,8 +523,8 @@ class EncadeadorDECOMPDECOMP(Encadeador):
                     ][0]
                     r.geracoes = reg_ant.geracoes
 
-        # Escreve o arquivo de saída
-        dad.escreve_arquivo(self._caso_atual.caminho, nome_dad)
+        with self._next_dc_uow:
+            self._next_dc_uow.decomp.set_dadgnl(dad)
 
     def encadeia(self) -> bool:
         Log.log().info(

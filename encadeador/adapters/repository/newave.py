@@ -5,9 +5,11 @@ from inewave.newave.arquivos import Arquivos
 from inewave.newave.dger import DGer
 from inewave.newave.cvar import CVAR
 from inewave.newave.confhd import Confhd
+from inewave.newave.modif import Modif
 from inewave.newave.eafpast import EafPast
 from inewave.newave.adterm import AdTerm
 from inewave.newave.term import Term
+from inewave.newave.re import RE
 from inewave.newave.pmo import PMO
 
 
@@ -42,6 +44,14 @@ class AbstractNewaveRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def get_modif(self) -> Modif:
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_modif(self, d: Modif):
+        raise NotImplementedError
+
+    @abstractmethod
     def get_eafpast(self) -> EafPast:
         raise NotImplementedError
 
@@ -66,11 +76,19 @@ class AbstractNewaveRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def get_re(self) -> RE:
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_re(self, d: RE):
+        raise NotImplementedError
+
+    @abstractmethod
     def get_pmo(self) -> PMO:
         raise NotImplementedError
 
 
-class FSNewaveRepository(ABC):
+class FSNewaveRepository(AbstractNewaveRepository):
     def __init__(self, path: str):
         self.__path = path
         self.__caso = ArquivoCaso.le_arquivo(self.__path)
@@ -104,6 +122,12 @@ class FSNewaveRepository(ABC):
     def set_confhd(self, d: CVAR):
         d.escreve_arquivo(self.__path, self.__arquivos.confhd)
 
+    def get_modif(self) -> Modif:
+        return Modif.le_arquivo(self.__path, self.arquivos.modif)
+
+    def set_modif(self, d: CVAR):
+        d.escreve_arquivo(self.__path, self.__arquivos.modif)
+
     def get_eafpast(self) -> EafPast:
         return EafPast.le_arquivo(self.__path, self.arquivos.vazpast)
 
@@ -121,6 +145,12 @@ class FSNewaveRepository(ABC):
 
     def set_term(self, d: Term):
         d.escreve_arquivo(self.__path, self.__arquivos.term)
+
+    def get_re(self) -> RE:
+        return RE.le_arquivo(self.__path, self.arquivos.re)
+
+    def set_re(self, d: RE):
+        d.escreve_arquivo(self.__path, self.__arquivos.re)
 
     def get_pmo(self) -> PMO:
         return PMO.le_arquivo(self.__path, self.arquivos.pmo)
