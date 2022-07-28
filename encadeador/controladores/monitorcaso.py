@@ -509,6 +509,8 @@ class MonitorDECOMP(MonitorCaso):
 
     # Override
     def _handler_caso_inviavel(self):
+        self.__armazena_caso()
+        self.__sintetiza_caso()
         n_flex = self._caso.numero_flexibilizacoes
         if n_flex >= Configuracoes().maximo_flexibilizacoes_revisao:
             self.callback_evento(TransicaoCaso.ERRO_MAX_FLEX)
