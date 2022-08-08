@@ -208,8 +208,8 @@ class MonitorCaso:
     def _handler_prepara_execucao_erro(self):
         Log.log().info(f"Caso {self._caso.nome}: erro na preparação do caso")
         self._caso.estado = EstadoCaso.ERRO_PREPARACAO
-        self.__armazena_caso()
-        self.__sintetiza_caso()
+        self._armazena_caso()
+        self._sintetiza_caso()
         self.callback_evento(TransicaoCaso.ERRO)
 
     def _handler_inicio_execucao_solicitada(self):
@@ -231,8 +231,8 @@ class MonitorCaso:
             f"Caso {self._caso.nome}: erro no início da execução do caso"
         )
         self._caso.estado = EstadoCaso.ERRO_EXECUCAO
-        self.__armazena_caso()
-        self.__sintetiza_caso()
+        self._armazena_caso()
+        self._sintetiza_caso()
         self.callback_evento(TransicaoCaso.ERRO)
 
     def _handler_submissao_solicitada_job(self):
@@ -249,8 +249,8 @@ class MonitorCaso:
             f"Caso {self._caso.nome}: erro na submissão do job do caso"
         )
         self._caso.estado = EstadoCaso.ERRO_COMUNICACAO
-        self.__armazena_caso()
-        self.__sintetiza_caso()
+        self._armazena_caso()
+        self._sintetiza_caso()
         self.callback_evento(TransicaoCaso.ERRO)
 
     def _handler_inicio_execucao_job(self):
@@ -266,8 +266,8 @@ class MonitorCaso:
             f"Caso {self._caso.nome}: erro na deleção de um caso com timeout"
         )
         self._caso.estado = EstadoCaso.ERRO_COMUNICACAO
-        self.__armazena_caso()
-        self.__sintetiza_caso()
+        self._armazena_caso()
+        self._sintetiza_caso()
         self.callback_evento(TransicaoCaso.ERRO)
 
     def _handler_delecao_sucesso(self):
@@ -277,8 +277,8 @@ class MonitorCaso:
     def _handler_erro_dados(self):
         Log.log().info(f"Caso {self._caso.nome}: erro de dados")
         self._caso.estado = EstadoCaso.ERRO_DADOS
-        self.__armazena_caso()
-        self.__sintetiza_caso()
+        self._armazena_caso()
+        self._sintetiza_caso()
         self.callback_evento(TransicaoCaso.ERRO)
 
     def _handler_erro_max_flex(self):
@@ -286,8 +286,8 @@ class MonitorCaso:
             f"Caso {self._caso.nome}: máximo de flexibilizações atingido"
         )
         self._caso.estado = EstadoCaso.ERRO_MAX_FLEX
-        self.__armazena_caso()
-        self.__sintetiza_caso()
+        self._armazena_caso()
+        self._sintetiza_caso()
         self.callback_evento(TransicaoCaso.ERRO)
 
     def _handler_timeout_execucao(self):
@@ -317,15 +317,15 @@ class MonitorCaso:
     def _handler_caso_concluido(self):
         Log.log().info(f"Caso {self._caso.nome}: caso concluído.")
         self._caso.estado = EstadoCaso.CONCLUIDO
-        self.__armazena_caso()
-        self.__sintetiza_caso()
+        self._armazena_caso()
+        self._sintetiza_caso()
         self._transicao_caso(TransicaoCaso.CONCLUIDO)
 
     def _handler_erro(self):
         Log.log().error(f"Caso {self._caso.nome}: Erro. ")
         self._transicao_caso(TransicaoCaso.ERRO)
 
-    def __armazena_caso(self):
+    def _armazena_caso(self):
         if not self._armazenador.armazena_caso():
             Log.log().error(
                 f"Caso {self._caso.nome}: Erro no armazenamento do caso - "
@@ -333,7 +333,7 @@ class MonitorCaso:
             )
             self.callback_evento(TransicaoCaso.ERRO)
 
-    def __sintetiza_caso(self):
+    def _sintetiza_caso(self):
         if not self._sintetizador.sintetiza_caso():
             Log.log().error(
                 f"Caso {self._caso.nome}: Erro na síntese do caso - "
@@ -509,8 +509,8 @@ class MonitorDECOMP(MonitorCaso):
 
     # Override
     def _handler_caso_inviavel(self):
-        self.__armazena_caso()
-        self.__sintetiza_caso()
+        self._armazena_caso()
+        self._sintetiza_caso()
         n_flex = self._caso.numero_flexibilizacoes
         if n_flex >= Configuracoes().maximo_flexibilizacoes_revisao:
             self.callback_evento(TransicaoCaso.ERRO_MAX_FLEX)
