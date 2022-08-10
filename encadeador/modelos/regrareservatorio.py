@@ -90,9 +90,17 @@ class RegraReservatorio:
     def volume_minimo(self) -> float:
         return self._volume_minimo
 
+    @volume_minimo.setter
+    def volume_minimo(self, v: float):
+        self._volume_minimo = v
+
     @property
     def volume_maximo(self) -> float:
         return self._volume_maximo
+
+    @volume_maximo.setter
+    def volume_maximo(self, v: float):
+        self._volume_maximo = v
 
     @property
     def limite_minimo(self) -> Optional[float]:
