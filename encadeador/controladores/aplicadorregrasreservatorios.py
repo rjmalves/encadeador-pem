@@ -320,9 +320,9 @@ class AplicadorRegrasReservatoriosNEWAVE(AplicadorRegrasReservatorios):
         ultima_vazao = 0.0
         if len(vazmint_existentes) > 0:
             for m in vazmint_existentes:
+                ultima_vazao = m.vazao
                 data_inicio = date(m.ano, m.mes, 1)
                 if data_inicio >= data_caso + relativedelta(months=+2):
-                    ultima_vazao = m.vazao
                     break
             if ultima_vazao == 0:
                 ultima_vazao = float(hidr.loc[codigo, "Vazão Mínima"])
@@ -738,7 +738,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
 
         # Agrupa regras por usina com defluência limitada
         regras_agrupadas: Dict[int, List[RegraReservatorioEquivalente]] = {
-            e: self.agrupa_usinas_defluencia(regras) 
+            e: [self.agrupa_usinas_defluencia(r) for r in regras]
             for e, regras in regras_hm3.items()
         }
 
