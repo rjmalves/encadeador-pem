@@ -738,7 +738,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
 
         # Agrupa regras por usina com defluência limitada
         regras_agrupadas: Dict[int, List[RegraReservatorioEquivalente]] = {
-            e: [self.agrupa_usinas_defluencia(r) for r in regras]
+            e: self.agrupa_usinas_defluencia(regras)
             for e, regras in regras_hm3.items()
         }
 
