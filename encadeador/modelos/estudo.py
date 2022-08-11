@@ -241,5 +241,9 @@ class Estudo:
     def estado(self, e: EstadoEstudo):
         Log.log().debug(f"Estudo: {self._estado} -> {e.value}")
         self._estado = e
+        self.atualiza()
+
+    def atualiza(self, atualiza_dados: bool = False):
         self._dados.resume_casos(self._casos)
-        self._dados.resume_dados_casos(self._casos)
+        if atualiza_dados:
+            self._dados.resume_dados_casos(self._casos)

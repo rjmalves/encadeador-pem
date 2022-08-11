@@ -135,9 +135,7 @@ class MonitorEstudo:
         """
         Log.log().debug("Monitorando - estudo...")
         self._monitor_atual.monitora()
-        if not self._armazenador.armazena_estudo():
-            Log.log().error("Erro no armazenamento do estudo")
-            raise RuntimeError()
+        self.__armazena_estudo()
 
     def _handler_prepara_execucao_solicitada(self):
         Log.log().info(
@@ -243,6 +241,7 @@ class MonitorEstudo:
         self.callback_evento(TransicaoEstudo.ERRO)
 
     def __armazena_estudo(self):
+        self._estudo.atualiza()
         if not self._armazenador.armazena_estudo():
             Log.log().error(
                 f"Estudo {self._estudo.nome}: Erro no armazenamento do estudo"
@@ -251,6 +250,7 @@ class MonitorEstudo:
             self.callback_evento(TransicaoEstudo.ERRO)
 
     def __sintetiza_estudo(self):
+        self._estudo.atualiza(True)
         if not self._sintetizador.sintetiza_estudo():
             Log.log().error(
                 f"Estudo {self._estudo.nome}: Erro na síntese do estudo - "
