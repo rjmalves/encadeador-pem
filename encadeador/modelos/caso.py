@@ -58,6 +58,8 @@ class Caso:
         if len(self._jobs) > 0:
             if self._jobs[-1].estado != EstadoJob.FINALIZADO:
                 self._jobs[-1] = job
+            else:
+                self._jobs.append(job)
         else:
             self._jobs.append(job)
 
