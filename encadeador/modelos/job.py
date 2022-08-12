@@ -42,6 +42,8 @@ class Job:
         if self.estado == EstadoJob.ESPERANDO:
             self._dados.instante_entrada_fila = t
         elif self.estado == EstadoJob.EXECUTANDO:
+            if self._dados.instante_entrada_fila == 0:
+                self._dados.instante_entrada_fila = t
             self._dados.instante_inicio_execucao = t
         elif self.estado in [EstadoJob.FINALIZADO, EstadoJob.ERRO]:
             self._dados.instante_saida_fila = t
