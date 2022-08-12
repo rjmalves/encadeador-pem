@@ -94,8 +94,13 @@ class Job:
     def tempo_execucao(self) -> float:
         if self.estado in [EstadoJob.NAO_INICIADO, EstadoJob.ESPERANDO]:
             return 0.0
-        elif self.estado in [EstadoJob.EXECUTANDO, EstadoJob.ERRO]:
-            return time() - self._dados.instante_entrada_fila
+        elif self.estado in [
+            EstadoJob.EXECUTANDO,
+            EstadoJob.DELETANDO,
+            EstadoJob.ERRO,
+            EstadoJob.TIMEOUT,
+        ]:
+            return time() - self._dados.instante_inicio_execucao
         else:
             return (
                 self._dados.instante_saida_fila
