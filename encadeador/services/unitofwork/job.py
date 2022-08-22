@@ -68,7 +68,9 @@ DEFAULT_SESSION_FACTORY = sessionmaker(
 
 
 class SQLJobUnitOfWork(AbstractJobUnitOfWork):
-    def __init__(self, session_factory: sessionmaker = DEFAULT_SESSION_FACTORY):
+    def __init__(
+        self, session_factory: sessionmaker = DEFAULT_SESSION_FACTORY
+    ):
         self._session_factory = session_factory
 
     def __enter__(self) -> "SQLJobUnitOfWork":

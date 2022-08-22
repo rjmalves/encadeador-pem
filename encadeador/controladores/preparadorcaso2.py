@@ -3,11 +3,11 @@ from os.path import join
 from typing import List, Optional
 
 from encadeador.modelos.caso2 import Caso
-from encadeador.controladores.encadeadorcaso import Encadeador
+from encadeador.controladores.encadeadorcaso2 import Encadeador
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.programa import Programa
 from encadeador.modelos.regrareservatorio import RegraReservatorio
-from encadeador.controladores.aplicadorregrasreservatorios import (
+from encadeador.controladores.aplicadorregrasreservatorios2 import (
     AplicadorRegrasReservatorios,
 )
 from encadeador.services.unitofwork.newave import factory as nw_factory

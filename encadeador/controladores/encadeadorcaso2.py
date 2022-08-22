@@ -390,18 +390,10 @@ class EncadeadorDECOMPDECOMP(Encadeador):
             existem_separadas_relato = all(
                 [34 in vols_relato, 43 in vols_relato]
             )
-            try:
-                dadger.uh(44)
-                existe_equiv_dadger = True
-            except ValueError:
-                existe_equiv_dadger = False
-            try:
-                dadger.uh(34)
-                dadger.uh(43)
-                existem_separadas_dadger = True
-            except ValueError:
-                existem_separadas_dadger = False
-
+            existe_equiv_dadger = dadger.uh(44) is not None
+            existem_separadas_dadger = (dadger.uh(34) is not None) and (
+                dadger.uh(43) is not None
+            )
             return all(
                 [
                     existe_equiv_relato,

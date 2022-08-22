@@ -28,8 +28,10 @@ class MonitorCaso:
         caso_uow: AbstractCasoUnitOfWork,
         job_uow: AbstractJobUnitOfWork,
     ):
-        # TODO - não deve mais receber o caso, pois o caso será
-        # criado aqui dentro, via chamadas de handlers.
+        # TODO - talvez dê problema passar os UoW como
+        # parâmetros, visto que eles já são construídos com
+        # argumentos tipo path, session...
+        # Esses argumentos tendem a mudar.
         self._caso_id = _caso_id
         self._caso_uow = caso_uow
         self._job_uow = job_uow
@@ -72,9 +74,6 @@ class MonitorCaso:
                 TransicaoCaso.INICIO_EXECUCAO_ERRO
             ): self._handler_inicio_execucao_erro,
             (TransicaoCaso.ERRO_DADOS): self._handler_erro_dados,
-            (
-                TransicaoCaso.FLEXIBILIZACAO_SOLICITADA
-            ): self._handler_flexibilizacao_solicitada,
             (TransicaoCaso.ERRO_MAX_FLEX): self._handler_erro_max_flex,
             (
                 TransicaoCaso.FLEXIBILIZACAO_SUCESSO
@@ -291,6 +290,7 @@ class MonitorCaso:
         comando = commands.FlexibilizaCaso(
             self._caso_id, Configuracoes().maximo_flexibilizacoes_revisao
         )
+        # TODO - sintetizar
         ret = handlers.flexibiliza(comando, self._caso_uow)
         if ret is None:
             self.callback_evento(TransicaoCaso.ERRO)

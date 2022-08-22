@@ -5,7 +5,7 @@ from typing import List, Dict, Any, Optional
 class RegraReservatorio:
     def __init__(
         self,
-        _codigo_reservatorio: int,
+        _codigo_reservatorio: int | List[int],
         _codigo_usina: int,
         _tipo_restricao: str,
         _mes: int,
@@ -71,7 +71,7 @@ class RegraReservatorio:
         return self.__dict__
 
     @property
-    def codigo_reservatorio(self) -> int:
+    def codigo_reservatorio(self) -> int | List[int]:
         return self._codigo_reservatorio
 
     @property
@@ -90,18 +90,38 @@ class RegraReservatorio:
     def volume_minimo(self) -> float:
         return self._volume_minimo
 
+    @volume_minimo.setter
+    def volume_minimo(self, v: float):
+        self._volume_minimo = v
+
     @property
     def volume_maximo(self) -> float:
         return self._volume_maximo
+
+    @volume_maximo.setter
+    def volume_maximo(self, v: float):
+        self._volume_maximo = v
 
     @property
     def limite_minimo(self) -> Optional[float]:
         return self._limite_minimo
 
+    @limite_minimo.setter
+    def limite_minimo(self, lim: float):
+        self._limite_minimo = lim
+
     @property
     def limite_maximo(self) -> Optional[float]:
         return self._limite_maximo
 
+    @limite_maximo.setter
+    def limite_maximo(self, lim: float):
+        self._limite_maximo = lim
+
     @property
     def periodicidade(self) -> str:
         return self._periodicidade
+
+    @property
+    def legenda_faixa(self) -> str:
+        return self._legenda_faixa

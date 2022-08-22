@@ -3,6 +3,7 @@ from typing import Dict
 from inewave.newave.caso import Caso as ArquivoCaso
 from inewave.newave.arquivos import Arquivos
 from inewave.newave.dger import DGer
+from inewave.newave.hidr import Hidr
 from inewave.newave.cvar import CVAR
 from inewave.newave.confhd import Confhd
 from inewave.newave.modif import Modif
@@ -25,6 +26,10 @@ class AbstractNewaveRepository(ABC):
 
     @abstractmethod
     def set_dger(self, d: DGer):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_hidr(self) -> Hidr:
         raise NotImplementedError
 
     @abstractmethod
@@ -109,6 +114,10 @@ class FSNewaveRepository(AbstractNewaveRepository):
 
     def set_dger(self, d: DGer):
         d.escreve_arquivo(self.__path, self.__arquivos.dger)
+
+    @abstractmethod
+    def get_hidr(self) -> Hidr:
+        return DGer.le_arquivo(self.__path, "hidr.dat")
 
     def get_cvar(self) -> CVAR:
         return CVAR.le_arquivo(self.__path, self.arquivos.cvar)

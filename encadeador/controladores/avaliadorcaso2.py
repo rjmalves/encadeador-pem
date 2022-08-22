@@ -51,6 +51,7 @@ class AvaliadorNEWAVE(AvaliadorCaso):
 class AvaliadorDECOMP(AvaliadorCaso):
 
     PADRAO_ERRO_DADOS = "ERRO(S) DE ENTRADA DE DADOS"
+    PADRAO_GAP_NEGATIVO = "ATENCAO: GAP NEGATIVO"
 
     def __init__(self, caso: Caso) -> None:
         super().__init__(caso)
@@ -63,6 +64,22 @@ class AvaliadorDECOMP(AvaliadorCaso):
                 return any(
                     [
                         AvaliadorDECOMP.PADRAO_ERRO_DADOS in b.data
+                        for b in relato.data.of_type(DefaultBlock)
+                    ]
+                )
+        except Exception as e:
+            Log.log().error(
+                "Erro na avaliação das saídas" + f" do {self._caso.nome}: {e}"
+            )
+            return False
+
+    def __avalia_gap_negativo(self) -> bool:
+        try:
+            with self._uow:
+                relato = self._uow.decomp.get_relato()
+                return any(
+                    [
+                        AvaliadorDECOMP.PADRAO_GAP_NEGATIVO in b.data
                         for b in relato.data.of_type(DefaultBlock)
                     ]
                 )
@@ -122,6 +139,7 @@ class AvaliadorDECOMP(AvaliadorCaso):
         Log.log().info(f"Verificando saídas do {self._caso.nome}")
         if self.__avalia_erro_dados():
             return TransicaoCaso.ERRO_DADOS
+        # TODO - implementar transição para GAP NEGATIVO
         if self.__avalia_relato():
             inviabs_sim_final = self.__avalia_inviab()
             if inviabs_sim_final is None:

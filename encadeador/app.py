@@ -2,8 +2,12 @@ from os import chdir
 import time
 from typing import Callable, Dict
 
+from encadeador.services.unitofwork.job import factory as job_uow_factory
+from encadeador.services.unitofwork.caso import factory as caso_uow_factory
+from encadeador.services.unitofwork.estudo import factory as estudo_uow_factory
+
 from encadeador.modelos.configuracoes import Configuracoes
-from encadeador.controladores.monitorestudo import MonitorEstudo
+from encadeador.controladores.monitorestudo2 import MonitorEstudo
 from encadeador.modelos.transicaoestudo import TransicaoEstudo
 from encadeador.utils.log import Log
 
@@ -15,10 +19,18 @@ INTERVALO_POLL = 5.0
 # os singletons. Se precisar de multithreading, tem que pensar
 # mais.. mas tem outras coisas que vão precisar mudar também.
 
+UOW_KIND = "FS"
+ESTUDO_ID = 1
+
 
 class App:
     def __init__(self) -> None:
-        self._monitor = MonitorEstudo()
+        self._monitor = MonitorEstudo(
+            ESTUDO_ID,
+            estudo_uow_factory(
+                UOW_KIND,
+            ),
+        )
         self._monitor.observa(self.callback_evento)
         self._executando = False
 
