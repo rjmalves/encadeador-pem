@@ -538,13 +538,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         )
         try:
             regra = None
-            print("MARIANA DEBUG regras:",regras)
             for r in regras:
-                print("MARIANA DEBUG. r: ",r)
-                print("MARIANA DEBUG. codigo_usina: ",r.codigo_usina)
-                print("MARIANA DEBUG. volume_minimo: ",r.volume_minimo)
-                print("MARIANA DEBUG. volume_maximo: ",r.volume_maximo)
-                print("MARIANA DEBUG. volume_total: ",float(volume_total))
                 if all(
                     [
                         r.codigo_usina == codigo_usina,
