@@ -538,6 +538,7 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         )
         try:
             regra = None
+            print("MARIANA DEBUG regras:",regras)
             for r in regras:
                 print("MARIANA DEBUG. r: ",r)
                 print("MARIANA DEBUG. codigo_usina: ",r.codigo_usina)
