@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, Integer, ForeignKey, String, Enum
+from sqlalchemy import Table, Column, Integer, ForeignKey, String, Enum  # type: ignore
 from encadeador.adapters.orm import registry
 from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.modelos.programa import Programa

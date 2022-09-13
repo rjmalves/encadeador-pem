@@ -10,7 +10,7 @@
 # - Erro em qualquer etapa
 
 from datetime import datetime, timedelta
-from encadeador.modelos.job2 import Job
+from encadeador.modelos.job import Job
 from encadeador.modelos.estadojob import EstadoJob
 
 

@@ -1,4 +1,3 @@
-from os import chdir
 import time
 from typing import Callable, Dict
 
@@ -6,12 +5,10 @@ from encadeador.services.unitofwork.job import factory as job_uow_factory
 from encadeador.services.unitofwork.caso import factory as caso_uow_factory
 from encadeador.services.unitofwork.estudo import factory as estudo_uow_factory
 
-from encadeador.modelos.configuracoes import Configuracoes
-from encadeador.controladores.monitorestudo2 import MonitorEstudo
+from encadeador.controladores.leitorarquivos import LeitorArquivos
+from encadeador.controladores.monitorestudo import MonitorEstudo
 from encadeador.modelos.transicaoestudo import TransicaoEstudo
 from encadeador.utils.log import Log
-
-INTERVALO_POLL = 5.0
 
 
 # TODO - Aqui pode ser o lugar para ocorrer DI no futuro
@@ -20,18 +17,19 @@ INTERVALO_POLL = 5.0
 # mais.. mas tem outras coisas que vão precisar mudar também.
 
 UOW_KIND = "FS"
+INTERVALO_POLL = 5.0
 ESTUDO_ID = 1
 
 
 class App:
     def __init__(self) -> None:
-        self._monitor = MonitorEstudo(
-            ESTUDO_ID,
-            estudo_uow_factory(
-                UOW_KIND,
-            ),
+        self._lista_casos = LeitorArquivos.carrega_lista_casos()
+        self._regras_reservatorio = (
+            LeitorArquivos.carrega_regras_reservatorios()
         )
-        self._monitor.observa(self.callback_evento)
+        self._regras_inviabilidades = (
+            LeitorArquivos.carrega_regras_inviabilidades()
+        )
         self._executando = False
 
     def callback_evento(self, evento: TransicaoEstudo):
@@ -56,9 +54,6 @@ class App:
                 TransicaoEstudo.PREPARA_EXECUCAO_SUCESSO
             ): self._handler_prepara_execucao_sucesso,
             (
-                TransicaoEstudo.INICIO_EXECUCAO_SOLICITADA
-            ): self._handler_inicio_execucao_solicitada,
-            (
                 TransicaoEstudo.INICIO_EXECUCAO_SUCESSO
             ): self._handler_inicio_execucao_sucesso,
             (TransicaoEstudo.CONCLUIDO): self._handler_concluido,
@@ -67,9 +62,6 @@ class App:
 
     def _handler_prepara_execucao_sucesso(self):
         self._monitor.inicia()
-
-    def _handler_inicio_execucao_solicitada(self):
-        Log.log().info(f"Iniciando Encadeador - {Configuracoes().nome_estudo}")
 
     def _handler_inicio_execucao_sucesso(self):
         self._executando = True
@@ -84,10 +76,21 @@ class App:
         Log.log().info("Finalizando Encadeador")
         exit(codigo)
 
-    def executa(self):
+    def inicializa(self):
+        self._monitor = MonitorEstudo(
+            ESTUDO_ID,
+            estudo_uow_factory(UOW_KIND),
+            caso_uow_factory(UOW_KIND),
+            job_uow_factory(UOW_KIND),
+            self._lista_casos,
+            self._regras_reservatorio,
+            self._regras_inviabilidades,
+        )
+        self._monitor.observa(self.callback_evento)
         self._monitor.prepara()
+
+    def executa(self):
         while True:
-            chdir(Configuracoes().caminho_base_estudo)
             time.sleep(INTERVALO_POLL)
             Log.log().debug("Tentando monitorar...")
             if not self._executando:

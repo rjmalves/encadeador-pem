@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
-from sqlalchemy import select, update, delete
-from sqlalchemy.orm import Session
+from sqlalchemy import select, update, delete  # type: ignore
+from sqlalchemy.orm import Session  # type: ignore
 from typing import List, Dict, Optional
 from pathlib import Path
 from os.path import exists
 from os import makedirs
 from json import dump, load
 
-from encadeador.modelos.estudo2 import Estudo
+from encadeador.modelos.estudo import Estudo
 from encadeador.modelos.estadoestudo import EstadoEstudo
 
 

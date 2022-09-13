@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, patch, mock_open
 from datetime import datetime, timedelta
 
-from encadeador.modelos.job2 import Job
+from encadeador.modelos.job import Job
 from encadeador.modelos.estadojob import EstadoJob
 from encadeador.adapters.repository.job import JSONJobRepository
 from tests.conftest import JSON_WRITING_FIRST_INDEX

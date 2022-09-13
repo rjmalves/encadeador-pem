@@ -36,7 +36,7 @@ class AbstractCasoUnitOfWork(ABC):
 
 
 class JSONCasoUnitOfWork(AbstractCasoUnitOfWork):
-    def __init__(self, path: str):
+    def __init__(self, path: str = Configuracoes.caminho_base_estudo):
         self._path = path
 
     def __enter__(self) -> "JSONCasoUnitOfWork":
@@ -68,7 +68,9 @@ DEFAULT_SESSION_FACTORY = sessionmaker(
 
 
 class SQLCasoUnitOfWork(AbstractCasoUnitOfWork):
-    def __init__(self, session_factory: sessionmaker = DEFAULT_SESSION_FACTORY):
+    def __init__(
+        self, session_factory: sessionmaker = DEFAULT_SESSION_FACTORY
+    ):
         self._session_factory = session_factory
 
     def __enter__(self) -> "SQLCasoUnitOfWork":

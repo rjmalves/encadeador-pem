@@ -1,12 +1,20 @@
 from typing import Callable, Tuple, Dict
 
-from encadeador.modelos.job import Job
 from encadeador.modelos.estadojob import EstadoJob
 from encadeador.modelos.transicaojob import TransicaoJob
 from encadeador.modelos.configuracoes import Configuracoes
-from encadeador.controladores.gerenciadorfila import GerenciadorFila
 from encadeador.utils.log import Log
 from encadeador.utils.event import Event
+
+import encadeador.domain.commands as commands
+import encadeador.services.handlers.job as handlers
+from encadeador.services.unitofwork.job import AbstractJobUnitOfWork
+
+
+# TODO - seria interessante ter uma AbstractMonitorJob ? Poderia
+# esclarecer algumas coisas na hora de pensar na generalização
+# para execução de casos em servidores diferentes, ou usando
+# meios diferentes (arquivos em disco, buckets s3, etc..)
 
 
 class MonitorJob:
@@ -17,11 +25,9 @@ class MonitorJob:
     adquirindo informações do estado por meio do Observer Pattern.
     """
 
-    def __init__(self, job: Job):
-        self._job = job
-        g = Configuracoes().gerenciador_fila
-        self._gerenciador = GerenciadorFila.factory(g)
-        self._gerenciador.observa(self.callback_estado_job)
+    def __init__(self, uow: AbstractJobUnitOfWork):
+        self._job_id = None
+        self._uow = uow
         self._transicao_job = Event()
 
     def _regras(self) -> Dict[Tuple[EstadoJob, EstadoJob], Callable]:
@@ -64,7 +70,9 @@ class MonitorJob:
             ): self._handler_delecao_solicitada,
         }
 
-    def callback_estado_job(self, novo_estado: EstadoJob):
+    def callback_estado_job(
+        self, estado_atual: EstadoJob, novo_estado: EstadoJob
+    ):
         """
         Esta função é usada para implementar o Observer Pattern.
         Quando chamada, significa que o estado de um Job foi alterado
@@ -74,56 +82,63 @@ class MonitorJob:
         :param novo_estado: O estado para o qual o job foi alterado.
         :type novo_estado: EstadoJob
         """
-        estado_atual = self._job.estado
-        # Atualiza o estado atual
-        self._job.atualiza(novo_estado)
         # Executa a ação da transição de estado
         self._regras()[estado_atual, novo_estado]()
 
     def inicializa(self):
         self._transicao_job(TransicaoJob.CRIADO)
 
-    def submete(self, numero_processadores: int) -> bool:
-        r = self._gerenciador.agenda_job(
-            self._job.caminho, self._job.nome, numero_processadores
+    def submete(
+        self,
+        caminho: str,
+        nome: str,
+        numero_processadores: int,
+        id_caso: int,
+        gerenciador: str = Configuracoes().gerenciador_fila,
+    ) -> bool:
+        comando = commands.SubmeteJob(
+            gerenciador, caminho, nome, numero_processadores, id_caso
         )
-        self._job.id = self._gerenciador.id_job
-        self._job.numero_processadores = numero_processadores
+        job = handlers.submete(comando, self._uow)
+
         self._transicao_job(TransicaoJob.SUBMISSAO_SOLICITADA)
-        if not r:
+        if job is None:
             self._transicao_job(TransicaoJob.SUBMISSAO_ERRO)
-        return r
+        else:
+            self._job_id = job.id
+        return job is not None
 
-    def deleta(self) -> bool:
-        return self._gerenciador.deleta_job()
+    def deleta(
+        self,
+        gerenciador: str = Configuracoes().gerenciador_fila,
+    ) -> bool:
+        comando = commands.DeletaJob(gerenciador, self._job_id)
+        return handlers.deleta(comando, self._uow)
 
-    def monitora(self):
-        Log.log().debug("Monitorando - job...")
-        self._gerenciador.monitora_estado_job()
+    def monitora(
+        self,
+        gerenciador: str = Configuracoes().gerenciador_fila,
+    ):
+        comando = commands.MonitoraJob(gerenciador, self._job_id)
+        handlers.monitora(comando, self._uow, self.callback_estado_job)
 
     def observa(self, f: Callable):
         self._transicao_job.append(f)
 
     def _handler_submissao_sucesso(self):
-        Log.log().info(
-            f"Job {self._job.id}[{self._job.nome}] inserido na fila"
-        )
+        Log.log().info("Job - inserido na fila")
         self._transicao_job(TransicaoJob.SUBMISSAO_SUCESSO)
 
     def _handler_delecao_solicitada(self):
-        Log.log().info(
-            f"Job {self._job.id}[{self._job.nome}] - solicitada deleção"
-        )
+        Log.log().info("Job - solicitada deleção")
         self._transicao_job(TransicaoJob.DELECAO_SOLICITADA)
 
     def _handler_delecao_sucesso(self):
-        Log.log().info(f"Job {self._job.id}[{self._job.nome}] - deletado")
+        Log.log().info("Job - deletado")
         self._transicao_job(TransicaoJob.DELECAO_SUCESSO)
 
     def _handler_inicio_execucao(self):
-        Log.log().info(
-            f"Job {self._job.id}[{self._job.nome}] - início da execução"
-        )
+        Log.log().info("Job - início da execução")
         self._transicao_job(TransicaoJob.INICIO_EXECUCAO)
 
     def _handler_inicio_execucao_direto(self):
@@ -131,15 +146,13 @@ class MonitorJob:
         self._handler_inicio_execucao()
 
     def _handler_fim_execucao(self):
-        Log.log().info(f"Job {self._job.id}[{self._job.nome}] - finalizado")
+        Log.log().info("Job - finalizado")
         self._transicao_job(TransicaoJob.FIM_EXECUCAO)
 
     def _handler_delecao_erro(self):
-        Log.log().info(
-            f"Job {self._job.id}[{self._job.nome}] - erro de deleção"
-        )
+        Log.log().info("Job - erro de deleção")
         self._transicao_job(TransicaoJob.DELECAO_ERRO)
 
     def _handler_timeout_execucao(self):
-        Log.log().info(f"Job {self._job.id}[{self._job.nome}] - timeout")
+        Log.log().info("Job - timeout")
         self._transicao_job(TransicaoJob.TIMEOUT_EXECUCAO)

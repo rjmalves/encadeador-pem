@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from os import chdir, curdir
-import re
 from typing import Dict
 from pathlib import Path
 

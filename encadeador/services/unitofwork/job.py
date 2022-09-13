@@ -36,7 +36,7 @@ class AbstractJobUnitOfWork(ABC):
 
 
 class JSONJobUnitOfWork(AbstractJobUnitOfWork):
-    def __init__(self, path: str):
+    def __init__(self, path: str = Configuracoes.caminho_base_estudo):
         self._path = path
 
     def __enter__(self) -> "JSONJobUnitOfWork":

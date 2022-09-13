@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, patch, mock_open
 
 from encadeador.modelos.estadoestudo import EstadoEstudo
-from encadeador.modelos.estudo2 import Estudo
+from encadeador.modelos.estudo import Estudo
 from encadeador.adapters.repository.estudo import JSONEstudoRepository
 from tests.conftest import JSON_WRITING_FIRST_INDEX
 

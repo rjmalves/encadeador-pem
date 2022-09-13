@@ -1,14 +1,17 @@
-from typing import Dict, Union, Callable
-from encadeador.controladores.preparadorestudo import PreparadorEstudo
-
-from encadeador.modelos.caso import Caso
+from typing import Dict, List, Union, Callable
+from encadeador.modelos.configuracoes import Configuracoes
+from encadeador.modelos.regrareservatorio import RegraReservatorio
+from encadeador.modelos.regrainviabilidade import RegraInviabilidade
 from encadeador.modelos.estadoestudo import EstadoEstudo
-from encadeador.modelos.estudo import Estudo
 from encadeador.modelos.transicaocaso import TransicaoCaso
 from encadeador.modelos.transicaoestudo import TransicaoEstudo
 from encadeador.controladores.monitorcaso import MonitorCaso
-from encadeador.controladores.armazenadorestudo import ArmazenadorEstudo
-from encadeador.controladores.sintetizadorestudo import SintetizadorEstudo
+from encadeador.services.unitofwork.job import AbstractJobUnitOfWork
+from encadeador.services.unitofwork.caso import AbstractCasoUnitOfWork
+from encadeador.services.unitofwork.estudo import AbstractEstudoUnitOfWork
+import encadeador.services.handlers.estudo as handlers
+import encadeador.domain.commands as commands
+
 from encadeador.utils.log import Log
 from encadeador.utils.event import Event
 
@@ -21,11 +24,23 @@ class MonitorEstudo:
     adquirindo informações dos casos por meio do Observer Pattern.
     """
 
-    def __init__(self):
-        self._estudo: Estudo = None  # type: ignore
-        self._armazenador: ArmazenadorEstudo = None  # type: ignore
-        self._sintetizador: SintetizadorEstudo = None  # type: ignore
-        self._caso_atual: Caso = None  # type: ignore
+    def __init__(
+        self,
+        _estudo_id: int,
+        estudo_uow: AbstractEstudoUnitOfWork,
+        caso_uow: AbstractCasoUnitOfWork,
+        job_uow: AbstractJobUnitOfWork,
+        diretorios_casos: List[str],
+        regras_reservatorios: List[RegraReservatorio],
+        regras_inviabilidades: List[RegraInviabilidade],
+    ):
+        self._estudo_id = _estudo_id
+        self._estudo_uow = estudo_uow
+        self._caso_uow = caso_uow
+        self._job_uow = job_uow
+        self._diretorios_casos = diretorios_casos
+        self._regras_reservatorios = regras_reservatorios
+        self._regras_inviabilidades = regras_inviabilidades
         self._monitor_atual: MonitorCaso = None  # type: ignore
         self._transicao_estudo = Event()
 
@@ -90,20 +105,9 @@ class MonitorEstudo:
 
     def prepara(self):
         """
-        Realiza a preparação do estudo encadeado para a sua execução. Caso
-        O estudo ainda não tenha sido iniciado, os arquivos para armazenamento
-        das saídas são criados, a conferência da existência dos casos a
-        serem executados é feita, etc.
+        Prepara a execução dos casos do estudo.
         """
-        self._estudo = ArmazenadorEstudo.gera_estudo()
-        self._armazenador = ArmazenadorEstudo(self._estudo)
-        self._sintetizador = SintetizadorEstudo(self._estudo)
         self.callback_evento(TransicaoEstudo.PREPARA_EXECUCAO_SOLICITADA)
-        preparador = PreparadorEstudo(self._estudo)
-        if preparador.prepara_estudo():
-            self.callback_evento(TransicaoEstudo.PREPARA_EXECUCAO_SUCESSO)
-        else:
-            self.callback_evento(TransicaoEstudo.PREPARA_EXECUCAO_ERRO)
 
     def inicia(self):
         """
@@ -112,7 +116,9 @@ class MonitorEstudo:
         self.callback_evento(TransicaoEstudo.INICIO_EXECUCAO_SOLICITADA)
 
     def __existe_proximo_caso(self) -> bool:
-        return self._estudo.proximo_caso is not None
+        with self._estudo_uow:
+            estudo = self._estudo_uow.estudos.read(self._estudo_id)
+            return estudo.proximo_caso is not None
 
     def __inicializa_proximo_caso(self):
         """
@@ -120,13 +126,16 @@ class MonitorEstudo:
         arquivos para adequação às necessidades do estudo
         encadeado e o encadeamento das variáveis selecionadas.
         """
-        self._caso_atual = self._estudo.proximo_caso
-        Log.log().info(
-            f"Estudo {self._estudo.nome} - Próximo: {self._caso_atual.nome}"
-        )
-        self._monitor_atual = MonitorCaso.factory(self._caso_atual)
-        self._monitor_atual.observa(self.callback_evento)
-        self._monitor_atual.inicializa(self._estudo.casos_concluidos)
+        with self._estudo_uow:
+            estudo = self._estudo_uow.estudos.read(self._estudo_id)
+            caso_atual = estudo.proximo_caso
+        if caso_atual is not None:
+            Log.log().info(f"Estudo - Próximo caso: {caso_atual.nome}")
+            self._monitor_atual = MonitorCaso(
+                caso_atual.id, self._caso_uow, self._job_uow
+            )
+            self._monitor_atual.observa(self.callback_evento)
+            self._monitor_atual.inicializa()
 
     def monitora(self):
         """
@@ -134,68 +143,78 @@ class MonitorEstudo:
         caso atual em execução.
         """
         Log.log().debug("Monitorando - estudo...")
-        self._monitor_atual.monitora()
-        if not self._armazenador.armazena_estudo():
-            Log.log().error("Erro no armazenamento do estudo")
-            raise RuntimeError()
+        comando = commands.MonitoraEstudo(self._estudo_id)
+        handlers.monitora(comando, self._monitor_atual)
 
     def _handler_prepara_execucao_solicitada(self):
-        Log.log().info(
-            f"Estudo {self._estudo.nome}: iniciando preparação do estudo"
-        )
+        Log.log().info("Estudo: preparando execução")
+        with self._estudo_uow:
+            estudo = self._estudo_uow.estudos.read(self._estudo_id)
+        if not estudo:
+            comando_cria_estudo = commands.CriaEstudo(
+                Configuracoes.caminho_base_estudo,
+                Configuracoes.nome_estudo,
+            )
+            estudo = handlers.cria(comando_cria_estudo, self._estudo_uow)
+            if not estudo:
+                self.callback_evento(TransicaoEstudo.PREPARA_EXECUCAO_ERRO)
+        else:
+            comando_inicializa_estudo = commands.InicializaEstudo(
+                estudo.id, self._diretorios_casos
+            )
+            handlers.inicializa(
+                comando_inicializa_estudo, self._estudo_uow, self._caso_uow
+            )
+        self.callback_evento(TransicaoEstudo.PREPARA_EXECUCAO_SUCESSO)
 
     def _handler_prepara_execucao_sucesso(self):
-        Log.log().info(
-            f"Estudo {self._estudo.nome}: estudo preparado com sucesso"
-        )
-        self._estudo.estado = EstadoEstudo.NAO_INICIADO
+        Log.log().info("Estudo: preparado com sucesso")
         self._transicao_estudo(TransicaoEstudo.PREPARA_EXECUCAO_SUCESSO)
 
     def _handler_prepara_execucao_erro(self):
-        Log.log().info(
-            f"Estudo {self._estudo.nome}: erro na preparação do estudo"
-        )
-        self.__armazena_estudo()
-        self.__sintetiza_estudo()
+        Log.log().info("Estudo: erro na preparação")
         self.callback_evento(TransicaoEstudo.ERRO)
 
     def _handler_inicio_execucao_solicitada(self):
-        self._transicao_estudo(TransicaoEstudo.INICIO_EXECUCAO_SOLICITADA)
-        self._estudo.estado = EstadoEstudo.INICIADO
-        self.callback_evento(TransicaoEstudo.INICIO_EXECUCAO_SUCESSO)
+        comando = commands.AtualizaEstudo(
+            self._estudo_id, EstadoEstudo.INICIADO
+        )
+        if handlers.atualiza(comando, self._estudo_uow):
+            Log.log().info("Iniciando Encadeador")
+            self.callback_evento(TransicaoEstudo.INICIO_EXECUCAO_SUCESSO)
+        else:
+            self.callback_evento(TransicaoEstudo.INICIO_EXECUCAO_ERRO)
 
     def _handler_inicio_execucao_sucesso(self):
-        Log.log().info(
-            f"Estudo {self._estudo.nome}: iniciando execução do estudo"
+        Log.log().info("Estudo: iniciando execução")
+        comando = commands.AtualizaEstudo(
+            self._estudo_id, EstadoEstudo.EXECUTANDO
         )
-        self._transicao_estudo(TransicaoEstudo.INICIO_EXECUCAO_SUCESSO)
-        self._estudo.estado = EstadoEstudo.EXECUTANDO
-        self.callback_evento(TransicaoEstudo.INICIO_PROXIMO_CASO)
+        if handlers.atualiza(comando, self._estudo_uow):
+            self._transicao_estudo(TransicaoEstudo.INICIO_EXECUCAO_SUCESSO)
+            self.callback_evento(TransicaoEstudo.INICIO_PROXIMO_CASO)
 
     def _handler_inicio_execucao_erro(self):
-        Log.log().info(
-            f"Estudo {self._estudo.nome}: erro no início da execução"
-            + " do estudo."
-        )
+        Log.log().info("Estudo: erro no início da execução")
         self.callback_evento(TransicaoEstudo.ERRO)
 
     def _handler_concluido(self):
-        Log.log().info(f"Estudo {self._estudo.nome}: concluído.")
-        self._estudo.estado = EstadoEstudo.CONCLUIDO
-        self.__armazena_estudo()
-        self.__sintetiza_estudo()
+        Log.log().info("Estudo: concluído.")
+        comando = commands.AtualizaEstudo(
+            self._estudo_id, EstadoEstudo.CONCLUIDO
+        )
+        handlers.atualiza(comando, self._estudo_uow)
         self._transicao_estudo(TransicaoEstudo.CONCLUIDO)
 
     def _handler_erro(self):
-        Log.log().info(f"Estudo {self._estudo.nome}: erro.")
-        self._estudo.estado = EstadoEstudo.ERRO
+        Log.log().info("Estudo: erro.")
+        comando = commands.AtualizaEstudo(self._estudo_id, EstadoEstudo.ERRO)
+        handlers.atualiza(comando, self._estudo_uow)
         self._transicao_estudo(TransicaoEstudo.ERRO)
 
     def _handler_inicializado_caso(self):
-        Log.log().debug(f"Estudo {self._estudo.nome}: caso inicializado")
-        self._monitor_atual.prepara(
-            self._estudo.casos_concluidos, self._estudo._regras_reservatorio
-        )
+        Log.log().debug("Estudo: caso inicializado")
+        self._monitor_atual.prepara(self._regras_reservatorios)
 
     def _handler_inicio_proximo_caso(self):
         if self.__existe_proximo_caso():
@@ -204,58 +223,25 @@ class MonitorEstudo:
             self.callback_evento(TransicaoEstudo.CONCLUIDO)
 
     def _handler_prepara_execucao_solicitada_caso(self):
-        Log.log().debug(
-            f"Estudo {self._estudo.nome}: preparação da execução"
-            + " do caso solicitada"
-        )
+        Log.log().debug("Estudo: preparação da execução do caso solicitada")
 
     def _handler_prepara_execucao_sucesso_caso(self):
         Log.log().debug(
-            f"Estudo {self._estudo.nome}: caso preparado com sucesso."
-            + " Iniciando execução."
+            "Estudo: caso preparado com sucesso. Iniciando execução."
         )
         self._monitor_atual.inicia_execucao()
 
     def _handler_inicio_execucao_solicitada_caso(self):
-        Log.log().debug(
-            f"Estudo {self._estudo.nome}: início da execução"
-            + " do caso solicitada"
-        )
+        Log.log().debug("Estudo: início da execução do caso solicitada")
 
     def _handler_inicio_execucao_sucesso_caso(self):
-        sintetizador = SintetizadorEstudo(self._estudo)
-        sintetizador.sintetiza_proximo_caso(self._estudo.proximo_caso)
-        Log.log().info(f"Estudo {self._estudo.nome} - iniciando novo caso")
+        Log.log().info("Estudo: iniciando novo caso")
 
     def _handler_concluido_caso(self):
-        self.__armazena_estudo()
-        self.__sintetiza_estudo()
+        # TODO - sintetizar
         self.callback_evento(TransicaoEstudo.INICIO_PROXIMO_CASO)
 
     def _handler_erro_caso(self):
-        Log.log().error(
-            f"Estudo: {self._estudo.nome} - erro na execução do caso"
-        )
-        self.__armazena_estudo()
-        self.__sintetiza_estudo()
+        Log.log().error("Estudo: erro na execução do caso")
+        # TODO - sintetizar parcialmente
         self.callback_evento(TransicaoEstudo.ERRO)
-
-    def __armazena_estudo(self):
-        if not self._armazenador.armazena_estudo():
-            Log.log().error(
-                f"Estudo {self._estudo.nome}: Erro no armazenamento do estudo"
-                + f" - estado: {self._estudo.estado}."
-            )
-            self.callback_evento(TransicaoEstudo.ERRO)
-
-    def __sintetiza_estudo(self):
-        if not self._sintetizador.sintetiza_estudo():
-            Log.log().error(
-                f"Estudo {self._estudo.nome}: Erro na síntese do estudo - "
-                + f"estado: {self._estudo.estado}."
-            )
-            self.callback_evento(TransicaoEstudo.ERRO)
-
-    @property
-    def estudo(self) -> Estudo:
-        return self._estudo

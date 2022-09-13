@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, Integer, String, Enum
+from sqlalchemy import Table, Column, Integer, String, Enum  # type: ignore
 
 from encadeador.adapters.orm import registry
 from encadeador.modelos.estadoestudo import EstadoEstudo

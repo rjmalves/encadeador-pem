@@ -1,5 +1,5 @@
 from encadeador.adapters.orm import registry
-from sqlalchemy import (
+from sqlalchemy import (  # type: ignore
     Table,
     Column,
     Integer,

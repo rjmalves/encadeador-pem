@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch, mock_open
 
-from encadeador.modelos.caso2 import Caso
+from encadeador.modelos.caso import Caso
 from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.adapters.repository.caso import JSONCasoRepository
 from encadeador.modelos.programa import Programa

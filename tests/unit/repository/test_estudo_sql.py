@@ -1,6 +1,6 @@
 import pytest
 
-from encadeador.modelos.estudo2 import Estudo
+from encadeador.modelos.estudo import Estudo
 from encadeador.modelos.estadoestudo import EstadoEstudo
 from encadeador.adapters.repository.estudo import SQLEstudoRepository
 

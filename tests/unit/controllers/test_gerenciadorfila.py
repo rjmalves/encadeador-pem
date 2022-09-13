@@ -2,9 +2,9 @@ from unittest.mock import patch
 from datetime import datetime, timedelta
 from typing import List
 
-from encadeador.modelos.job2 import Job
+from encadeador.modelos.job import Job
 from encadeador.modelos.estadojob import EstadoJob
-from encadeador.controladores.gerenciadorfila2 import GerenciadorFilaSGE
+from encadeador.controladores.gerenciadorfila import GerenciadorFilaSGE
 
 
 @patch(

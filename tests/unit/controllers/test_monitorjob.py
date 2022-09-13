@@ -2,11 +2,11 @@ from unittest.mock import MagicMock, patch
 from datetime import datetime, timedelta
 from typing import List
 
-from encadeador.modelos.job2 import Job
+from encadeador.modelos.job import Job
 from encadeador.modelos.estadojob import EstadoJob
 from encadeador.modelos.transicaojob import TransicaoJob
 from encadeador.services.unitofwork.job import JSONJobUnitOfWork
-from encadeador.controladores.monitorjob2 import MonitorJob
+from encadeador.controladores.monitorjob import MonitorJob
 
 
 def test_inicializa_monitor_job():

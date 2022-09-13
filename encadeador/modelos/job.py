@@ -1,9 +1,7 @@
-from time import time
-from typing import Dict, Any
+from datetime import datetime, timedelta
+from typing import Optional
 
-from encadeador.modelos.dadosjob import DadosJob
 from encadeador.modelos.estadojob import EstadoJob
-from encadeador.utils.log import Log
 
 
 class Job:
@@ -12,63 +10,95 @@ class Job:
     pelo gerenciador de filas de processos no cluster. É responsável
     apenas por guardar informações do estado do job e estatísticas de
     execução, mas não por enviar e interpretar comandos.
-    Junto com a classe DadosJob, implementa o padrão Proxy, na forma de
-    proteção de acesso (protection proxy).
     """
 
     def __init__(
-        self, dados: DadosJob, estado: EstadoJob = EstadoJob.NAO_INICIADO
+        self,
+        _codigo: int,
+        _nome: str,
+        _caminho: str,
+        _instante_entrada_fila: datetime,
+        _instante_inicio_execucao: datetime,
+        _instante_saida_fila: datetime,
+        _numero_processadores: int,
+        _estado: EstadoJob,
+        _id_caso: int,
     ):
-        self._dados = dados
-        self._estado = estado
+        self._id = None
+        self._codigo = _codigo
+        self._nome = _nome
+        self._caminho = str(_caminho)
+        self._instante_entrada_fila = _instante_entrada_fila
+        self._instante_inicio_execucao = _instante_inicio_execucao
+        self._instante_saida_fila = _instante_saida_fila
+        self._numero_processadores = _numero_processadores
+        self._estado = _estado
+        self._id_caso = _id_caso
 
-    @staticmethod
-    def from_json(json_dict: Dict[str, Any]):
-        dados = DadosJob.from_json(json_dict["_dados"])
-        estado = EstadoJob.factory(json_dict["_estado"])
-        job = Job(dados, estado)
-        return job
+    def __eq__(self, o: object):
+        if not isinstance(o, Job):
+            return False
+        return all(
+            [
+                self.id == o.id,
+                self.codigo == o.codigo,
+                self.nome == o.nome,
+                self.caminho == o.caminho,
+                self._instante_entrada_fila == o._instante_entrada_fila,
+                self._instante_inicio_execucao == o._instante_inicio_execucao,
+                self._instante_saida_fila == o._instante_saida_fila,
+                self.numero_processadores == o.numero_processadores,
+                self.estado == o.estado,
+                self._id_caso == o._id_caso,
+            ]
+        )
 
-    def to_json(self) -> Dict[str, Any]:
-        return {
-            "_dados": self._dados.to_json(),
-            "_estado": str(self._estado.value),
-        }
+    def __gt__(self, o: object):
+        if not isinstance(o, Job):
+            raise TypeError
+        return self._instante_entrada_fila > o._instante_entrada_fila
 
-    def atualiza(self, estado: EstadoJob):
-        Log.log().debug(f"Job: {self._dados.nome} - estado -> {estado.value}")
+    def atualiza(self, estado: EstadoJob, t: Optional[datetime] = None):
         self.estado = estado
-        t = time()
+        t = datetime.now() if t is None else t
         if self.estado == EstadoJob.ESPERANDO:
-            self._dados.instante_entrada_fila = t
+            self._instante_entrada_fila = t
         elif self.estado == EstadoJob.EXECUTANDO:
-            self._dados.instante_inicio_execucao = t
-        elif self.estado in [EstadoJob.FINALIZADO, EstadoJob.ERRO]:
-            self._dados.instante_saida_fila = t
+            self._instante_inicio_execucao = t
+        elif self.estado == EstadoJob.FINALIZADO:
+            self._instante_saida_fila = t
 
     @property
-    def id(self) -> str:
-        return self._dados.id
+    def id(self) -> Optional[int]:
+        return self._id
 
-    @id.setter
-    def id(self, i: str):
-        self._dados.id = i
+    @property
+    def codigo(self) -> int:
+        return self._codigo
+
+    @codigo.setter
+    def codigo(self, c: int):
+        self._codigo = c
 
     @property
     def nome(self) -> str:
-        return self._dados.nome
+        return self._nome
+
+    @nome.setter
+    def nome(self, n: str):
+        self._nome = n
 
     @property
     def caminho(self) -> str:
-        return self._dados.caminho
+        return self._caminho
 
     @property
     def numero_processadores(self) -> int:
-        return self._dados.numero_processadores
+        return self._numero_processadores
 
     @numero_processadores.setter
     def numero_processadores(self, n: int):
-        self._dados.numero_processadores = n
+        self._numero_processadores = n
 
     @property
     def estado(self) -> EstadoJob:
@@ -79,25 +109,29 @@ class Job:
         self._estado = e
 
     @property
-    def tempo_fila(self) -> float:
-        if self.estado == EstadoJob.NAO_INICIADO:
-            return 0.0
-        elif self.estado == EstadoJob.ESPERANDO:
-            return time() - self._dados.instante_entrada_fila
+    def tempo_fila(self) -> timedelta:
+        if self._estado == EstadoJob.NAO_INICIADO:
+            return timedelta()
+        elif self._estado == EstadoJob.ESPERANDO:
+            return datetime.now() - self._instante_entrada_fila
         else:
-            return (
-                self._dados.instante_inicio_execucao
-                - self._dados.instante_entrada_fila
-            )
+            return self._instante_inicio_execucao - self._instante_entrada_fila
 
     @property
-    def tempo_execucao(self) -> float:
-        if self.estado in [EstadoJob.NAO_INICIADO, EstadoJob.ESPERANDO]:
-            return 0.0
-        elif self.estado in [EstadoJob.EXECUTANDO, EstadoJob.ERRO]:
-            return time() - self._dados.instante_entrada_fila
+    def tempo_execucao(self) -> timedelta:
+        if self._estado in [EstadoJob.NAO_INICIADO, EstadoJob.ESPERANDO]:
+            return timedelta()
+        elif self._estado == EstadoJob.EXECUTANDO:
+            return datetime.now() - self._instante_entrada_fila
         else:
-            return (
-                self._dados.instante_saida_fila
-                - self._dados.instante_inicio_execucao
-            )
+            return self._instante_saida_fila - self._instante_inicio_execucao
+
+    @property
+    def ativo(self) -> bool:
+        return self.estado in [
+            EstadoJob.ESPERANDO,
+            EstadoJob.EXECUTANDO,
+            EstadoJob.ERRO,
+            EstadoJob.TIMEOUT,
+            EstadoJob.DELETANDO,
+        ]

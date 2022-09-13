@@ -19,4 +19,5 @@ if __name__ == "__main__":
     Configuracoes.le_variaveis_ambiente()
 
     app = App()
+    app.inicializa()
     app.executa()

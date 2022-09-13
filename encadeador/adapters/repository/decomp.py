@@ -88,7 +88,7 @@ class FSDecompRepository(AbstractDecompRepository):
     def get_relato(self) -> Relato:
         return Relato.le_arquivo(self.__path, f"relato.{self.__caso.arquivos}")
 
-    def get_relato(self) -> RelGNL:
+    def get_relgnl(self) -> RelGNL:
         return RelGNL.le_arquivo(self.__path, f"relgnl.{self.__caso.arquivos}")
 
 

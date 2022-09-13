@@ -1,0 +1,2 @@
+class RegraInviabilidade:
+    pass

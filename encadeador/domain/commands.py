@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 from typing import List
-from encadeador.modelos.caso2 import Caso
 from encadeador.modelos.estadocaso import EstadoCaso
-
+from encadeador.modelos.estadoestudo import EstadoEstudo
 from encadeador.modelos.regrareservatorio import RegraReservatorio
 
 
@@ -39,40 +38,79 @@ class CriaCaso(Command):
 
 @dataclass
 class InicializaCaso(Command):
-    id_caso: str
+    id_caso: int
 
 
 @dataclass
 class PreparaCaso(Command):
-    id_caso: str
+    id_caso: int
     # TODO - não passar mais por aqui. Está ruim.
     regras_reservatorios: List[RegraReservatorio]
 
 
 @dataclass
 class SubmeteCaso(Command):
-    id_caso: str
+    id_caso: int
     gerenciador: str
 
 
 @dataclass
 class MonitoraCaso(Command):
-    id_caso: str
+    id_caso: int
     gerenciador: str
 
 
 @dataclass
 class AtualizaCaso(Command):
-    id_caso: str
+    id_caso: int
     estado: EstadoCaso
 
 
 @dataclass
 class AvaliaCaso(Command):
-    id_caso: str
+    id_caso: int
 
 
 @dataclass
 class FlexibilizaCaso(Command):
-    id_caso: str
+    id_caso: int
     max_flex: int
+
+
+@dataclass
+class CorrigeErroConvergenciaCaso(Command):
+    id_caso: int
+
+
+@dataclass
+class FlexibilizaCriterioConvergenciaCaso(Command):
+    id_caso: int
+
+
+@dataclass
+class CriaEstudo(Command):
+    caminho: str
+    nome: str
+
+
+@dataclass
+class InicializaEstudo(Command):
+    id_estudo: int
+    diretorios_casos: List[str]
+
+
+@dataclass
+class PreparaEstudo(Command):
+    id_estudo: int
+
+
+@dataclass
+class MonitoraEstudo(Command):
+    id_caso: int
+    gerenciador: str
+
+
+@dataclass
+class AtualizaEstudo(Command):
+    id_estudo: int
+    estado: EstadoEstudo

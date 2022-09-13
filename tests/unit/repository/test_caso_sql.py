@@ -1,7 +1,7 @@
 import pytest
 
-from encadeador.modelos.caso2 import Caso
-from encadeador.modelos.estudo2 import Estudo
+from encadeador.modelos.caso import Caso
+from encadeador.modelos.estudo import Estudo
 from encadeador.modelos.programa import Programa
 from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.modelos.estadoestudo import EstadoEstudo

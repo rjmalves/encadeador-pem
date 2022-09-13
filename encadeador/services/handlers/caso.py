@@ -1,13 +1,13 @@
 from typing import Optional
-from encadeador.controladores.flexibilizadorcaso2 import Flexibilizador
-from encadeador.controladores.monitorjob2 import MonitorJob
-from encadeador.controladores.preparadorcaso2 import PreparadorCaso
-from encadeador.controladores.avaliadorcaso2 import AvaliadorCaso
+from encadeador.controladores.flexibilizadorcaso import Flexibilizador
+from encadeador.controladores.monitorjob import MonitorJob
+from encadeador.controladores.preparadorcaso import PreparadorCaso
+from encadeador.controladores.avaliadorcaso import AvaliadorCaso
 
 from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.modelos.transicaocaso import TransicaoCaso
 from encadeador.services.unitofwork.caso import AbstractCasoUnitOfWork
-from encadeador.modelos.caso2 import Caso
+from encadeador.modelos.caso import Caso
 import encadeador.domain.commands as commands
 from encadeador.domain.programs import ProgramRules
 
@@ -108,13 +108,16 @@ def monitora(
         monitor.monitora(command.gerenciador)
 
 
-def atualiza(command: commands.AtualizaCaso, uow: AbstractCasoUnitOfWork):
+def atualiza(
+    command: commands.AtualizaCaso, uow: AbstractCasoUnitOfWork
+) -> bool:
     with uow:
         caso = uow.casos.read(command.id_caso)
         if caso is not None:
             caso.estado = command.estado
             uow.casos.update(caso)
             uow.commit()
+        return caso is not None
 
 
 def avalia(
@@ -132,11 +135,31 @@ def flexibiliza(
 ) -> Optional[TransicaoCaso]:
     with uow:
         caso = uow.casos.read(command.id_caso)
-        if caso.numero_flexibilizacoes < command.max_flex:
-            flexibilizador = Flexibilizador.factory(caso)
-            if flexibilizador.flexibiliza():
-                return TransicaoCaso.FLEXIBILIZACAO_SUCESSO
+        if caso is not None:
+            if caso.numero_flexibilizacoes < command.max_flex:
+                flexibilizador = Flexibilizador.factory(caso)
+                if flexibilizador.flexibiliza():
+                    return TransicaoCaso.FLEXIBILIZACAO_SUCESSO
+                else:
+                    return TransicaoCaso.FLEXIBILIZACAO_ERRO
             else:
-                return TransicaoCaso.FLEXIBILIZACAO_ERRO
-        else:
-            return TransicaoCaso.ERRO_MAX_FLEX
+                return TransicaoCaso.ERRO_MAX_FLEX
+
+
+def corrige_erro_convergencia(
+    command: commands.CorrigeErroConvergenciaCaso, uow: AbstractCasoUnitOfWork
+) -> bool:
+    with uow:
+        caso = uow.casos.read(command.id_caso)
+        preparador = PreparadorCaso.factory(caso, [])
+        return preparador.corrige_erro_convergencia()
+
+
+def flexibiliza_criterio_convergencia(
+    command: commands.FlexibilizaCriterioConvergenciaCaso,
+    uow: AbstractCasoUnitOfWork,
+) -> bool:
+    with uow:
+        caso = uow.casos.read(command.id_caso)
+        preparador = PreparadorCaso.factory(caso, [])
+        return preparador.flexibiliza_criterio_convergencia()

@@ -18,3 +18,5 @@ class TransicaoCaso(Enum):
     ERRO = auto()
     ERRO_MAX_FLEX = auto()
     ERRO_DADOS = auto()
+    ERRO_CONVERGENCIA = auto()
+    NAO_CONVERGIU = auto()

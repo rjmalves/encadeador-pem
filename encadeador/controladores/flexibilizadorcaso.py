@@ -1,13 +1,11 @@
 from abc import abstractmethod
 from typing import List
-from idecomp.decomp.inviabunic import InviabUnic
-from idecomp.decomp.dadger import Dadger
-from idecomp.decomp.hidr import Hidr
-from idecomp.decomp.relato import Relato
 
-from encadeador.modelos.caso import Caso, CasoDECOMP
+from encadeador.services.unitofwork.decomp import factory as dc_uow_factory
+from encadeador.modelos.caso import Caso
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.inviabilidade import Inviabilidade
+from encadeador.modelos.programa import Programa
 from encadeador.modelos.regraflexibilizacao import RegraFlexibilizacao
 from encadeador.utils.log import Log
 
@@ -18,22 +16,28 @@ class Flexibilizador:
 
     @staticmethod
     def factory(caso: Caso) -> "Flexibilizador":
-        if isinstance(caso, CasoDECOMP):
+        if caso.programa == Programa.NEWAVE:
+            return FlexibilizadorNEWAVE(caso)
+        if caso.programa == Programa.DECOMP:
             return FlexibilizadorDECOMP(caso)
-        else:
-            raise TypeError(
-                f"Caso do tipo {type(caso)} "
-                + "não suportado para encadeamento"
-            )
 
     @abstractmethod
     def flexibiliza(self) -> bool:
-        raise RuntimeError("Não se deve flexibilizar NEWAVE")
+        raise NotImplementedError
+
+
+class FlexibilizadorNEWAVE(Flexibilizador):
+    def __init__(self, caso: Caso):
+        super().__init__(caso)
+
+    def flexibiliza(self) -> bool:
+        raise NotImplementedError
 
 
 class FlexibilizadorDECOMP(Flexibilizador):
     def __init__(self, caso: Caso):
         super().__init__(caso)
+        self._uow = dc_uow_factory("FS", caso.caminho)
 
     def flexibiliza(self) -> bool:
         max_flex = Configuracoes().maximo_flexibilizacoes_revisao
@@ -41,38 +45,31 @@ class FlexibilizadorDECOMP(Flexibilizador):
             f"Flexibilizando caso {self._caso.nome}: "
             + f"{self._caso.numero_flexibilizacoes } de {max_flex}"
         )
-        try:
-            # Lê o inviab_unic.rvX
-            arq_inviab = f"inviab_unic.rv{self._caso.revisao}"
-            inviab = InviabUnic.le_arquivo(self._caso.caminho, arq_inviab)
-            Log.log().info(f"Arquivo {arq_inviab} lido com sucesso")
-            # Lê o dadger.rvX
-            arq_dadger = f"dadger.rv{self._caso.revisao}"
-            dadger = Dadger.le_arquivo(self._caso.caminho, arq_dadger)
-            Log.log().info(f"Arquivo {arq_dadger} lido com sucesso")
-            # Lê o hidr.dat
-            hidr = Hidr.le_arquivo(self._caso.caminho)
-            Log.log().info("Arquivo hidr.dat lido com sucesso")
-            # Lê o relato.rvX
-            arq_relato = f"relato.rv{self._caso.revisao}"
-            relato = Relato.le_arquivo(self._caso.caminho, arq_relato)
-            # Cria as inviabilidades
-            inviabilidades: List[Inviabilidade] = []
-            for _, linha in inviab.inviabilidades_simulacao_final.iterrows():
-                inv = Inviabilidade.factory(linha, hidr, relato)
-                Log.log().info(inv)
-                inviabilidades.append(inv)
-            Log.log().info("Inviabilidades processadas com sucesso")
-            # Cria a regra de flexibilização
-            metodo_flex = Configuracoes().metodo_flexibilizacao
-            regra = RegraFlexibilizacao.factory(metodo_flex)
-            # Flexibiliza
-            regra.flexibiliza(dadger, inviabilidades)
-            Log.log().info("Inviabilidades flexibilizadas")
-            # Escreve o dadger.rvX de saída
-            dadger.escreve_arquivo(self._caso.caminho, arq_dadger)
-            Log.log().info(f"Arquivo {arq_dadger} escrito com sucesso")
-            return True
-        except Exception as e:
-            Log.log().error(e)
-            return False
+        with self._uow:
+            try:
+                inviab = self._uow.decomp.get_inviab()
+                dadger = self._uow.decomp.get_dadger()
+                hidr = self._uow.decomp.get_hidr()
+                relato = self._uow.decomp.get_relato()
+                # Cria as inviabilidades
+                inviabilidades: List[Inviabilidade] = []
+                for (
+                    _,
+                    linha,
+                ) in inviab.inviabilidades_simulacao_final.iterrows():
+                    inv = Inviabilidade.factory(linha, hidr, relato)
+                    Log.log().info(inv)
+                    inviabilidades.append(inv)
+                Log.log().info("Inviabilidades processadas com sucesso")
+                # Cria a regra de flexibilização
+                metodo_flex = Configuracoes().metodo_flexibilizacao
+                regra = RegraFlexibilizacao.factory(metodo_flex)
+                # Flexibiliza
+                regra.flexibiliza(dadger, inviabilidades)
+                Log.log().info("Inviabilidades flexibilizadas")
+                # Escreve o dadger.rvX de saída
+                self._uow.decomp.set_dadger(dadger)
+            except Exception as e:
+                Log.log().exception(e)
+                return False
+        return True

@@ -1,9 +1,9 @@
 import pytest
 from datetime import datetime, timedelta
 
-from encadeador.modelos.job2 import Job
-from encadeador.modelos.caso2 import Caso
-from encadeador.modelos.estudo2 import Estudo
+from encadeador.modelos.job import Job
+from encadeador.modelos.caso import Caso
+from encadeador.modelos.estudo import Estudo
 from encadeador.modelos.programa import Programa
 from encadeador.modelos.estadojob import EstadoJob
 from encadeador.modelos.estadocaso import EstadoCaso

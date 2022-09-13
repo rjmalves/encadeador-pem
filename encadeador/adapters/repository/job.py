@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from sqlalchemy import select, update, delete
-from sqlalchemy.orm import Session
+from sqlalchemy import select, update, delete  # type: ignore
+from sqlalchemy.orm import Session  # type: ignore
 from typing import List, Dict, Optional
 from pathlib import Path
 from os.path import exists
@@ -8,7 +8,7 @@ from os import makedirs
 from json import dump, load
 from datetime import datetime
 
-from encadeador.modelos.job2 import Job
+from encadeador.modelos.job import Job
 from encadeador.modelos.estadojob import EstadoJob
 
 

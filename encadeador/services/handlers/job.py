@@ -1,9 +1,9 @@
 from typing import Callable, Optional
 
-from encadeador.controladores.gerenciadorfila2 import GerenciadorFila
+from encadeador.controladores.gerenciadorfila import GerenciadorFila
 from encadeador.modelos.estadojob import EstadoJob
 from encadeador.services.unitofwork.job import AbstractJobUnitOfWork
-from encadeador.modelos.job2 import Job
+from encadeador.modelos.job import Job
 import encadeador.domain.commands as commands
 
 
