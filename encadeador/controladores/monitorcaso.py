@@ -363,7 +363,9 @@ class MonitorNEWAVE(MonitorCaso):
         versao = Configuracoes().versao_newave
         dir_versao = join(dir_base, versao)
         arquivos_versao = listdir(dir_versao)
-        arq_job = [a for a in arquivos_versao if ".job" in a]
+        arq_job = [
+            a for a in arquivos_versao if ".job" in a and "mpi_newave" in a
+        ]
         return join(dir_versao, arq_job[0])
 
     # Override
@@ -452,7 +454,9 @@ class MonitorDECOMP(MonitorCaso):
         versao = Configuracoes().versao_decomp
         dir_versao = join(dir_base, versao)
         arquivos_versao = listdir(dir_versao)
-        arq_job = [a for a in arquivos_versao if ".job" in a]
+        arq_job = [
+            a for a in arquivos_versao if ".job" in a and "mpi_decomp" in a
+        ]
         return join(dir_versao, arq_job[0])
 
     # Override
