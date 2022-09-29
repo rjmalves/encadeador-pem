@@ -4,6 +4,7 @@ from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.modelos.estadoestudo import EstadoEstudo
 from encadeador.modelos.estudo import Estudo
 from encadeador.controladores.monitorcaso import MonitorCaso
+from encadeador.controladores.sintetizadorestudo import SintetizadorEstudo
 from encadeador.services.unitofwork.caso import AbstractCasoUnitOfWork
 from encadeador.services.unitofwork.estudo import AbstractEstudoUnitOfWork
 import encadeador.services.handlers.caso as handlers_caso
@@ -71,3 +72,14 @@ def atualiza(
             estudo.estado = command.estado
             uow.estudos.update(estudo)
         return estudo is not None
+
+
+def sintetiza(
+    command: commands.SintetizaEstudo, uow: AbstractEstudoUnitOfWork
+) -> bool:
+    with uow:
+        estudo = uow.estudos.read(command.id_estudo)
+    if estudo is not None:
+        sintetizador = SintetizadorEstudo(estudo)
+        return sintetizador.sintetiza_estudo()
+    return False

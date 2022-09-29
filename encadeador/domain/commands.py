@@ -88,6 +88,12 @@ class FlexibilizaCriterioConvergenciaCaso(Command):
 
 
 @dataclass
+class SintetizaCaso(Command):
+    id_caso: int
+    comando: str
+
+
+@dataclass
 class CriaEstudo(Command):
     caminho: str
     nome: str
@@ -114,3 +120,8 @@ class MonitoraEstudo(Command):
 class AtualizaEstudo(Command):
     id_estudo: int
     estado: EstadoEstudo
+
+
+@dataclass
+class SintetizaEstudo(Command):
+    id_estudo: int

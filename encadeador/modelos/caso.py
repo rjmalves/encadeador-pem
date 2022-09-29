@@ -58,7 +58,20 @@ class Caso:
     def __ge__(self, o: object):
         if not isinstance(o, Caso):
             return False
-        return datetime(self.ano, self.mes, 1) >= datetime(o.ano, o.mes, 1)
+        data_caso = datetime(self.ano, self.mes, 1)
+        data_o = datetime(o.ano, o.mes, 1)
+        if data_caso == data_o:
+            if self.revisao == o.revisao:
+                if (self.programa == Programa.DECOMP) and (o.programa == Programa.NEWAVE):
+                    return True
+                elif self.programa == o.programa:
+                    return True
+                else:
+                    return False
+            else:
+                return self.revisao >= o.revisao
+        else:
+            return data_caso >= data_o
 
     def adiciona_job(self, job: Job):
         if len(self._jobs) > 0:

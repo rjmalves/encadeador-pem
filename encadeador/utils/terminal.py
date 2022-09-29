@@ -10,7 +10,7 @@ TIMEOUT_DEFAULT = 10
 
 
 def executa_terminal_retry(
-    cmds: List[str], num_retry: int = NUM_RETRY_DEFAULT
+    cmds: List[str], num_retry: int = NUM_RETRY_DEFAULT, timeout: float = TIMEOUT_DEFAULT
 ) -> Tuple[int, List[str]]:
     """
     Executa um comando no terminal e obtém as saídas e o código
@@ -24,7 +24,7 @@ def executa_terminal_retry(
     :rtype: Tuple[int, List[str]]
     """
     for _ in range(num_retry):
-        cod, saidas = executa_terminal(cmds)
+        cod, saidas = executa_terminal(cmds, timeout)
         if cod == 0:
             return cod, saidas
     return -1, []

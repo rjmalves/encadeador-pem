@@ -117,7 +117,7 @@ class FSNewaveRepository(AbstractNewaveRepository):
 
     @abstractmethod
     def get_hidr(self) -> Hidr:
-        return DGer.le_arquivo(self.__path, "hidr.dat")
+        return Hidr.le_arquivo(self.__path, "hidr.dat")
 
     def get_cvar(self) -> CVAR:
         return CVAR.le_arquivo(self.__path, self.arquivos.cvar)

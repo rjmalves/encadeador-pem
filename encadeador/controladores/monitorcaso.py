@@ -263,10 +263,15 @@ class MonitorCaso:
 
     def _handler_erro_convergencia(self):
         Log.log().info(f"Caso {self._caso_id}: erro na convergência")
+
         comando = commands.CorrigeErroConvergenciaCaso(self._caso_id)
         if handlers.corrige_erro_convergencia(comando, self._caso_uow):
             self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
         else:
+            comando = commands.AtualizaCaso(
+                self._caso_id, EstadoCaso.ERRO_EXECUCAO
+            )
+            handlers.atualiza(comando, self._caso_uow)
             self.callback_evento(TransicaoCaso.ERRO)
 
     def _handler_nao_convergiu(self):
@@ -275,6 +280,10 @@ class MonitorCaso:
         if handlers.flexibiliza_criterio_convergencia(comando, self._caso_uow):
             self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
         else:
+            comando = commands.AtualizaCaso(
+                self._caso_id, EstadoCaso.ERRO_PREPARACAO
+            )
+            handlers.atualiza(comando, self._caso_uow)
             self.callback_evento(TransicaoCaso.ERRO)
 
     def _handler_erro_max_flex(self):
@@ -289,6 +298,10 @@ class MonitorCaso:
 
     def _handler_timeout_execucao(self):
         Log.log().debug(f"Caso {self._caso_id}: timeout durante a execução")
+        comando = commands.AtualizaCaso(
+            self._caso_id, EstadoCaso.ERRO_COMUNICACAO
+        )
+        handlers.atualiza(comando, self._caso_uow)
         self._monitor_job_atual.deleta()
 
     def _handler_fim_execucao_job(self):
@@ -296,6 +309,8 @@ class MonitorCaso:
         comando = commands.AvaliaCaso(self._caso_id)
         ret = handlers.avalia(comando, self._caso_uow)
         if ret is None:
+            comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.ERRO)
+            handlers.atualiza(comando, self._caso_uow)
             self.callback_evento(TransicaoCaso.ERRO)
         else:
             self.callback_evento(ret)
@@ -305,9 +320,12 @@ class MonitorCaso:
         comando = commands.FlexibilizaCaso(
             self._caso_id, Configuracoes().maximo_flexibilizacoes_revisao
         )
-        # TODO - sintetizar
+        comando_sintese = commands.SintetizaCaso(self._caso_id, "execucao")
+        handlers.sintetiza(comando_sintese, self._caso_uow)
         ret = handlers.flexibiliza(comando, self._caso_uow)
         if ret is None:
+            comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.ERRO)
+            handlers.atualiza(comando, self._caso_uow)
             self.callback_evento(TransicaoCaso.ERRO)
         else:
             self.callback_evento(ret)
@@ -328,7 +346,8 @@ class MonitorCaso:
         Log.log().info(f"Caso {self._caso_id}: caso concluído.")
         comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.CONCLUIDO)
         handlers.atualiza(comando, self._caso_uow)
-        # TODO - sintetizar
+        comando_sintese = commands.SintetizaCaso(self._caso_id, "completa")
+        handlers.sintetiza(comando_sintese, self._caso_uow)
         self._transicao_caso(TransicaoCaso.CONCLUIDO)
 
     def _handler_erro(self):

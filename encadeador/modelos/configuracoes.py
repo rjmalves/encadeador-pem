@@ -46,8 +46,10 @@ class Configuracoes(metaclass=Singleton):
         self._maximo_iteracoes_decomp = None
         self._fator_aumento_gap_decomp = None
         self._gap_maximo_decomp = None
+        self._formato_armazenamento_dados = None
+        self._diretorio_sintese = None
+        self._formato_sintese = None
         self._script_converte_codificacao = None
-        self._modo_armazenamento_dados = None
         self._arquivo_regras_operacao_reservatorios = None
         self._arquivo_regras_flexibilizacao_inviabilidades = None
 
@@ -87,7 +89,9 @@ class Configuracoes(metaclass=Singleton):
             .fator_aumento_gap_decomp("FATOR_AUMENTO_GAP_DECOMP")
             .gap_maximo_decomp("GAP_MAXIMO_DECOMP")
             .script_converte_codificacao("SCRIPT_CONVERTE_CODIFICACAO")
-            .modo_armazenamento_dados("MODO_ARMAZENAMENTO_DADOS")
+            .formato_armazenamento_dados("FORMATO_ARMAZENAMENTO_DADOS")
+            .diretorio_sintese("DIRETORIO_SINTESE")
+            .formato_sintese("FORMATO_SINTESE")
             .arquivo_regras_operacao_reservatorios(
                 "ARQUIVO_REGRAS_OPERACAO_RESERVATORIOS"
             )
@@ -284,13 +288,12 @@ class Configuracoes(metaclass=Singleton):
         return self._cvar
 
     @property
-    def opcao_parpa(self) -> List[int]:
+    def opcao_parpa(self) -> int:
         """
-        Opção de PAR(p)-A utilizada para substituir no arquivo dger.dat e
-        o uso, ou não, da redução automática da ordem.
+        Opção de PAR(p)-A utilizada para substituir no arquivo dger.dat.
 
-        :return: O par de opções para uso no dger.dat.
-        :rtype: List[int]
+        :return: O tipo de modelo PAR(p) no dger.dat.
+        :rtype: int
         """
         return self._opcao_parpa
 
@@ -353,11 +356,25 @@ class Configuracoes(metaclass=Singleton):
         return self._script_converte_codificacao
 
     @property
-    def modo_armazenamento_dados(self) -> str:
+    def formato_armazenamento_dados(self) -> str:
         """
-        Configuração do modo de armazenamento de dados utilizado.
+        Configuração do formato de armazenamento de dados utilizado.
         """
-        return self._modo_armazenamento_dados
+        return self._formato_armazenamento_dados
+
+    @property
+    def diretorio_sintese(self) -> str:
+        """
+        Configuração do nome do diretório utilizado para síntese.
+        """
+        return self._diretorio_sintese
+
+    @property
+    def formato_sintese(self) -> str:
+        """
+        Configuração do formato de saída utilizado para a síntese.
+        """
+        return self._formato_sintese
 
     @property
     def arquivo_regras_operacao_reservatorios(self) -> str:
@@ -508,7 +525,15 @@ class BuilderConfiguracoes:
         raise NotImplementedError()
 
     @abstractmethod
-    def modo_armazenamento_dados(self, variavel: str):
+    def formato_armazenamento_dados(self, variavel: str):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def diretorio_sintese(self, variavel: str):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def formato_sintese(self, variavel: str):
         raise NotImplementedError()
 
     @abstractmethod
@@ -821,19 +846,8 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
 
     def opcao_parpa(self, variavel: str):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
-        valor = valor.split(",")
-        # Verifica se todos os valores são inteiros
-        if len(valor) != 2:
-            raise ValueError(
-                "Devem ser informados apenas 2 valores "
-                + f" como opção de PAR(p)-A, não {len(valor)}."
-            )
-        if not all([v.isnumeric() for v in valor]):
-            raise ValueError(
-                "Devem ser informados parâmetros inteiros"
-                + f" para o PAR(p)-A, não {valor}."
-            )
-        self._configuracoes._opcao_parpa = [int(v) for v in valor]
+        valor = BuilderConfiguracoesENV.__valida_int(valor)
+        self._configuracoes._opcao_parpa = valor
         # Fluent method
         return self
 
@@ -898,7 +912,7 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         # Fluent method
         return self
 
-    def modo_armazenamento_dados(self, variavel: str):
+    def formato_armazenamento_dados(self, variavel: str):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
         # Confere se as variáveis está dentro das: JSON, SQL
         variaveis_validas = set(["", "JSON", "SQL"])
@@ -908,7 +922,30 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
                 + " é inválido. "
                 + " Válidos: JSON, SQL"
             )
-        self._configuracoes._modo_armazenamento_dados = valor
+        self._configuracoes._formato_armazenamento_dados = valor
+        # Fluent method
+        return self
+
+    def diretorio_sintese(self, variavel: str):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        # Confere se a variável é válida
+        if not re.match(BuilderConfiguracoesENV.regex_alfanum, valor):
+            raise ValueError(f"Nome de arquivo {valor} inválido.")
+        self._configuracoes._diretorio_sintese = valor
+        # Fluent method
+        return self
+
+    def formato_sintese(self, variavel: str):
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        # Confere se a variável é válida
+        variaveis_validas = set(["PARQUET", "CSV"])
+        if valor in variaveis_validas:
+            raise ValueError(
+                f"Formato de síntese informado {valor}"
+                + " é inválido. "
+                + " Válidos: PARQUET, CSV"
+            )
+        self._configuracoes._formato_sintese = valor
         # Fluent method
         return self
 

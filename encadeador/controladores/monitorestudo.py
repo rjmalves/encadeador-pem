@@ -238,10 +238,10 @@ class MonitorEstudo:
         Log.log().info("Estudo: iniciando novo caso")
 
     def _handler_concluido_caso(self):
-        # TODO - sintetizar
+        comando = commands.SintetizaEstudo(self._estudo_id)
+        handlers.sintetiza(comando, self._estudo_uow)
         self.callback_evento(TransicaoEstudo.INICIO_PROXIMO_CASO)
 
     def _handler_erro_caso(self):
         Log.log().error("Estudo: erro na execução do caso")
-        # TODO - sintetizar parcialmente
         self.callback_evento(TransicaoEstudo.ERRO)

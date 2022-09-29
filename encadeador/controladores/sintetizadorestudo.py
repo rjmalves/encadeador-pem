@@ -1,69 +1,157 @@
-from os.path import join
-from typing import Optional
+from os.path import join, isdir
+from os import makedirs
+from typing import List
 import pandas as pd  # type: ignore
 
 from encadeador.modelos.caso import Caso
 from encadeador.modelos.configuracoes import Configuracoes
-from encadeador.modelos.dadoscaso import NOME_ARQUIVO_ESTADO
 from encadeador.modelos.estudo import Estudo
+from encadeador.modelos.programa import Programa
 from encadeador.utils.log import Log
-from encadeador.utils.io import escreve_df_em_csv, escreve_arquivo_json
+from encadeador.adapters.repository.synthesis import (
+    factory as synthesis_factory,
+)
 
-ARQUIVO_PROXIMO_CASO = "proximo_caso.json"
-ARQUIVO_RESUMO_NEWAVES = "newaves_encadeados.csv"
-ARQUIVO_RESUMO_DECOMPS = "decomps_encadeados.csv"
-ARQUIVO_RESUMO_RESERVATORIOS = "reservatorios_encadeados.csv"
-ARQUIVO_RESUMO_DEFLUENCIAS = "defluencias_encadeadas.csv"
-ARQUIVO_CONVERGENCIA_NEWAVES = "convergencia_newaves.csv"
-ARQUIVO_CONVERGENCIA_DECOMPS = "convergencia_decomps.csv"
-ARQUIVO_INVIABILIDADES_DECOMPS = "inviabilidades_decomps.csv"
+VARIAVEIS_GERAIS = ["CONVERGENCIA", "TEMPO"]
+VARIAVEIS_INVIABILIDADES = [
+    "INVIABILIDADES_CODIGO",
+    "INVIABILIDADES_PATAMAR",
+    "INVIABILIDADES_PATAMAR_LIMITE",
+    "INVIABILIDADES_LIMITE",
+    "INVIABILIDADES_SBM_PATAMAR",
+]
+VARIAVEIS_OPERACAO_NEWAVE = ["EARMF_SBM_EST"]
+VARIAVEIS_OPERACAO_DECOMP = ["EARMF_SBM_EST"]
+QUANTIS = [0.1, 0.9]
+
+COLUNAS_FILTRO = [
+    "Submercado",
+    "Submercado De",
+    "Submercado Para",
+    "REE",
+    "Usina",
+    "Patamar",
+    "Estagio",
+    "Data Inicio",
+    "Data Fim",
+]
 
 
 class SintetizadorEstudo:
     def __init__(self, estudo: Estudo) -> None:
         self._estudo = estudo
+        self._diretorio_sintese = join(
+            Configuracoes().caminho_base_estudo,
+            Configuracoes().diretorio_sintese,
+        )
+        self._diretorio_newave = join(
+            self._diretorio_sintese, Configuracoes().nome_diretorio_newave
+        )
+        self._diretorio_decomp = join(
+            self._diretorio_sintese, Configuracoes().nome_diretorio_decomp
+        )
+        self.__repositorio_sintese = synthesis_factory(
+            Configuracoes().formato_sintese
+        )
+        if not isdir(self._diretorio_sintese):
+            makedirs(self._diretorio_sintese)
 
-    @staticmethod
-    def sintetiza_proximo_caso(caso: Optional[Caso]):
-        df_proximo_caso = pd.DataFrame(columns=["Caminho"])
-        if caso is not None:
-            caminho = join(caso.caminho, NOME_ARQUIVO_ESTADO)
-            df_proximo_caso["Caminho"] = [caminho]
-            arq = join(
-                Configuracoes().caminho_base_estudo, ARQUIVO_PROXIMO_CASO
+    def __casos_nao_sintetizados(
+        self, casos_concluidos: List[Caso], arquivo_sintese: str
+    ) -> List[Caso]:
+        self.__df_sintese = self.__repositorio_sintese.read(arquivo_sintese)
+        ids_sintetizados = self.__df_sintese["Caso"].unique().tolist()
+        return [c for c in casos_concluidos if c.id not in ids_sintetizados]
+
+    def __sintetiza_adicionando_identificador(
+        self, variavel: str, casos: List[Caso], extrai_quantis=False
+    ):
+        for c in casos:
+            arquivo_sintese = join(
+                c.caminho, Configuracoes().diretorio_sintese, variavel
             )
-            escreve_arquivo_json(arq, {"Caminho": caminho})
-        else:
-            raise RuntimeError(
-                "Erro na sintese do próximo caso do estudo " + "encadeado."
+            df_caso = self.__repositorio_sintese.read(arquivo_sintese)
+            if extrai_quantis:
+                df_caso = self.__extrai_quantis_cenarios(df_caso)
+            self.__df_sintese = pd.concat(
+                [self.__df_sintese, df_caso], ignore_index=True
+            )
+        self.__repositorio_sintese.write(self.__df_sintese, arquivo_sintese)
+
+    def __extrai_quantis_cenarios(self, df: pd.DataFrame) -> pd.DataFrame:
+        cols_cenarios = [
+            col for col in df.columns.tolist() if col not in COLUNAS_FILTRO
+        ]
+        for q in QUANTIS:
+            label = f"p{int(100 * q)}"
+            df[label] = df[cols_cenarios].quantile(q, axis=1)
+        df["median"] = df[cols_cenarios].quantile(0.5, axis=1)
+        return df.drop(columns=cols_cenarios)
+
+    def __sintetiza_variavel(
+        self,
+        diretorio: str,
+        variavel: str,
+        casos_concluidos: List[Caso],
+        extrai_quantis=True,
+    ):
+        arquivo_v = join(diretorio, variavel)
+        nao_sintetizados = self.__casos_nao_sintetizados(
+            casos_concluidos, arquivo_v
+        )
+        self.__sintetiza_adicionando_identificador(
+            variavel, nao_sintetizados, extrai_quantis=extrai_quantis
+        )
+        self.__repositorio_sintese.write(self.__df_sintese, arquivo_v)
+
+    def __sintetiza_newave(self):
+        if not isdir(self._diretorio_newave):
+            makedirs(self._diretorio_newave)
+        newaves_concluidos = [
+            c
+            for c in self._estudo.casos_concluidos
+            if c.programa == Programa.NEWAVE
+        ]
+        for v in VARIAVEIS_GERAIS:
+            self.__sintetiza_variavel(
+                self._diretorio_newave,
+                v,
+                newaves_concluidos,
+                extrai_quantis=False,
+            )
+        for v in VARIAVEIS_OPERACAO_NEWAVE:
+            self.__sintetiza_variavel(
+                self._diretorio_newave,
+                v,
+                newaves_concluidos,
+                extrai_quantis=True,
+            )
+
+    def __sintetiza_decomp(self):
+        if not isdir(self._diretorio_decomp):
+            makedirs(self._diretorio_decomp)
+        decomps_concluidos = [
+            c
+            for c in self._estudo.casos_concluidos
+            if c.programa == Programa.DECOMP
+        ]
+        for v in VARIAVEIS_GERAIS + VARIAVEIS_INVIABILIDADES:
+            self.__sintetiza_variavel(
+                self._diretorio_decomp,
+                v,
+                decomps_concluidos,
+                extrai_quantis=False,
+            )
+        for v in VARIAVEIS_OPERACAO_NEWAVE:
+            self.__sintetiza_variavel(
+                self._diretorio_decomp,
+                v,
+                decomps_concluidos,
+                extrai_quantis=True,
             )
 
     def sintetiza_estudo(self) -> bool:
-        Log.log().info("Sintetizando dados do estudo encadeado")
-        dados = self._estudo.dados
-        diretorio_estudo = Configuracoes().caminho_base_estudo
-        resumo_newaves = join(diretorio_estudo, ARQUIVO_RESUMO_NEWAVES)
-        resumo_decomps = join(diretorio_estudo, ARQUIVO_RESUMO_DECOMPS)
-        resumo_reservatorios = join(
-            diretorio_estudo, ARQUIVO_RESUMO_RESERVATORIOS
-        )
-        resumo_defluencias = join(
-            diretorio_estudo, ARQUIVO_RESUMO_DEFLUENCIAS
-        )
-        convergencias_newaves = join(
-            diretorio_estudo, ARQUIVO_CONVERGENCIA_NEWAVES
-        )
-        convergencias_decomps = join(
-            diretorio_estudo, ARQUIVO_CONVERGENCIA_DECOMPS
-        )
-        inviabilidades_decomps = join(
-            diretorio_estudo, ARQUIVO_INVIABILIDADES_DECOMPS
-        )
-        escreve_df_em_csv(dados.resumo_newaves, resumo_newaves)
-        escreve_df_em_csv(dados.resumo_decomps, resumo_decomps)
-        escreve_df_em_csv(dados.resumo_reservatorios, resumo_reservatorios)
-        escreve_df_em_csv(dados.resumo_defluencias, resumo_defluencias)
-        escreve_df_em_csv(dados.convergencias_newaves, convergencias_newaves)
-        escreve_df_em_csv(dados.convergencias_decomps, convergencias_decomps)
-        escreve_df_em_csv(dados.inviabilidades_decomps, inviabilidades_decomps)
+        Log.log().info("Sintetizando resultados do estudo encadeado")
+        self.__sintetiza_newave()
+        self.__sintetiza_decomp()
         return True

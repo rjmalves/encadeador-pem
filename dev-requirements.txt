@@ -1,7 +1,13 @@
 inewave
 idecomp
+mypy
+pylama
 numpy
 pandas
 pyarrow
 python-dotenv
+pytest
+pytest-cov
+pytest-mock
+black
 SQLAlchemy

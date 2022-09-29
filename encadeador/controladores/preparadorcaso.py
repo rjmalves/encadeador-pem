@@ -31,7 +31,7 @@ class PreparadorCaso:
         elif caso.programa == Programa.DECOMP:
             return PreparadorDECOMP(caso, casos_anteriores)
         else:
-            raise ValueError(f"Caso do tipo {type(caso)} não suportado")
+            raise ValueError(f"Caso não suportado")
 
     @abstractmethod
     def prepara(self, **kwargs) -> bool:

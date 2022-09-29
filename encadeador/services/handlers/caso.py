@@ -3,6 +3,7 @@ from encadeador.controladores.flexibilizadorcaso import Flexibilizador
 from encadeador.controladores.monitorjob import MonitorJob
 from encadeador.controladores.preparadorcaso import PreparadorCaso
 from encadeador.controladores.avaliadorcaso import AvaliadorCaso
+from encadeador.controladores.sintetizadorcaso import SintetizadorCaso
 
 from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.modelos.transicaocaso import TransicaoCaso
@@ -144,6 +145,17 @@ def flexibiliza(
                     return TransicaoCaso.FLEXIBILIZACAO_ERRO
             else:
                 return TransicaoCaso.ERRO_MAX_FLEX
+
+
+def sintetiza(
+    command: commands.SintetizaCaso, uow: AbstractCasoUnitOfWork
+) -> bool:
+    with uow:
+        caso = uow.casos.read(command.id_caso)
+    if caso is not None:
+        sintetizador = SintetizadorCaso.factory(caso)
+        return sintetizador.sintetiza_caso(command.comando)
+    return False
 
 
 def corrige_erro_convergencia(
