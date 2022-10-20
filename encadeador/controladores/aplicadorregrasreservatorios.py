@@ -718,9 +718,9 @@ class AplicadorRegrasReservatoriosDECOMP(AplicadorRegrasReservatorios):
         )
         # Se está falando de regras mensais, não consulta semana a semana
         if regras_mensais:
-            ultimo_estagio = list(mapa_dias_fim.keys())[-1]
-            mapa_dias_fim = {1: mapa_dias_fim[ultimo_estagio]}
-            pass
+            # Premissa:
+            # substituir pelo primeiro dia do mês do caso de decomp a ser executado
+            mapa_dias_fim = {1: date(self._caso.ano, self._caso.mes, 1)}
         Log.log().info(
             f"Dias de fim dos estágios do DECOMP anterior: {mapa_dias_fim}"
         )
