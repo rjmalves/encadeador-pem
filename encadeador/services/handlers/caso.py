@@ -1,17 +1,24 @@
-from typing import Optional
-from encadeador.controladores.flexibilizadorcaso import Flexibilizador
-from encadeador.controladores.monitorjob import MonitorJob
+from typing import Optional, Dict
 from encadeador.controladores.preparadorcaso import PreparadorCaso
-from encadeador.controladores.avaliadorcaso import AvaliadorCaso
-from encadeador.controladores.sintetizadorcaso import SintetizadorCaso
+from encadeador.adapters.repository.apis import (
+    EncadeadorAPIRepository,
+    RegrasReservatoriosAPIRepository,
+    FlexibilizadorAPIRepository,
+)
 
+from encadeador.utils.log import Log
+from encadeador.internal.httpresponse import HTTPResponse
 from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.modelos.transicaocaso import TransicaoCaso
 from encadeador.services.unitofwork.caso import AbstractCasoUnitOfWork
+from encadeador.services.unitofwork.rodada import AbstractRodadaUnitOfWork
 from encadeador.modelos.caso import Caso
+from encadeador.modelos.runstatus import RunStatus
+from encadeador.modelos.programa import Programa
+from encadeador.modelos.reservoirrule import ReservoirRule
 import encadeador.domain.commands as commands
 from encadeador.domain.programs import ProgramRules
-
+import encadeador.services.handlers.rodada as rodada_handlers
 
 # TODO - no futuro, quando toda a aplicação for
 # orientada a eventos, o logging deve ser praticamente
@@ -56,7 +63,7 @@ def inicializa(
         return caso
 
 
-def prepara(
+async def prepara(
     command: commands.PreparaCaso, uow: AbstractCasoUnitOfWork
 ) -> Optional[Caso]:
     with uow:
@@ -67,46 +74,95 @@ def prepara(
         ]
         preparador = PreparadorCaso.factory(caso, casos_anteriores)
         sucesso_prepara = preparador.prepara()
-        sucesso_encadeia = preparador.encadeia()
-        sucesso_regras = preparador.aplica_regras_operacao_reservatorios(
-            command.regras_reservatorios
+        sucesso_encadeia = True
+        sucesso_regras = True
+        # PREMISSA: só encadeia se tiver decomps anteriores.
+        if (
+            len([c for c in casos_anteriores if c.programa == Programa.DECOMP])
+            > 0
+        ):
+            variaveis = ProgramRules.program_chaining_variables(caso.programa)
+            if variaveis is not None:
+                for v in variaveis:
+                    res = await EncadeadorAPIRepository.encadeia(
+                        casos_anteriores, caso, v
+                    )
+                    if isinstance(res, HTTPResponse):
+                        Log.log().warning(
+                            "Erro no encadeamento:"
+                            + f" [{res.code}] {res.detail}"
+                        )
+                        sucesso_encadeia = False
+                    else:
+                        Log.log().info(f"Encadeamento de {v}:")
+                        for r in res:
+                            Log.log().info(str(r))
+        # PREMISSA: só aplica regras de reservatórios
+        # se tiver decomps anteriores
+        regras_convertidas = [
+            ReservoirRule.from_regra(r) for r in command.regras_reservatorios
+        ]
+        res = await RegrasReservatoriosAPIRepository.aplica_regras(
+            casos_anteriores, caso, regras_convertidas
         )
+        if isinstance(res, HTTPResponse):
+            Log.log().warning(
+                "Erro da aplicação de regras de reservatórios:"
+                + f" [{res.code}] {res.detail}"
+            )
+            sucesso_regras = False
+        else:
+            Log.log().info("Regras de reservatórios aplicadas:")
+            for r in res:
+                Log.log().info(str(r))
+
         return all([sucesso_prepara, sucesso_encadeia, sucesso_regras])
 
 
-def submete(
+async def submete(
     command: commands.SubmeteCaso,
     caso_uow: AbstractCasoUnitOfWork,
-    monitor: MonitorJob,
-) -> bool:
+    rodada_uow: AbstractRodadaUnitOfWork,
+) -> Optional[int]:
     with caso_uow:
         # Extrai o caso
         caso = caso_uow.casos.read(command.id_caso)
         if caso is None:
-            return False
-        caminho = ProgramRules.program_job_path(caso.programa)
-        nome = ProgramRules.program_job_name(
-            caso.ano, caso.mes, caso.revisao, caso.programa
-        )
+            Log.log().error(f"Caso {command.id_caso} não encontrado")
+            return None
+        versao = ProgramRules.program_version(caso.programa)
         processadores = ProgramRules.program_processor_count(caso.programa)
-        if caminho is None or nome is None:
-            return False
-        return monitor.submete(
-            caminho,
-            nome,
+        cmd = commands.CriaRodada(
+            caso.programa.value,
+            versao,
+            caso.caminho,
             processadores,
             command.id_caso,
-            command.gerenciador,
         )
+        rodada = await rodada_handlers.submete(cmd, rodada_uow)
+        if rodada is not None:
+            caso.estado = EstadoCaso.EXECUTANDO
+            caso_uow.casos.update(caso)
+            caso_uow.commit()
+            return rodada.id
 
 
-def monitora(
+async def monitora(
     command: commands.MonitoraCaso,
-    uow: AbstractCasoUnitOfWork,
-    monitor: MonitorJob,
-) -> bool:
-    with uow:
-        monitor.monitora(command.gerenciador)
+    caso_uow: AbstractCasoUnitOfWork,
+    rodada_uow: AbstractRodadaUnitOfWork,
+) -> Optional[TransicaoCaso]:
+    cmd = commands.MonitoraRodada(command.id_rodada)
+    rodada = await rodada_handlers.monitora(cmd, rodada_uow)
+    if rodada is not None:
+        MAPA_ESTADO_TRANSICAO: Dict[RunStatus, TransicaoCaso] = {
+            RunStatus.SUCCESS: TransicaoCaso.CONCLUIDO,
+            RunStatus.INFEASIBLE: TransicaoCaso.INVIAVEL,
+            RunStatus.DATA_ERROR: TransicaoCaso.ERRO_DADOS,
+            RunStatus.RUNTIME_ERROR: TransicaoCaso.ERRO_CONVERGENCIA,
+            RunStatus.COMMUNICATION_ERROR: TransicaoCaso.ERRO_DADOS,
+        }
+        return MAPA_ESTADO_TRANSICAO.get(rodada.estado)
 
 
 def atualiza(
@@ -121,41 +177,24 @@ def atualiza(
         return caso is not None
 
 
-def avalia(
-    command: commands.AvaliaCaso, uow: AbstractCasoUnitOfWork
-) -> Optional[TransicaoCaso]:
-    with uow:
-        caso = uow.casos.read(command.id_caso)
-        if caso is not None:
-            avaliador = AvaliadorCaso.factory(caso)
-            return avaliador.avalia()
-
-
-def flexibiliza(
+async def flexibiliza(
     command: commands.FlexibilizaCaso, uow: AbstractCasoUnitOfWork
 ) -> Optional[TransicaoCaso]:
     with uow:
         caso = uow.casos.read(command.id_caso)
         if caso is not None:
             if caso.numero_flexibilizacoes < command.max_flex:
-                flexibilizador = Flexibilizador.factory(caso)
-                if flexibilizador.flexibiliza():
-                    return TransicaoCaso.FLEXIBILIZACAO_SUCESSO
-                else:
+                res = await FlexibilizadorAPIRepository.flexibiliza(caso)
+                if isinstance(res, HTTPResponse):
+                    Log.log().error(
+                        "Erro na flexibilização: "
+                        + f"[{res.code}] {res.detail}"
+                    )
                     return TransicaoCaso.FLEXIBILIZACAO_ERRO
+                else:
+                    return TransicaoCaso.FLEXIBILIZACAO_SUCESSO
             else:
                 return TransicaoCaso.ERRO_MAX_FLEX
-
-
-def sintetiza(
-    command: commands.SintetizaCaso, uow: AbstractCasoUnitOfWork
-) -> bool:
-    with uow:
-        caso = uow.casos.read(command.id_caso)
-    if caso is not None:
-        sintetizador = SintetizadorCaso.factory(caso)
-        return sintetizador.sintetiza_caso(command.comando)
-    return False
 
 
 def corrige_erro_convergencia(

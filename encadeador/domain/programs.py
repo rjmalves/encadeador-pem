@@ -1,7 +1,7 @@
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.programa import Programa
 from pathlib import Path
-from typing import Tuple, Dict, Optional
+from typing import Tuple, Dict, Optional, List
 from os.path import join
 from os import listdir
 
@@ -48,61 +48,49 @@ class ProgramRules:
         return mapping.get(program)
 
     @staticmethod
-    def newave_job_path() -> str:
-        basedir = Configuracoes().diretorio_instalacao_newaves
-        version = Configuracoes().versao_newave
-        versiondir = join(basedir, version)
-        files = listdir(versiondir)
-        jobfile = [a for a in files if ".job" in a]
-        return join(versiondir, jobfile[0])
+    def newave_chaining_variables() -> List[str]:
+        return Configuracoes().variaveis_encadeadas_newave
 
     @staticmethod
-    def decomp_job_path() -> str:
-        basedir = Configuracoes().diretorio_instalacao_decomps
-        version = Configuracoes().versao_decomp
-        versiondir = join(basedir, version)
-        files = listdir(versiondir)
-        jobfile = [a for a in files if ".job" in a]
-        return join(versiondir, jobfile[0])
+    def decomp_chaining_variables() -> List[str]:
+        return Configuracoes().variaveis_encadeadas_decomp
 
     @staticmethod
-    def program_job_path(program: Programa) -> Optional[str]:
-        mapping: Dict[Programa, str] = {
-            Programa.NEWAVE: ProgramRules.newave_job_path(),
-            Programa.DECOMP: ProgramRules.decomp_job_path(),
-        }
-        return mapping.get(program)
-
-    @staticmethod
-    def newave_job_name(year: int, month: int) -> str:
-        return f"NW{year}{str(month).zfill(2)}"
-
-    @staticmethod
-    def decomp_job_name(year: int, month: int, rv: int) -> str:
-        return f"DC{year}{str(month).zfill(2)}{rv}"
-
-    @staticmethod
-    def program_job_name(
-        year: int, month: int, rv: int, program: Programa
-    ) -> Optional[str]:
-        mapping: Dict[Programa, str] = {
-            Programa.NEWAVE: ProgramRules.newave_job_name(year, month),
-            Programa.DECOMP: ProgramRules.decomp_job_name(year, month, rv),
+    def program_chaining_variables(program: Programa) -> Optional[List[str]]:
+        mapping: Dict[Programa, int] = {
+            Programa.NEWAVE: ProgramRules.newave_chaining_variables(),
+            Programa.DECOMP: ProgramRules.decomp_chaining_variables(),
         }
         return mapping.get(program)
 
     @staticmethod
     def newave_processor_count() -> int:
-        return Configuracoes().processadores_minimos_newave
+        return Configuracoes().processadores_newave
 
     @staticmethod
     def decomp_processor_count() -> int:
-        return Configuracoes().processadores_minimos_decomp
+        return Configuracoes().processadores_decomp
 
     @staticmethod
     def program_processor_count(program: Programa) -> Optional[int]:
         mapping: Dict[Programa, int] = {
             Programa.NEWAVE: ProgramRules.newave_processor_count(),
             Programa.DECOMP: ProgramRules.decomp_processor_count(),
+        }
+        return mapping.get(program)
+
+    @staticmethod
+    def newave_version() -> str:
+        return Configuracoes().versao_newave
+
+    @staticmethod
+    def decomp_version() -> str:
+        return Configuracoes().versao_decomp
+
+    @staticmethod
+    def program_version(program: Programa) -> Optional[str]:
+        mapping: Dict[Programa, str] = {
+            Programa.NEWAVE: ProgramRules.newave_version(),
+            Programa.DECOMP: ProgramRules.decomp_version(),
         }
         return mapping.get(program)

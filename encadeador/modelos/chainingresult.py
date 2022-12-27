@@ -10,3 +10,6 @@ class ChainingResult(BaseModel):
 
     id: Optional[str]
     value: float
+
+    def __str__(self) -> str:
+        return f"{self.id} -> {self.value}"

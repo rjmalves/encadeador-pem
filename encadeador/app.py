@@ -1,7 +1,7 @@
 import time
 from typing import Callable, Dict
 
-from encadeador.services.unitofwork.job import factory as job_uow_factory
+from encadeador.services.unitofwork.rodada import factory as rodada_uow_factory
 from encadeador.services.unitofwork.caso import factory as caso_uow_factory
 from encadeador.services.unitofwork.estudo import factory as estudo_uow_factory
 
@@ -16,7 +16,7 @@ from encadeador.utils.log import Log
 # os singletons. Se precisar de multithreading, tem que pensar
 # mais.. mas tem outras coisas que vão precisar mudar também.
 
-UOW_KIND = "FS"
+UOW_KIND = "SQL"
 INTERVALO_POLL = 5.0
 ESTUDO_ID = 1
 
@@ -81,7 +81,7 @@ class App:
             ESTUDO_ID,
             estudo_uow_factory(UOW_KIND),
             caso_uow_factory(UOW_KIND),
-            job_uow_factory(UOW_KIND),
+            rodada_uow_factory(UOW_KIND),
             self._lista_casos,
             self._regras_reservatorio,
             self._regras_inviabilidades,

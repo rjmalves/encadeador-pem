@@ -3,13 +3,9 @@ from os.path import join
 from typing import List, Optional
 
 from encadeador.modelos.caso import Caso
-from encadeador.controladores.encadeadorcaso import Encadeador
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.programa import Programa
-from encadeador.modelos.regrareservatorio import RegraReservatorio
-from encadeador.controladores.aplicadorregrasreservatorios import (
-    AplicadorRegrasReservatorios,
-)
+
 from encadeador.services.unitofwork.newave import factory as nw_factory
 from encadeador.services.unitofwork.decomp import factory as dc_factory
 from encadeador.domain.programs import ProgramRules
@@ -43,17 +39,6 @@ class PreparadorCaso:
 
     @abstractmethod
     def flexibiliza_criterio_convergencia(self) -> bool:
-        pass
-
-    @abstractmethod
-    def encadeia(self) -> bool:
-        pass
-
-    @abstractmethod
-    def aplica_regras_operacao_reservatorios(
-        self,
-        regras_operacao: List[RegraReservatorio],
-    ) -> bool:
         pass
 
     @property
@@ -116,32 +101,6 @@ class PreparadorNEWAVE(PreparadorCaso):
             + f"{self.caso.nome}"
         )
         return True
-
-    def encadeia(self) -> bool:
-        if len(self._casos_anteriores) == 0:
-            Log.log().info(f"Primeiro: {self.caso.nome} - sem encadeamentos")
-            return True
-        elif self._casos_anteriores[-1].programa == Programa.DECOMP:
-            Log.log().info(
-                "Encadeando variáveis dos casos "
-                + f"{self._casos_anteriores[-1].nome} -> {self.caso.nome}"
-            )
-            encadeador = Encadeador.factory(self._casos_anteriores, self.caso)
-            return encadeador.encadeia()
-        else:
-            Log.log().error(
-                "Encadeamento NW com NW não suportado. Casos: "
-                + f"{self._casos_anteriores[-1].nome} -> {self.caso.nome}"
-            )
-            return False
-
-    def aplica_regras_operacao_reservatorios(
-        self,
-        casos_anteriores: List[Caso],
-        regras_operacao: List[RegraReservatorio],
-    ) -> bool:
-        aplicador = AplicadorRegrasReservatorios.factory(self.caso)
-        return aplicador.aplica_regras(casos_anteriores, regras_operacao)
 
 
 class PreparadorDECOMP(PreparadorCaso):
@@ -245,38 +204,3 @@ class PreparadorDECOMP(PreparadorCaso):
             dadger.gp.gap *= 10
             dc_uow.decomp.set_dadger(dadger)
         return True
-
-    def __decomps_anteriores(self):
-        return [
-            c
-            for c in reversed(self._casos_anteriores)
-            if c.programa == Programa.DECOMP
-        ]
-
-    def encadeia(self) -> bool:
-        if len(self.__decomps_anteriores()) == 0:
-            Log.log().info(f"Primeiro: {self.caso.nome} - sem encadeamentos")
-            return True
-        elif self.__decomps_anteriores()[0].programa == Programa.DECOMP:
-            Log.log().info(
-                "Encadeando variáveis dos casos "
-                + f"{self.__decomps_anteriores()[0].nome}"
-                + f" -> {self.caso.nome}"
-            )
-            encadeador = Encadeador.factory(self._casos_anteriores, self.caso)
-            return encadeador.encadeia()
-        else:
-            Log.log().error(
-                "Encadeamento NW com DC não suportado. Casos: "
-                + f"{self.__decomps_anteriores()[0].nome}"
-                + f" -> {self.caso.nome}"
-            )
-            return False
-
-    def aplica_regras_operacao_reservatorios(
-        self,
-        casos_anteriores: List[Caso],
-        regras_operacao: List[RegraReservatorio],
-    ) -> bool:
-        aplicador = AplicadorRegrasReservatorios.factory(self.caso)
-        return aplicador.aplica_regras(casos_anteriores, regras_operacao)

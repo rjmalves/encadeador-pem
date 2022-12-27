@@ -4,15 +4,15 @@ from sqlalchemy.orm import sessionmaker, Session
 from typing import Dict
 
 from encadeador.modelos.configuracoes import Configuracoes
-from encadeador.adapters.repository.job import (
-    AbstractJobRepository,
-    JSONJobRepository,
-    SQLJobRepository,
+from encadeador.adapters.repository.rodada import (
+    AbstractRodadaRepository,
+    JSONRodadaRepository,
+    SQLRodadaRepository,
 )
 
 
-class AbstractJobUnitOfWork(ABC):
-    def __enter__(self) -> "AbstractJobUnitOfWork":
+class AbstractRodadaUnitOfWork(ABC):
+    def __enter__(self) -> "AbstractRodadaUnitOfWork":
         return self
 
     def __exit__(self, *args):
@@ -23,7 +23,7 @@ class AbstractJobUnitOfWork(ABC):
 
     @property
     @abstractmethod
-    def jobs(self) -> AbstractJobRepository:
+    def rodadas(self) -> AbstractRodadaRepository:
         raise NotImplementedError
 
     @abstractmethod
@@ -35,20 +35,20 @@ class AbstractJobUnitOfWork(ABC):
         raise NotImplementedError
 
 
-class JSONJobUnitOfWork(AbstractJobUnitOfWork):
+class JSONRodadaUnitOfWork(AbstractRodadaUnitOfWork):
     def __init__(self, path: str = Configuracoes.caminho_base_estudo):
         self._path = path
 
-    def __enter__(self) -> "JSONJobUnitOfWork":
-        self._jobs = JSONJobRepository(self._path)
+    def __enter__(self) -> "JSONRodadaUnitOfWork":
+        self._rodadas = JSONRodadaRepository(self._path)
         return super().__enter__()
 
     def __exit__(self, *args):
         super().__exit__(*args)
 
     @property
-    def jobs(self) -> JSONJobRepository:
-        return self._jobs
+    def rodadas(self) -> JSONRodadaRepository:
+        return self._rodadas
 
     def commit(self):
         self._commit()
@@ -67,15 +67,15 @@ DEFAULT_SESSION_FACTORY = sessionmaker(
 )
 
 
-class SQLJobUnitOfWork(AbstractJobUnitOfWork):
+class SQLRodadaUnitOfWork(AbstractRodadaUnitOfWork):
     def __init__(
         self, session_factory: sessionmaker = DEFAULT_SESSION_FACTORY
     ):
         self._session_factory = session_factory
 
-    def __enter__(self) -> "SQLJobUnitOfWork":
+    def __enter__(self) -> "SQLRodadaUnitOfWork":
         self._session: Session = self._session_factory()
-        self._jobs = SQLJobRepository(self._session)
+        self._rodadas = SQLRodadaRepository(self._session)
         return super().__enter__()
 
     def __exit__(self, *args):
@@ -83,8 +83,8 @@ class SQLJobUnitOfWork(AbstractJobUnitOfWork):
         self._session.close()
 
     @property
-    def jobs(self) -> SQLJobRepository:
-        return self._jobs
+    def rodadas(self) -> SQLRodadaRepository:
+        return self._rodadas
 
     def commit(self):
         self._commit()
@@ -96,9 +96,9 @@ class SQLJobUnitOfWork(AbstractJobUnitOfWork):
         self._session.rollback()
 
 
-def factory(kind: str, *args, **kwargs) -> AbstractJobUnitOfWork:
-    mappings: Dict[str, AbstractJobUnitOfWork] = {
-        "SQL": SQLJobUnitOfWork,
-        "JSON": JSONJobUnitOfWork,
+def factory(kind: str, *args, **kwargs) -> AbstractRodadaUnitOfWork:
+    mappings: Dict[str, AbstractRodadaUnitOfWork] = {
+        "SQL": SQLRodadaUnitOfWork,
+        "JSON": JSONRodadaUnitOfWork,
     }
     return mappings[kind](*args, **kwargs)

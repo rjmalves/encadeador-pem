@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from typing import Optional
 
+from encadeador.modelos.regrareservatorio import RegraReservatorio
+
 
 class ReservoirRule(BaseModel):
     """
@@ -49,3 +51,17 @@ class ReservoirRule(BaseModel):
         if isinstance(other, ReservoirRule):
             return self.__key() == other.__key()
         return NotImplemented
+
+    @classmethod
+    def from_regra(cls, regra: RegraReservatorio) -> "ReservoirRule":
+        return cls(
+            reservoirCode=regra.codigo_reservatorio,
+            uheCode=regra.codigo_usina,
+            constraintType=regra.tipo_restricao,
+            month=regra.mes,
+            label=regra.legenda_faixa,
+            minVolume=regra.volume_minimo,
+            maxVolume=regra.volume_maximo,
+            minLimit=regra.limite_minimo,
+            maxLimit=regra.limite_maximo,
+        )

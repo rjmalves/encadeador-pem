@@ -6,7 +6,7 @@ from encadeador.modelos.estadoestudo import EstadoEstudo
 from encadeador.modelos.transicaocaso import TransicaoCaso
 from encadeador.modelos.transicaoestudo import TransicaoEstudo
 from encadeador.controladores.monitorcaso import MonitorCaso
-from encadeador.services.unitofwork.job import AbstractJobUnitOfWork
+from encadeador.services.unitofwork.rodada import AbstractRodadaRepository
 from encadeador.services.unitofwork.caso import AbstractCasoUnitOfWork
 from encadeador.services.unitofwork.estudo import AbstractEstudoUnitOfWork
 import encadeador.services.handlers.estudo as handlers
@@ -29,7 +29,7 @@ class MonitorEstudo:
         _estudo_id: int,
         estudo_uow: AbstractEstudoUnitOfWork,
         caso_uow: AbstractCasoUnitOfWork,
-        job_uow: AbstractJobUnitOfWork,
+        rodada_uow: AbstractRodadaRepository,
         diretorios_casos: List[str],
         regras_reservatorios: List[RegraReservatorio],
         regras_inviabilidades: List[RegraInviabilidade],
@@ -37,7 +37,7 @@ class MonitorEstudo:
         self._estudo_id = _estudo_id
         self._estudo_uow = estudo_uow
         self._caso_uow = caso_uow
-        self._job_uow = job_uow
+        self._rodada_uow = rodada_uow
         self._diretorios_casos = diretorios_casos
         self._regras_reservatorios = regras_reservatorios
         self._regras_inviabilidades = regras_inviabilidades
@@ -132,7 +132,7 @@ class MonitorEstudo:
         if caso_atual is not None:
             Log.log().info(f"Estudo - Próximo caso: {caso_atual.nome}")
             self._monitor_atual = MonitorCaso(
-                caso_atual.id, self._caso_uow, self._job_uow
+                caso_atual.id, self._caso_uow, self._rodada_uow
             )
             self._monitor_atual.observa(self.callback_evento)
             self._monitor_atual.inicializa()

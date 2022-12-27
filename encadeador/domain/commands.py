@@ -10,23 +10,21 @@ class Command:
 
 
 @dataclass
-class SubmeteJob(Command):
-    gerenciador: str
+class CriaRodada(Command):
+    programa: str
+    versao: str
     caminho: str
-    nome: str
     numero_processadores: int
     id_caso: int
 
 
 @dataclass
-class MonitoraJob(Command):
-    gerenciador: str
+class MonitoraRodada(Command):
     id: int
 
 
 @dataclass
-class DeletaJob(Command):
-    gerenciador: str
+class DeletaRodada(Command):
     id: int
 
 
@@ -51,13 +49,12 @@ class PreparaCaso(Command):
 @dataclass
 class SubmeteCaso(Command):
     id_caso: int
-    gerenciador: str
 
 
 @dataclass
 class MonitoraCaso(Command):
     id_caso: int
-    gerenciador: str
+    id_rodada: int
 
 
 @dataclass

@@ -1,13 +1,11 @@
-from typing import Dict, List, Callable, Union
-from encadeador.controladores.monitorjob import MonitorJob
-from encadeador.services.unitofwork.job import AbstractJobUnitOfWork
+from typing import Dict, List, Callable
+from encadeador.services.unitofwork.rodada import AbstractRodadaRepository
 from encadeador.services.unitofwork.caso import AbstractCasoUnitOfWork
 
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.modelos.regrareservatorio import RegraReservatorio
 from encadeador.modelos.transicaocaso import TransicaoCaso
-from encadeador.modelos.transicaojob import TransicaoJob
 from encadeador.utils.log import Log
 from encadeador.utils.event import Event
 import encadeador.domain.commands as commands
@@ -26,15 +24,15 @@ class MonitorCaso:
         self,
         _caso_id: int,
         caso_uow: AbstractCasoUnitOfWork,
-        job_uow: AbstractJobUnitOfWork,
+        rodada_uow: AbstractRodadaRepository,
     ):
         self._caso_id = _caso_id
+        self._rodada_id = None
         self._caso_uow = caso_uow
-        self._job_uow = job_uow
-        self._monitor_job_atual: MonitorJob = None  # type: ignore
+        self._rodada_uow = rodada_uow
         self._transicao_caso = Event()
 
-    def callback_evento(self, evento: Union[TransicaoJob, TransicaoCaso]):
+    def callback_evento(self, evento: TransicaoCaso):
         """
         Esta função é usada para implementar o Observer Pattern.
         Quando chamada, significa que ocorreu algo com o job do caso
@@ -42,13 +40,13 @@ class MonitorCaso:
         e o monitor deve reagir atualizando os campos adequados nos objetos.
 
         :param evento: O evento ocorrido com o job ou caso
-        :type evento: Union[TransicaoJob, TransicaoCaso]
+        :type evento: Union[TransicaoCaso]
         """
         self._regras()[evento]()
 
     def _regras(
         self,
-    ) -> Dict[Union[TransicaoJob, TransicaoCaso], Callable]:
+    ) -> Dict[TransicaoCaso, Callable]:
         return {
             TransicaoCaso.INICIALIZADO: self._handler_inicializado,
             (
@@ -82,21 +80,6 @@ class MonitorCaso:
             (TransicaoCaso.CONCLUIDO): self._handler_caso_concluido,
             (TransicaoCaso.INVIAVEL): self._handler_caso_inviavel,
             (TransicaoCaso.ERRO): self._handler_erro,
-            (
-                TransicaoJob.SUBMISSAO_SOLICITADA
-            ): self._handler_submissao_solicitada_job,
-            (
-                TransicaoJob.SUBMISSAO_SUCESSO
-            ): self._handler_submissao_sucesso_job,
-            (TransicaoJob.SUBMISSAO_ERRO): self._handler_submissao_erro_job,
-            (TransicaoJob.INICIO_EXECUCAO): self._handler_inicio_execucao_job,
-            (TransicaoJob.FIM_EXECUCAO): self._handler_fim_execucao_job,
-            (TransicaoJob.TIMEOUT_EXECUCAO): self._handler_timeout_execucao,
-            (
-                TransicaoJob.DELECAO_SOLICITADA
-            ): self._handler_delecao_solicitada,
-            (TransicaoJob.DELECAO_ERRO): self._handler_delecao_erro,
-            (TransicaoJob.DELECAO_SUCESSO): self._handler_delecao_sucesso,
         }
 
     def inicializa(self):
@@ -108,7 +91,7 @@ class MonitorCaso:
         if handlers.inicializa(comando, self._caso_uow) is not None:
             self.callback_evento(TransicaoCaso.INICIALIZADO)
 
-    def prepara(
+    async def prepara(
         self,
         regras_operacao_reservatorios: List[RegraReservatorio],
     ):
@@ -121,7 +104,7 @@ class MonitorCaso:
         comando = commands.PreparaCaso(
             self._caso_id, regras_operacao_reservatorios
         )
-        if handlers.prepara(comando, self._caso_uow):
+        if await handlers.prepara(comando, self._caso_uow):
             self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_SUCESSO)
         else:
             self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_ERRO)
@@ -133,30 +116,31 @@ class MonitorCaso:
         """
         self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
 
-    def __submete(self):
+    async def __submete(self):
         """
         Cria um novo Job para o caso e o submete à fila.
         """
         comando = commands.SubmeteCaso(
             self._caso_id,
-            Configuracoes().gerenciador_fila,
         )
-        self._monitor_job_atual = MonitorJob(self._job_uow)
-        self._monitor_job_atual.observa(self.callback_evento)
-        if handlers.submete(comando, self._caso_uow, self._monitor_job_atual):
+        res = await handlers.submete(comando, self._caso_uow, self._rodada_uow)
+        if isinstance(res, int):
+            self._rodada_id = res
             self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SUCESSO)
         else:
             self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_ERRO)
 
-    def monitora(self):
+    async def monitora(self):
         """
         Realiza o monitoramento do estado do caso e também do
         job associado.
         """
-        comando = commands.MonitoraCaso(
-            self._caso_id, Configuracoes().gerenciador_fila
+        comando = commands.MonitoraCaso(self._caso_id, self._rodada_id)
+        transicao = await handlers.monitora(
+            comando, self._caso_uow, self._rodada_uow
         )
-        handlers.monitora(comando, self._caso_uow, self._monitor_job_atual)
+        if transicao is not None:
+            self.callback_evento(transicao)
 
     def observa(self, f: Callable):
         self._transicao_caso.append(f)
@@ -215,46 +199,6 @@ class MonitorCaso:
             f"Caso {self._caso_id}: submissão do job do caso solicitada"
         )
 
-    def _handler_submissao_sucesso_job(self):
-        Log.log().info(f"Caso {self._caso_id}: sucesso na submissão do caso")
-        comando = commands.AtualizaCaso(
-            self._caso_id, EstadoCaso.ESPERANDO_FILA
-        )
-        handlers.atualiza(comando, self._caso_uow)
-
-    def _handler_submissao_erro_job(self):
-        Log.log().info(
-            f"Caso {self._caso_id}: erro na submissão do job do caso"
-        )
-        comando = commands.AtualizaCaso(
-            self._caso_id, EstadoCaso.ERRO_COMUNICACAO
-        )
-        handlers.atualiza(comando, self._caso_uow)
-        self.callback_evento(TransicaoCaso.ERRO)
-
-    def _handler_inicio_execucao_job(self):
-        Log.log().info(f"Caso {self._caso_id}: iniciou execução")
-        comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.EXECUTANDO)
-        handlers.atualiza(comando, self._caso_uow)
-
-    def _handler_delecao_solicitada(self):
-        # Aguarda o job ser deletado completamente
-        Log.log().debug(f"Caso {self._caso_id}: deleção solicitada")
-
-    def _handler_delecao_erro(self):
-        Log.log().info(
-            f"Caso {self._caso_id}: erro na deleção de um caso com timeout"
-        )
-        comando = commands.AtualizaCaso(
-            self._caso_id, EstadoCaso.ERRO_COMUNICACAO
-        )
-        handlers.atualiza(comando, self._caso_uow)
-        self.callback_evento(TransicaoCaso.ERRO)
-
-    def _handler_delecao_sucesso(self):
-        Log.log().debug(f"Caso {self._caso_id}: caso com timeout deletado")
-        self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
-
     def _handler_erro_dados(self):
         Log.log().info(f"Caso {self._caso_id}: erro de dados")
         comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.ERRO_DADOS)
@@ -296,33 +240,12 @@ class MonitorCaso:
         handlers.atualiza(comando, self._caso_uow)
         self.callback_evento(TransicaoCaso.ERRO)
 
-    def _handler_timeout_execucao(self):
-        Log.log().debug(f"Caso {self._caso_id}: timeout durante a execução")
-        comando = commands.AtualizaCaso(
-            self._caso_id, EstadoCaso.ERRO_COMUNICACAO
-        )
-        handlers.atualiza(comando, self._caso_uow)
-        self._monitor_job_atual.deleta()
-
-    def _handler_fim_execucao_job(self):
-        Log.log().info(f"Caso {self._caso_id}: fim da execução")
-        comando = commands.AvaliaCaso(self._caso_id)
-        ret = handlers.avalia(comando, self._caso_uow)
-        if ret is None:
-            comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.ERRO)
-            handlers.atualiza(comando, self._caso_uow)
-            self.callback_evento(TransicaoCaso.ERRO)
-        else:
-            self.callback_evento(ret)
-
-    def _handler_caso_inviavel(self):
+    async def _handler_caso_inviavel(self):
         Log.log().info(f"Caso {self._caso_id}: caso inviável")
         comando = commands.FlexibilizaCaso(
             self._caso_id, Configuracoes().maximo_flexibilizacoes_revisao
         )
-        comando_sintese = commands.SintetizaCaso(self._caso_id, "execucao")
-        handlers.sintetiza(comando_sintese, self._caso_uow)
-        ret = handlers.flexibiliza(comando, self._caso_uow)
+        ret = await handlers.flexibiliza(comando, self._caso_uow)
         if ret is None:
             comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.ERRO)
             handlers.atualiza(comando, self._caso_uow)
@@ -346,8 +269,6 @@ class MonitorCaso:
         Log.log().info(f"Caso {self._caso_id}: caso concluído.")
         comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.CONCLUIDO)
         handlers.atualiza(comando, self._caso_uow)
-        comando_sintese = commands.SintetizaCaso(self._caso_id, "completa")
-        handlers.sintetiza(comando_sintese, self._caso_uow)
         self._transicao_caso(TransicaoCaso.CONCLUIDO)
 
     def _handler_erro(self):
