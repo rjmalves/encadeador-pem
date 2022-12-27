@@ -1,22 +1,22 @@
 from sqlalchemy.orm import relationship  # type: ignore
 from encadeador.adapters.orm import registry
-from encadeador.adapters.orm.job import tabela_jobs
+from encadeador.adapters.orm.rodada import tabela_rodadas
 from encadeador.adapters.orm.caso import tabela_casos
 from encadeador.adapters.orm.estudo import tabela_estudos
 
-from encadeador.modelos.job import Job
+from encadeador.modelos.rodada import Rodada
 from encadeador.modelos.caso import Caso
 from encadeador.modelos.estudo import Estudo
 
 
 def start_mappers():
-    job_mapper = registry.map_imperatively(Job, tabela_jobs)
+    rodada_mapper = registry.map_imperatively(Rodada, tabela_rodadas)
     caso_mapper = registry.map_imperatively(
         Caso,
         tabela_casos,
         properties={
-            "_jobs": relationship(
-                job_mapper,
+            "_rodadas": relationship(
+                rodada_mapper,
                 collection_class=list,
             )
         },

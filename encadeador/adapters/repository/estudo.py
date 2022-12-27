@@ -44,7 +44,7 @@ class SQLEstudoRepository(ABC):
         self.__session.add(estudo)
 
     def read(self, id: int) -> Optional[Estudo]:
-        statement = select(Estudo).filter_by(_id=id)
+        statement = select(Estudo).filter_by(id=id)
         try:
             j = self.__session.execute(statement).one()[0]
             return j
@@ -54,17 +54,17 @@ class SQLEstudoRepository(ABC):
     def update(self, estudo: Estudo):
         statement = (
             update(Estudo)
-            .where(Estudo._id == estudo._id)
+            .where(Estudo.id == estudo.id)
             .values(
                 {
-                    "_estado": estudo._estado,
+                    "estado": estudo.estado,
                 }
             )
         )
         return self.__session.execute(statement)
 
     def delete(self, id: int):
-        statement = delete(Estudo).where(Estudo._id == id)
+        statement = delete(Estudo).where(Estudo.id == id)
         return self.__session.execute(statement)
 
     def list(self) -> List[Estudo]:
@@ -80,24 +80,24 @@ class JSONEstudoRepository(AbstractEstudoRepository):
     @staticmethod
     def __to_json(estudo: Estudo) -> dict:
         return {
-            "_id": estudo.id,
-            "_caminho": estudo.caminho,
-            "_nome": estudo.nome,
-            "_estado": estudo.estado.value,
+            "id": estudo.id,
+            "caminho": estudo.caminho,
+            "nome": estudo.nome,
+            "estado": estudo.estado.value,
         }
 
     @staticmethod
     def __from_json(estudo_data: dict) -> Estudo:
         estudo = Estudo(
-            estudo_data["_caminho"],
-            estudo_data["_nome"],
-            EstadoEstudo.factory(estudo_data["_estado"]),
+            estudo_data["caminho"],
+            estudo_data["nome"],
+            EstadoEstudo.factory(estudo_data["estado"]),
         )
-        estudo._id = estudo_data["_id"]
+        estudo.id = estudo_data["id"]
         return estudo
 
     def __choose_id_for_new_estudo(self, existing: List[Estudo]) -> int:
-        existing_ids = [j._id for j in existing]
+        existing_ids = [j.id for j in existing]
         max_current_id = max(existing_ids) if len(existing_ids) > 0 else 0
         return max_current_id + 1
 
@@ -113,7 +113,7 @@ class JSONEstudoRepository(AbstractEstudoRepository):
         with open(self.__path, "r") as file:
             estudos = [JSONEstudoRepository.__from_json(c) for c in load(file)]
             for e in estudos:
-                e._casos = self.__casos_repository.list_by_estudo(e._id)
+                e._casos = self.__casos_repository.list_by_estudo(e.id)
             return estudos
 
     def __write_file(self, estudos: List[Estudo]):
@@ -124,18 +124,18 @@ class JSONEstudoRepository(AbstractEstudoRepository):
     def create(self, estudo: Estudo):
         existing = self.__read_file()
         new_id = self.__choose_id_for_new_estudo(existing)
-        estudo._id = new_id
+        estudo.id = new_id
         updated = existing + [estudo]
         self.__write_file(updated)
 
     def read(self, id: int) -> Optional[Estudo]:
         existing = self.__read_file()
-        candidate = [c for c in existing if c._id == id]
+        candidate = [c for c in existing if c.id == id]
         return candidate[0] if len(candidate) == 1 else None
 
     def update(self, estudo: Estudo):
         estudos = self.__read_file()
-        candidates = list(filter(lambda c: c._id == estudo._id, estudos))
+        candidates = list(filter(lambda c: c.id == estudo.id, estudos))
         if len(candidates) == 1:
             index = estudos.index(candidates[0])
             estudos[index] = estudo
@@ -143,7 +143,7 @@ class JSONEstudoRepository(AbstractEstudoRepository):
 
     def delete(self, id: int):
         existing = self.__read_file()
-        deleted = [c for c in existing if c._id != id]
+        deleted = [c for c in existing if c.id != id]
         return self.__write_file(deleted)
 
     def list(self) -> List[Estudo]:

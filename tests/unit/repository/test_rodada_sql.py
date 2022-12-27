@@ -1,29 +1,29 @@
 import pytest
 from datetime import datetime, timedelta
 
-from encadeador.modelos.job import Job
+from encadeador.modelos.rodada import Rodada
 from encadeador.modelos.caso import Caso
 from encadeador.modelos.estudo import Estudo
 from encadeador.modelos.programa import Programa
-from encadeador.modelos.estadojob import EstadoJob
+from encadeador.modelos.runstatus import RunStatus
 from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.modelos.estadoestudo import EstadoEstudo
-from encadeador.adapters.repository.job import SQLJobRepository
+from encadeador.adapters.repository.rodada import SQLRodadaRepository
 from encadeador.adapters.repository.caso import SQLCasoRepository
 from encadeador.adapters.repository.estudo import SQLEstudoRepository
 
 pytestmark = pytest.mark.usefixtures("mappers")
 
 
-def test_get_job_not_found(sqlite_session_factory):
+def test_get_rodada_not_found(sqlite_session_factory):
     session = sqlite_session_factory()
-    job_repo = SQLJobRepository(session)
-    assert job_repo.read(1) is None
+    rodada_repo = SQLRodadaRepository(session)
+    assert rodada_repo.read(1) is None
 
 
-def test_get_job(sqlite_session_factory):
+def test_get_rodada(sqlite_session_factory):
     session = sqlite_session_factory()
-    job_repo = SQLJobRepository(session)
+    rodada_repo = SQLRodadaRepository(session)
     caso_repo = SQLCasoRepository(session)
     estudo_repo = SQLEstudoRepository(session)
     estudo_repo.create(Estudo("/home/teste", "teste", EstadoEstudo.CONCLUIDO))
@@ -39,25 +39,26 @@ def test_get_job(sqlite_session_factory):
             1,
         )
     )
-    job_teste = Job(
-        1,
+    rodada_teste = Rodada(
         "teste",
+        RunStatus.SUCCESS,
+        1,
         "/home/teste",
         datetime.now(),
         datetime.now(),
-        datetime.now(),
         72,
-        EstadoJob.FINALIZADO,
+        "NEWAVE",
+        "v28",
         1,
     )
-    job_teste._id = 1
-    job_repo.create(job_teste)
-    assert job_repo.read(1) == job_teste
+    rodada_teste.id = 1
+    rodada_repo.create(rodada_teste)
+    assert rodada_repo.read(1) == rodada_teste
 
 
-def test_update_job(sqlite_session_factory):
+def test_update_rodada(sqlite_session_factory):
     session = sqlite_session_factory()
-    job_repo = SQLJobRepository(session)
+    rodada_repo = SQLRodadaRepository(session)
     caso_repo = SQLCasoRepository(session)
     estudo_repo = SQLEstudoRepository(session)
     estudo_repo.create(Estudo("/home/teste", "teste", EstadoEstudo.CONCLUIDO))
@@ -73,29 +74,30 @@ def test_update_job(sqlite_session_factory):
             1,
         )
     )
-    job_teste = Job(
-        1,
+    rodada_teste = Rodada(
         "teste",
+        RunStatus.SUCCESS,
+        1,
         "/home/teste",
         datetime.now(),
         datetime.now(),
-        datetime.now(),
         72,
-        EstadoJob.FINALIZADO,
+        "NEWAVE",
+        "v28",
         1,
     )
-    job_teste._id = 1
-    job_repo.create(job_teste)
-    job_lido = job_repo.read(1)
-    assert job_lido == job_teste
-    job_lido._instante_entrada_fila = datetime.now() + timedelta(weeks=1)
-    job_repo.update(job_lido)
-    assert job_repo.read(1) == job_lido
+    rodada_teste.id = 1
+    rodada_repo.create(rodada_teste)
+    rodada_lida = rodada_repo.read(1)
+    assert rodada_lida == rodada_teste
+    rodada_lida.instante_inicio_execucao = datetime.now() + timedelta(weeks=1)
+    rodada_repo.update(rodada_lida)
+    assert rodada_repo.read(1) == rodada_lida
 
 
-def test_delete_job(sqlite_session_factory):
+def test_delete_rodada(sqlite_session_factory):
     session = sqlite_session_factory()
-    job_repo = SQLJobRepository(session)
+    rodada_repo = SQLRodadaRepository(session)
     caso_repo = SQLCasoRepository(session)
     estudo_repo = SQLEstudoRepository(session)
     estudo_repo.create(Estudo("/home/teste", "teste", EstadoEstudo.CONCLUIDO))
@@ -111,19 +113,20 @@ def test_delete_job(sqlite_session_factory):
             1,
         )
     )
-    job_teste = Job(
-        1,
+    rodada_teste = Rodada(
         "teste",
+        RunStatus.SUCCESS,
+        1,
         "/home/teste",
         datetime.now(),
         datetime.now(),
-        datetime.now(),
         72,
-        EstadoJob.FINALIZADO,
+        "NEWAVE",
+        "v28",
         1,
     )
-    job_teste._id = 1
-    job_repo.create(job_teste)
-    assert job_repo.read(1) == job_teste
-    job_repo.delete(1)
-    assert job_repo.read(1) is None
+    rodada_teste.id = 1
+    rodada_repo.create(rodada_teste)
+    assert rodada_repo.read(1) == rodada_teste
+    rodada_repo.delete(1)
+    assert rodada_repo.read(1) is None

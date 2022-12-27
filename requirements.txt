@@ -5,3 +5,7 @@ pandas
 pyarrow
 python-dotenv
 SQLAlchemy
+validators
+fastapi[all]
+pybase62
+aiohttp

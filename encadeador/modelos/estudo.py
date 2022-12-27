@@ -3,15 +3,15 @@ from encadeador.modelos.caso import Caso
 from encadeador.modelos.estadoestudo import EstadoEstudo
 from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.modelos.programa import Programa
-from encadeador.utils.log import Log
 
 
 class Estudo:
-    def __init__(self, _caminho: str, _nome: str, _estado: EstadoEstudo):
-        self._id = None
-        self._caminho = _caminho
-        self._nome = _nome
-        self._estado = _estado
+    def __init__(self, caminho: str, nome: str, estado: EstadoEstudo):
+        self.id = None
+        self.caminho = caminho
+        self.nome = nome
+        self.estado = estado
+        self.casos: List[Caso] = []
 
     def __eq__(self, o: object):
         if not isinstance(o, Estudo):
@@ -25,39 +25,11 @@ class Estudo:
             ]
         )
 
-    @property
-    def id(self) -> Optional[int]:
-        return self._id
-
-    @property
-    def nome(self) -> str:
-        return self._nome
-
-    @nome.setter
-    def nome(self, n: str):
-        self._nome = n
-
-    @property
-    def caminho(self) -> str:
-        return self._caminho
-
-    @caminho.setter
-    def caminho(self, c: str):
-        self._caminho = c
-
-    @property
-    def casos(self) -> List[Caso]:
-        return self._casos
-
-    @casos.setter
-    def casos(self, c: List[Caso]):
-        self._casos = c
-
     def indice_caso(self, caso: Optional[Caso]) -> int:
         if caso is None:
             return 0
         else:
-            return self._casos.index(caso)
+            return self.casos.index(caso)
 
     @property
     def proximo_caso(self) -> Optional[Caso]:
@@ -156,12 +128,3 @@ class Estudo:
         except ValueError:
             return False
         return all(sucesso)
-
-    @property
-    def estado(self) -> EstadoEstudo:
-        return self._estado
-
-    @estado.setter
-    def estado(self, e: EstadoEstudo):
-        Log.log().debug(f"Estudo: {self._estado} -> {e.value}")
-        self._estado = e

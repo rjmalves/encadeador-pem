@@ -25,14 +25,14 @@ def test_get_caso_not_found():
 
 
 @patch(
-    "encadeador.adapters.repository.job.JSONJobRepository.list_by_caso",
+    "encadeador.adapters.repository.rodada.JSONRodadaRepository.list_by_caso",
     return_value=[],
 )
 @patch(
     "encadeador.adapters.repository.caso.exists",
     return_value=True,
 )
-def test_get_caso(ignore_jobs_caso, mock_exists):
+def test_get_caso(ignore_rodadas_caso, mock_exists):
     m: MagicMock = mock_open(read_data="[]")
     with patch("builtins.open", m):
         caso_repo = JSONCasoRepository(".")
@@ -60,14 +60,14 @@ def test_get_caso(ignore_jobs_caso, mock_exists):
 
 
 @patch(
-    "encadeador.adapters.repository.job.JSONJobRepository.list_by_caso",
+    "encadeador.adapters.repository.rodada.JSONRodadaRepository.list_by_caso",
     return_value=[],
 )
 @patch(
     "encadeador.adapters.repository.caso.exists",
     return_value=True,
 )
-def test_update_caso(ignore_jobs_caso, mock_exists):
+def test_update_caso(ignore_rodadas_caso, mock_exists):
     m: MagicMock = mock_open(read_data="[]")
     with patch("builtins.open", m):
         caso_repo = JSONCasoRepository(".")
@@ -109,14 +109,14 @@ def test_update_caso(ignore_jobs_caso, mock_exists):
 
 
 @patch(
-    "encadeador.adapters.repository.job.JSONJobRepository.list_by_caso",
+    "encadeador.adapters.repository.rodada.JSONRodadaRepository.list_by_caso",
     return_value=[],
 )
 @patch(
     "encadeador.adapters.repository.caso.exists",
     return_value=True,
 )
-def test_delete_caso(ignore_jobs_caso, mock_exists):
+def test_delete_caso(ignore_rodadas_caso, mock_exists):
     m: MagicMock = mock_open(read_data="[]")
     with patch("builtins.open", m):
         caso_repo = JSONCasoRepository(".")

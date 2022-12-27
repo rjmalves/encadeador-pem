@@ -12,7 +12,7 @@ from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.modelos.programa import Programa
 
 
-from encadeador.adapters.repository.job import JSONJobRepository
+from encadeador.adapters.repository.rodada import JSONRodadaRepository
 
 
 class AbstractCasoRepository(ABC):
@@ -49,7 +49,7 @@ class SQLCasoRepository(ABC):
         self.__session.add(caso)
 
     def read(self, id: int) -> Optional[Caso]:
-        statement = select(Caso).filter_by(_id=id)
+        statement = select(Caso).filter_by(id=id)
         try:
             j = self.__session.execute(statement).one()[0]
             return j
@@ -59,17 +59,17 @@ class SQLCasoRepository(ABC):
     def update(self, caso: Caso):
         statement = (
             update(Caso)
-            .where(Caso._id == caso._id)
+            .where(Caso.id == caso.id)
             .values(
                 {
-                    "_estado": caso._estado,
+                    "estado": caso.estado,
                 }
             )
         )
         return self.__session.execute(statement)
 
     def delete(self, id: int):
-        statement = delete(Caso).where(Caso._id == id)
+        statement = delete(Caso).where(Caso.id == id)
         return self.__session.execute(statement)
 
     def list(self) -> List[Caso]:
@@ -77,46 +77,46 @@ class SQLCasoRepository(ABC):
         return [j[0] for j in self.__session.execute(statement).all()]
 
     def list_by_estudo(self, id_estudo: int) -> List[Caso]:
-        statement = select(Caso).where(Caso._id_estudo == id_estudo)
+        statement = select(Caso).where(Caso.id_estudo == id_estudo)
         return [j[0] for j in self.__session.execute(statement).all()]
 
 
 class JSONCasoRepository(AbstractCasoRepository):
     def __init__(self, path: str):
         self.__path = Path(path) / "casos.json"
-        self.__jobs_repository = JSONJobRepository(path)
+        self.__rodadas_repository = JSONRodadaRepository(path)
 
     @staticmethod
     def __to_json(caso: Caso) -> dict:
         return {
-            "_id": caso.id,
-            "_caminho": caso.caminho,
-            "_nome": caso.nome,
-            "_ano": caso.ano,
-            "_mes": caso.mes,
-            "_revisao": caso.revisao,
-            "_programa": caso.programa.value,
-            "_estado": caso.estado.value,
-            "_id_estudo": caso.id_estudo,
+            "id": caso.id,
+            "caminho": caso.caminho,
+            "nome": caso.nome,
+            "ano": caso.ano,
+            "mes": caso.mes,
+            "revisao": caso.revisao,
+            "programa": caso.programa.value,
+            "estado": caso.estado.value,
+            "id_estudo": caso.id_estudo,
         }
 
     @staticmethod
     def __from_json(caso_data: dict) -> Caso:
         caso = Caso(
-            caso_data["_caminho"],
-            caso_data["_nome"],
-            caso_data["_ano"],
-            caso_data["_mes"],
-            caso_data["_revisao"],
-            Programa.factory(caso_data["_programa"]),
-            EstadoCaso.factory(caso_data["_estado"]),
-            caso_data["_id_estudo"],
+            caso_data["caminho"],
+            caso_data["nome"],
+            caso_data["ano"],
+            caso_data["mes"],
+            caso_data["revisao"],
+            Programa.factory(caso_data["programa"]),
+            EstadoCaso.factory(caso_data["estado"]),
+            caso_data["id_estudo"],
         )
-        caso._id = caso_data["_id"]
+        caso.id = caso_data["id"]
         return caso
 
     def __choose_id_for_new_caso(self, existing: List[Caso]) -> int:
-        existing_ids = [j._id for j in existing]
+        existing_ids = [j.id for j in existing]
         max_current_id = max(existing_ids) if len(existing_ids) > 0 else 0
         return max_current_id + 1
 
@@ -132,7 +132,7 @@ class JSONCasoRepository(AbstractCasoRepository):
         with open(self.__path, "r") as file:
             casos = [JSONCasoRepository.__from_json(c) for c in load(file)]
             for c in casos:
-                c._jobs = self.__jobs_repository.list_by_caso(c._id)
+                c.rodadas = self.__rodadas_repository.list_by_caso(c.id)
             return casos
 
     def __write_file(self, casos: List[Caso]):
@@ -143,18 +143,18 @@ class JSONCasoRepository(AbstractCasoRepository):
     def create(self, caso: Caso):
         existing = self.__read_file()
         new_id = self.__choose_id_for_new_caso(existing)
-        caso._id = new_id
+        caso.id = new_id
         updated = existing + [caso]
         self.__write_file(updated)
 
     def read(self, id: int) -> Optional[Caso]:
         existing = self.__read_file()
-        candidate = [c for c in existing if c._id == id]
+        candidate = [c for c in existing if c.id == id]
         return candidate[0] if len(candidate) == 1 else None
 
     def update(self, caso: Caso):
         casos = self.__read_file()
-        candidates = list(filter(lambda c: c._id == caso._id, casos))
+        candidates = list(filter(lambda c: c.id == caso.id, casos))
         if len(candidates) == 1:
             index = casos.index(candidates[0])
             casos[index] = caso
@@ -162,14 +162,14 @@ class JSONCasoRepository(AbstractCasoRepository):
 
     def delete(self, id: int):
         existing = self.__read_file()
-        deleted = [c for c in existing if c._id != id]
+        deleted = [c for c in existing if c.id != id]
         return self.__write_file(deleted)
 
     def list(self) -> List[Caso]:
         return self.__read_file()
 
     def list_by_estudo(self, id_estudo: int) -> List[Caso]:
-        return [j for j in self.__read_file() if j._id_estudo == id_estudo]
+        return [j for j in self.__read_file() if j.id_estudo == id_estudo]
 
 
 def factory(kind: str, *args, **kwargs) -> AbstractCasoRepository:
