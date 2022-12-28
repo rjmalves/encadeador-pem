@@ -79,7 +79,7 @@ class Configuracoes(metaclass=Singleton):
             )
             .model_api("MODEL_API")
             .result_api("RESULT_API")
-            .encadeaor_service("ENCADEADOR_SERVICE")
+            .encadeador_service("ENCADEADOR_SERVICE")
             .flexibilizador_service("FLEXIBILIZADOR_SERVICE")
             .regras_reservatorios_service("REGRAS_RESERVATORIOS_SERVICE")
             .build()
