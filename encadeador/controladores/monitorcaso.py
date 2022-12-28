@@ -92,7 +92,10 @@ class MonitorCaso:
         extração de arquivos.
         """
         comando = commands.InicializaCaso(self._caso_id)
-        if handlers.inicializa(comando, self._caso_uow) is not None:
+        if (
+            handlers.inicializa(comando, self._caso_uow, self._rodada_uow)
+            is not None
+        ):
             await self.callback_evento(TransicaoCaso.INICIALIZADO)
 
     async def prepara(

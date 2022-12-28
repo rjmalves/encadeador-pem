@@ -58,13 +58,21 @@ def cria(
 
 def inicializa(
     command: commands.InicializaCaso,
-    uow: AbstractCasoUnitOfWork,
+    caso_uow: AbstractCasoUnitOfWork,
+    rodada_uow: AbstractRodadaUnitOfWork,
 ) -> Optional[Caso]:
-    with uow:
-        caso = uow.casos.read(command.id_caso)
+    with rodada_uow:
+        # Limpa rodadas do caso que estão ativas
+        rodadas_caso = rodada_uow.rodadas.list_by_caso(command.id_caso)
+        rodadas_ativas = [r for r in rodadas_caso if r.ativa]
+        for r in rodadas_ativas:
+            rodada_uow.rodadas.delete(r.id)
+        rodada_uow.commit()
+    with caso_uow:
+        caso = caso_uow.casos.read(command.id_caso)
         if caso is not None:
             caso.estado = EstadoCaso.INICIADO
-            uow.commit()
+            caso_uow.commit()
         return caso
 
 
