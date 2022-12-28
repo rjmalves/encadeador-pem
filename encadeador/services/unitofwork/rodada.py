@@ -60,7 +60,7 @@ class JSONRodadaUnitOfWork(AbstractRodadaUnitOfWork):
         pass
 
 
-DEFAULT_SESSION_FACTORY = sessionmaker(
+DEFAULT_SESSION_FACTORY = lambda _: sessionmaker(
     bind=create_engine(
         sqlite_url(),
     )
@@ -68,15 +68,8 @@ DEFAULT_SESSION_FACTORY = sessionmaker(
 
 
 class SQLRodadaUnitOfWork(AbstractRodadaUnitOfWork):
-    def __init__(
-        self,
-        session_factory=sessionmaker(
-            bind=create_engine(
-                sqlite_url(),
-            )
-        ),
-    ):
-        self._session_factory = session_factory
+    def __init__(self, session_factory=DEFAULT_SESSION_FACTORY):
+        self._session_factory = session_factory()
 
     def __enter__(self) -> "SQLRodadaUnitOfWork":
         self._session: Session = self._session_factory()

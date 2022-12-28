@@ -60,7 +60,7 @@ class JSONEstudoUnitOfWork(AbstractEstudoUnitOfWork):
         pass
 
 
-DEFAULT_SESSION_FACTORY = sessionmaker(
+DEFAULT_SESSION_FACTORY = lambda _: sessionmaker(
     bind=create_engine(
         sqlite_url(),
     )
@@ -68,10 +68,8 @@ DEFAULT_SESSION_FACTORY = sessionmaker(
 
 
 class SQLEstudoUnitOfWork(AbstractEstudoUnitOfWork):
-    def __init__(
-        self, session_factory: sessionmaker = DEFAULT_SESSION_FACTORY
-    ):
-        self._session_factory = session_factory
+    def __init__(self, session_factory=DEFAULT_SESSION_FACTORY):
+        self._session_factory = session_factory()
 
     def __enter__(self) -> "SQLEstudoUnitOfWork":
         self._session: Session = self._session_factory()
