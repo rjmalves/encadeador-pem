@@ -170,7 +170,7 @@ class MonitorEstudo:
                 )
 
         comando_inicializa_estudo = commands.InicializaEstudo(
-            estudo.id, self._diretorios_casos
+            self._estudo_id, self._diretorios_casos
         )
         handlers.inicializa(
             comando_inicializa_estudo, self._estudo_uow, self._caso_uow
