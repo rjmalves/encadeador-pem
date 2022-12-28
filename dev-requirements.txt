@@ -11,3 +11,7 @@ pytest-cov
 pytest-mock
 black
 SQLAlchemy
+validators
+fastapi[all]
+pybase62
+aiohttp

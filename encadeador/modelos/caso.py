@@ -74,13 +74,6 @@ class Caso:
         else:
             return data_caso >= data_o
 
-    def adiciona_rodada(self, rodada: Rodada):
-        if len(self.rodadas) > 0:
-            if self.rodadas[-1].estado != RunStatus.SUCCESS:
-                self.rodadas[-1] = rodada
-        else:
-            self.rodadas.append(rodada)
-
     @property
     def tempo_execucao(self) -> float:
         return sum([j.tempo_execucao for j in self.rodadas])

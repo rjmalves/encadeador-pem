@@ -1,7 +1,11 @@
 import aiohttp
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional
 from os.path import join
 import json
+import asyncio
+import io
+import pathlib
+import pandas as pd
 
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.internal.httpresponse import HTTPResponse
@@ -163,3 +167,53 @@ class RegrasReservatoriosAPIRepository:
                     return [
                         FlexibilizationResult.parse_raw(j) for j in flexData
                     ]
+
+
+class ResultAPIRepository:
+    @staticmethod
+    async def resultados_1o_estagio_casos(
+        casos: List[Caso],
+        variavel: str,
+        filtros: dict = {"estagio": 1, "cenario": "mean"},
+    ) -> Optional[pd.DataFrame]:
+        valid_dfs: List[pd.DataFrame] = []
+        async with aiohttp.ClientSession() as session:
+            ret: List[Optional[pd.DataFrame]] = await asyncio.gather(
+                *[
+                    ResultAPIRepository.resultados_caso(
+                        session,
+                        join(Configuracoes().caminho_base_estudo, c.caminho),
+                        variavel,
+                        filtros,
+                    )
+                    for c in casos
+                ]
+            )
+            for c, df in zip(casos, ret):
+                ano_mes_rv = pathlib.Path(c).parts[-2]
+                if df is not None:
+                    df_cols = df.columns.to_list()
+                    df["caso"] = ano_mes_rv
+                    df = df[["caso"] + df_cols]
+                    valid_dfs.append(df)
+        if len(valid_dfs) > 0:
+            complete_df = pd.concat(valid_dfs, ignore_index=True)
+            return complete_df
+        else:
+            return None
+
+    @classmethod
+    async def resultados_caso(
+        cls,
+        session: aiohttp.ClientSession,
+        case_path: str,
+        desired_data: str,
+        filters: dict,
+    ) -> Optional[pd.DataFrame]:
+        identifier = base62_encode(case_path)
+        url = f"{Configuracoes().result_api}/{identifier}/{desired_data}"
+        async with session.get(url, params=filters) as r:
+            if r.status != 200:
+                return None
+            else:
+                return pd.read_parquet(io.BytesIO(await r.content.read()))

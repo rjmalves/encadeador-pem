@@ -1,11 +1,13 @@
-from typing import Optional, Dict
+from typing import Optional, Dict, Tuple
+import pandas as pd
+import pathlib
 from encadeador.controladores.preparadorcaso import PreparadorCaso
 from encadeador.adapters.repository.apis import (
     EncadeadorAPIRepository,
     RegrasReservatoriosAPIRepository,
     FlexibilizadorAPIRepository,
 )
-
+from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.utils.log import Log
 from encadeador.internal.httpresponse import HTTPResponse
 from encadeador.modelos.estadocaso import EstadoCaso
@@ -35,8 +37,11 @@ def cria(
         case_name = ProgramRules.case_name_from_data(*case_data)
         if case_name is None:
             return None
+        basepath = pathlib.Path(Configuracoes().caminho_base_estudo)
+        casepath = pathlib.Path(command.caminho)
+        relpath = str(casepath.relative_to(basepath))
         caso = Caso(
-            command.caminho,
+            relpath,
             case_name,
             case_data[0],
             case_data[1],
@@ -195,6 +200,31 @@ async def flexibiliza(
                     return TransicaoCaso.FLEXIBILIZACAO_SUCESSO
             else:
                 return TransicaoCaso.ERRO_MAX_FLEX
+
+
+async def sintetiza_casos_rodadas(
+    caso_uow: AbstractCasoUnitOfWork, rodada_uow: AbstractRodadaUnitOfWork
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    with caso_uow:
+        casos = caso_uow.casos.list()
+    df_casos = pd.DataFrame(
+        data={
+            "id": [c.id for c in casos],
+            "nome": [c.nome for c in casos],
+            "caminho": [c.caminho for c in casos],
+            "ano": [c.ano for c in casos],
+            "mes": [c.mes for c in casos],
+            "revisao": [c.revisao for c in casos],
+            "programa": [c.programa.value for c in casos],
+            "estado": [c.estado.value for c in casos],
+            "tempo_execucao": [c.tempo_execucao for c in casos],
+            "numero_flexibilizacoes": [
+                c.numero_flexibilizacoes for c in casos
+            ],
+        }
+    )
+    df_rodadas = await rodada_handlers.sintetiza_rodadas(rodada_uow)
+    return df_casos, df_rodadas
 
 
 def corrige_erro_convergencia(

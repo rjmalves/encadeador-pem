@@ -1,4 +1,5 @@
 import pathlib
+import asyncio
 from os.path import join
 from dotenv import load_dotenv
 
@@ -19,5 +20,5 @@ if __name__ == "__main__":
     Configuracoes.le_variaveis_ambiente()
 
     app = App()
-    app.inicializa()
-    app.executa()
+    asyncio.run(app.inicializa())
+    asyncio.run(app.executa())

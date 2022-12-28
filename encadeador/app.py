@@ -76,7 +76,7 @@ class App:
         Log.log().info("Finalizando Encadeador")
         exit(codigo)
 
-    def inicializa(self):
+    async def inicializa(self):
         self._monitor = MonitorEstudo(
             ESTUDO_ID,
             estudo_uow_factory(UOW_KIND),
@@ -87,13 +87,13 @@ class App:
             self._regras_inviabilidades,
         )
         self._monitor.observa(self.callback_evento)
-        self._monitor.prepara()
+        await self._monitor.prepara()
 
-    def executa(self):
+    async def executa(self):
         while True:
             time.sleep(INTERVALO_POLL)
             Log.log().debug("Tentando monitorar...")
             if not self._executando:
                 continue
             Log.log().debug("Monitorando...")
-            self._monitor.monitora()
+            await self._monitor.monitora()

@@ -1,13 +1,17 @@
 from typing import Dict, List, Callable
 from encadeador.services.unitofwork.rodada import AbstractRodadaRepository
 from encadeador.services.unitofwork.caso import AbstractCasoUnitOfWork
-
+from os.path import join
+from os import makedirs
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.modelos.regrareservatorio import RegraReservatorio
 from encadeador.modelos.transicaocaso import TransicaoCaso
 from encadeador.utils.log import Log
 from encadeador.utils.event import Event
+from encadeador.adapters.repository.synthesis import (
+    factory as synthesis_factory,
+)
 import encadeador.domain.commands as commands
 import encadeador.services.handlers.caso as handlers
 
@@ -32,7 +36,7 @@ class MonitorCaso:
         self._rodada_uow = rodada_uow
         self._transicao_caso = Event()
 
-    def callback_evento(self, evento: TransicaoCaso):
+    async def callback_evento(self, evento: TransicaoCaso):
         """
         Esta função é usada para implementar o Observer Pattern.
         Quando chamada, significa que ocorreu algo com o job do caso
@@ -42,7 +46,7 @@ class MonitorCaso:
         :param evento: O evento ocorrido com o job ou caso
         :type evento: Union[TransicaoCaso]
         """
-        self._regras()[evento]()
+        await self._regras()[evento]()
 
     def _regras(
         self,
@@ -82,14 +86,14 @@ class MonitorCaso:
             (TransicaoCaso.ERRO): self._handler_erro,
         }
 
-    def inicializa(self):
+    async def inicializa(self):
         """
         Realiza a inicialização do caso, lidando com identificação e
         extração de arquivos.
         """
         comando = commands.InicializaCaso(self._caso_id)
         if handlers.inicializa(comando, self._caso_uow) is not None:
-            self.callback_evento(TransicaoCaso.INICIALIZADO)
+            await self.callback_evento(TransicaoCaso.INICIALIZADO)
 
     async def prepara(
         self,
@@ -100,21 +104,21 @@ class MonitorCaso:
         necessidades do estudo encadeado e o encadeamento das
         variáveis selecionadas.
         """
-        self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_SOLICITADA)
+        await self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_SOLICITADA)
         comando = commands.PreparaCaso(
             self._caso_id, regras_operacao_reservatorios
         )
         if await handlers.prepara(comando, self._caso_uow):
-            self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_SUCESSO)
+            await self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_SUCESSO)
         else:
-            self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_ERRO)
+            await self.callback_evento(TransicaoCaso.PREPARA_EXECUCAO_ERRO)
 
-    def inicia_execucao(self):
+    async def inicia_execucao(self):
         """
         Inicia o processo de execução de um caso após as etapas
         de inicialização e preparação.
         """
-        self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
+        await self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
 
     async def __submete(self):
         """
@@ -126,9 +130,9 @@ class MonitorCaso:
         res = await handlers.submete(comando, self._caso_uow, self._rodada_uow)
         if isinstance(res, int):
             self._rodada_id = res
-            self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SUCESSO)
+            await self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SUCESSO)
         else:
-            self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_ERRO)
+            await self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_ERRO)
 
     async def monitora(self):
         """
@@ -140,51 +144,54 @@ class MonitorCaso:
             comando, self._caso_uow, self._rodada_uow
         )
         if transicao is not None:
-            self.callback_evento(transicao)
+            await self.callback_evento(transicao)
 
     def observa(self, f: Callable):
         self._transicao_caso.append(f)
 
-    def _handler_inicializado(self):
+    async def _handler_inicializado(self):
         Log.log().info(f"Caso {self._caso_id}: inicializado")
         self._transicao_caso(TransicaoCaso.INICIALIZADO)
 
-    def _handler_prepara_execucao_solicitada(self):
+    async def _handler_prepara_execucao_solicitada(self):
         Log.log().info(f"Caso {self._caso_id}: iniciando preparação do caso")
         comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.PREPARANDO)
         handlers.atualiza(comando, self._caso_uow)
         self._transicao_caso(TransicaoCaso.PREPARA_EXECUCAO_SOLICITADA)
 
-    def _handler_prepara_execucao_sucesso(self):
+    async def _handler_prepara_execucao_sucesso(self):
         Log.log().info(f"Caso {self._caso_id}: caso preparado com sucesso")
         comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.PREPARADO)
         handlers.atualiza(comando, self._caso_uow)
         self._transicao_caso(TransicaoCaso.PREPARA_EXECUCAO_SUCESSO)
 
-    def _handler_prepara_execucao_erro(self):
+    async def _handler_prepara_execucao_erro(self):
         Log.log().info(f"Caso {self._caso_id}: erro na preparação do caso")
         comando = commands.AtualizaCaso(
             self._caso_id, EstadoCaso.ERRO_PREPARACAO
         )
         handlers.atualiza(comando, self._caso_uow)
-        self.callback_evento(TransicaoCaso.ERRO)
+        await self.callback_evento(TransicaoCaso.ERRO)
 
-    def _handler_inicio_execucao_solicitada(self):
+    async def _handler_inicio_execucao_solicitada(self):
         Log.log().info(f"Caso {self._caso_id}: solicitada execução do caso")
         comando = commands.AtualizaCaso(
             self._caso_id, EstadoCaso.INICIANDO_EXECUCAO
         )
         handlers.atualiza(comando, self._caso_uow)
         self._transicao_caso(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
-        self.__submete()
+        await self.__submete()
 
-    def _handler_inicio_execucao_sucesso(self):
+    async def _handler_inicio_execucao_sucesso(self):
         Log.log().info(f"Caso {self._caso_id}: início da execução com sucesso")
         self._transicao_caso(TransicaoCaso.INICIO_EXECUCAO_SUCESSO)
+        comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.EXECUTANDO)
+        handlers.atualiza(comando, self._caso_uow)
+        await self.__sintetiza_casos_rodadas()
         # Nada a fazer, visto que agora existe o job na fila e as transições
         # acontecem escutando os eventos do Job, até ser finalizado.
 
-    def _handler_inicio_execucao_erro(self):
+    async def _handler_inicio_execucao_erro(self):
         Log.log().info(
             f"Caso {self._caso_id}: erro no início da execução do caso"
         )
@@ -192,45 +199,49 @@ class MonitorCaso:
             self._caso_id, EstadoCaso.ERRO_EXECUCAO
         )
         handlers.atualiza(comando, self._caso_uow)
-        self.callback_evento(TransicaoCaso.ERRO)
+        await self.callback_evento(TransicaoCaso.ERRO)
 
-    def _handler_submissao_solicitada_job(self):
+    async def _handler_submissao_solicitada_job(self):
         Log.log().info(
             f"Caso {self._caso_id}: submissão do job do caso solicitada"
         )
 
-    def _handler_erro_dados(self):
+    async def _handler_erro_dados(self):
         Log.log().info(f"Caso {self._caso_id}: erro de dados")
         comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.ERRO_DADOS)
         handlers.atualiza(comando, self._caso_uow)
-        self.callback_evento(TransicaoCaso.ERRO)
+        await self.callback_evento(TransicaoCaso.ERRO)
 
-    def _handler_erro_convergencia(self):
+    async def _handler_erro_convergencia(self):
         Log.log().info(f"Caso {self._caso_id}: erro na convergência")
 
         comando = commands.CorrigeErroConvergenciaCaso(self._caso_id)
         if handlers.corrige_erro_convergencia(comando, self._caso_uow):
-            self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
+            await self.callback_evento(
+                TransicaoCaso.INICIO_EXECUCAO_SOLICITADA
+            )
         else:
             comando = commands.AtualizaCaso(
                 self._caso_id, EstadoCaso.ERRO_EXECUCAO
             )
             handlers.atualiza(comando, self._caso_uow)
-            self.callback_evento(TransicaoCaso.ERRO)
+            await self.callback_evento(TransicaoCaso.ERRO)
 
-    def _handler_nao_convergiu(self):
+    async def _handler_nao_convergiu(self):
         Log.log().info(f"Caso {self._caso_id}: não convergiu")
         comando = commands.FlexibilizaCriterioConvergenciaCaso(self._caso_id)
         if handlers.flexibiliza_criterio_convergencia(comando, self._caso_uow):
-            self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
+            await self.callback_evento(
+                TransicaoCaso.INICIO_EXECUCAO_SOLICITADA
+            )
         else:
             comando = commands.AtualizaCaso(
                 self._caso_id, EstadoCaso.ERRO_PREPARACAO
             )
             handlers.atualiza(comando, self._caso_uow)
-            self.callback_evento(TransicaoCaso.ERRO)
+            await self.callback_evento(TransicaoCaso.ERRO)
 
-    def _handler_erro_max_flex(self):
+    async def _handler_erro_max_flex(self):
         Log.log().info(
             f"Caso {self._caso_id}: máximo de flexibilizações atingido"
         )
@@ -238,7 +249,7 @@ class MonitorCaso:
             self._caso_id, EstadoCaso.ERRO_MAX_FLEX
         )
         handlers.atualiza(comando, self._caso_uow)
-        self.callback_evento(TransicaoCaso.ERRO)
+        await self.callback_evento(TransicaoCaso.ERRO)
 
     async def _handler_caso_inviavel(self):
         Log.log().info(f"Caso {self._caso_id}: caso inviável")
@@ -249,27 +260,43 @@ class MonitorCaso:
         if ret is None:
             comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.ERRO)
             handlers.atualiza(comando, self._caso_uow)
-            self.callback_evento(TransicaoCaso.ERRO)
+            await self.callback_evento(TransicaoCaso.ERRO)
         else:
-            self.callback_evento(ret)
+            await self.__sintetiza_casos_rodadas()
+            await self.callback_evento(ret)
 
-    def _handler_flexibilizacao_sucesso(self):
+    async def _handler_flexibilizacao_sucesso(self):
         Log.log().info(
             f"Caso {self._caso_id}: flexibilização realizada com sucesso."
         )
-        self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
+        await self.callback_evento(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
 
-    def _handler_flexibilizacao_erro(self):
+    async def _handler_flexibilizacao_erro(self):
         Log.log().info(f"Caso {self._caso_id}: erro na flexibilização.")
         comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.ERRO)
         handlers.atualiza(comando, self._caso_uow)
-        self.callback_evento(TransicaoCaso.ERRO)
+        await self.callback_evento(TransicaoCaso.ERRO)
 
-    def _handler_caso_concluido(self):
+    async def _handler_caso_concluido(self):
         Log.log().info(f"Caso {self._caso_id}: caso concluído.")
         comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.CONCLUIDO)
         handlers.atualiza(comando, self._caso_uow)
+        await self.__sintetiza_casos_rodadas()
         self._transicao_caso(TransicaoCaso.CONCLUIDO)
 
-    def _handler_erro(self):
+    async def _handler_erro(self):
+        await self.__sintetiza_casos_rodadas()
         Log.log().error(f"Caso {self._caso_id}: Erro. ")
+
+    async def __sintetiza_casos_rodadas(self):
+        df_casos, df_rodadas = await handlers.sintetiza_casos_rodadas(
+            self._caso_uow, self._rodada_uow
+        )
+        caminho_sintese = join(
+            Configuracoes().caminho_base_estudo,
+            Configuracoes().diretorio_sintese,
+        )
+        makedirs(caminho_sintese, exist_ok=True)
+        sintetizador = synthesis_factory(Configuracoes().formato_sintese)
+        sintetizador.write(df_casos, join(caminho_sintese, "CASOS"))
+        sintetizador.write(df_rodadas, join(caminho_sintese, "RODADAS"))

@@ -1,10 +1,10 @@
 from typing import Optional
-
+import pandas as pd
 from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.modelos.estadoestudo import EstadoEstudo
 from encadeador.modelos.estudo import Estudo
 from encadeador.controladores.monitorcaso import MonitorCaso
-from encadeador.controladores.sintetizadorestudo import SintetizadorEstudo
+from encadeador.controladores.sintetizador import Sintetizador
 from encadeador.services.unitofwork.caso import AbstractCasoUnitOfWork
 from encadeador.services.unitofwork.estudo import AbstractEstudoUnitOfWork
 import encadeador.services.handlers.caso as handlers_caso
@@ -56,11 +56,11 @@ def inicializa(
         return estudo
 
 
-def monitora(
+async def monitora(
     command: commands.MonitoraEstudo,
     monitor: MonitorCaso,
 ) -> bool:
-    monitor.monitora()
+    await monitor.monitora()
 
 
 def atualiza(
@@ -74,12 +74,23 @@ def atualiza(
         return estudo is not None
 
 
-def sintetiza(
+async def sintetiza_estudo(uow: AbstractEstudoUnitOfWork) -> pd.DataFrame:
+    with uow:
+        estudos = uow.estudos.list()
+    return pd.DataFrame(
+        data={
+            "id": [c.id for c in estudos],
+            "nome": [c.nome for c in estudos],
+            "caminho": [c.caminho for c in estudos],
+            "estado": [c.estado.value for c in estudos],
+        }
+    )
+
+
+async def sintetiza_resultados(
     command: commands.SintetizaEstudo, uow: AbstractEstudoUnitOfWork
-) -> bool:
+):
     with uow:
         estudo = uow.estudos.read(command.id_estudo)
-    if estudo is not None:
-        sintetizador = SintetizadorEstudo(estudo)
-        return sintetizador.sintetiza_estudo()
-    return False
+    sintetizador = Sintetizador(estudo.casos_concluidos)
+    await sintetizador.sintetiza_resultados()
