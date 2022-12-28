@@ -167,7 +167,7 @@ async def submete(
             caso.estado = EstadoCaso.EXECUTANDO
             caso_uow.casos.update(caso)
             caso_uow.commit()
-            return rodada.id
+            return rodada
 
 
 async def monitora(
