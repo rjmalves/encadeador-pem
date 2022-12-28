@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from typing import Dict
+from config import sqlite_url
 
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.adapters.repository.caso import (
@@ -62,7 +63,7 @@ class JSONCasoUnitOfWork(AbstractCasoUnitOfWork):
 
 DEFAULT_SESSION_FACTORY = sessionmaker(
     bind=create_engine(
-        f"sqlite:///{Configuracoes().caminho_base_estudo}",
+        sqlite_url(),
     )
 )
 

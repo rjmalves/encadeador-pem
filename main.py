@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     Log.configura_logging(DIR_BASE)
     Configuracoes.le_variaveis_ambiente()
-    start_db(DIR_BASE)
+    start_db()
 
     app = App()
     asyncio.run(app.inicializa())
