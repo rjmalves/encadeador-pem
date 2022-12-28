@@ -179,7 +179,7 @@ class MonitorEstudo:
 
     async def _handler_prepara_execucao_sucesso(self):
         Log.log().info("Estudo: preparado com sucesso")
-        self._transicao_estudo(TransicaoEstudo.PREPARA_EXECUCAO_SUCESSO)
+        await self._transicao_estudo(TransicaoEstudo.PREPARA_EXECUCAO_SUCESSO)
 
     async def _handler_prepara_execucao_erro(self):
         Log.log().info("Estudo: erro na preparação")
@@ -201,7 +201,9 @@ class MonitorEstudo:
             self._estudo_id, EstadoEstudo.EXECUTANDO
         )
         if handlers.atualiza(comando, self._estudo_uow):
-            self._transicao_estudo(TransicaoEstudo.INICIO_EXECUCAO_SUCESSO)
+            await self._transicao_estudo(
+                TransicaoEstudo.INICIO_EXECUCAO_SUCESSO
+            )
             await self.callback_evento(TransicaoEstudo.INICIO_PROXIMO_CASO)
 
     async def _handler_inicio_execucao_erro(self):
@@ -216,14 +218,14 @@ class MonitorEstudo:
         handlers.atualiza(comando, self._estudo_uow)
         command = commands.SintetizaEstudo(self._estudo_id)
         await handlers.sintetiza_resultados(command, self._estudo_uow)
-        self._transicao_estudo(TransicaoEstudo.CONCLUIDO)
+        await self._transicao_estudo(TransicaoEstudo.CONCLUIDO)
 
     async def _handler_erro(self):
         Log.log().info("Estudo: erro.")
         comando = commands.AtualizaEstudo(self._estudo_id, EstadoEstudo.ERRO)
         handlers.atualiza(comando, self._estudo_uow)
         await self.__sintetiza_estudo()
-        self._transicao_estudo(TransicaoEstudo.ERRO)
+        await self._transicao_estudo(TransicaoEstudo.ERRO)
 
     async def _handler_inicializado_caso(self):
         Log.log().debug("Estudo: caso inicializado")
