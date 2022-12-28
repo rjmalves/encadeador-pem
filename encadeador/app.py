@@ -1,4 +1,4 @@
-import time
+import asyncio
 from typing import Callable, Dict
 
 from encadeador.services.unitofwork.rodada import factory as rodada_uow_factory
@@ -32,7 +32,7 @@ class App:
         )
         self._executando = False
 
-    def callback_evento(self, evento: TransicaoEstudo):
+    async def callback_evento(self, evento: TransicaoEstudo):
         """
         Esta função é usada para implementar o Observer Pattern.
         Quando chamada, significa que ocorreu algo com o estudo.
@@ -42,7 +42,7 @@ class App:
         """
         regras = self._regras()
         if evento in regras.keys():
-            regras[evento]()
+            await regras[evento]()
         else:
             Log.log().warning(f"Evento não capturado: {evento.name}")
 
@@ -60,16 +60,16 @@ class App:
             (TransicaoEstudo.ERRO): self._handler_erro,
         }
 
-    def _handler_prepara_execucao_sucesso(self):
-        self._monitor.inicia()
+    async def _handler_prepara_execucao_sucesso(self):
+        await self._monitor.inicia()
 
-    def _handler_inicio_execucao_sucesso(self):
+    async def _handler_inicio_execucao_sucesso(self):
         self._executando = True
 
-    def _handler_concluido(self):
+    async def _handler_concluido(self):
         self.__finaliza(0)
 
-    def _handler_erro(self):
+    async def _handler_erro(self):
         self.__finaliza(1)
 
     def __finaliza(self, codigo: int):
@@ -91,7 +91,7 @@ class App:
 
     async def executa(self):
         while True:
-            time.sleep(INTERVALO_POLL)
+            asyncio.sleep(INTERVALO_POLL)
             Log.log().debug("Tentando monitorar...")
             if not self._executando:
                 continue
