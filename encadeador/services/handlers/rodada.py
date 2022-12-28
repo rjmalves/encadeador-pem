@@ -79,22 +79,24 @@ async def deleta(
 async def sintetiza_rodadas(uow: AbstractRodadaUnitOfWork) -> pd.DataFrame:
     with uow:
         rodadas = uow.rodadas.list()
-    return pd.DataFrame(
-        data={
-            "id": [c.id for c in rodadas],
-            "nome": [c.nome for c in rodadas],
-            "caminho": [c.caminho for c in rodadas],
-            "id_job": [c.id_job for c in rodadas],
-            "instante_inicio_execucao": [
-                c.instante_inicio_execucao for c in rodadas
-            ],
-            "instante_fim_execucao": [
-                c.instante_fim_execucao for c in rodadas
-            ],
-            "numero_processadores": [c.numero_processadores for c in rodadas],
-            "estado": [c.estado.value for c in rodadas],
-            "nome_programa": [c.nome_programa for c in rodadas],
-            "versao_programa": [c.versao_programa for c in rodadas],
-            "id_caso": [c.id_caso for c in rodadas],
-        }
-    )
+        return pd.DataFrame(
+            data={
+                "id": [c.id for c in rodadas],
+                "nome": [c.nome for c in rodadas],
+                "caminho": [c.caminho for c in rodadas],
+                "id_job": [c.id_job for c in rodadas],
+                "instante_inicio_execucao": [
+                    c.instante_inicio_execucao for c in rodadas
+                ],
+                "instante_fim_execucao": [
+                    c.instante_fim_execucao for c in rodadas
+                ],
+                "numero_processadores": [
+                    c.numero_processadores for c in rodadas
+                ],
+                "estado": [c.estado.value for c in rodadas],
+                "nome_programa": [c.nome_programa for c in rodadas],
+                "versao_programa": [c.versao_programa for c in rodadas],
+                "id_caso": [c.id_caso for c in rodadas],
+            }
+        )
