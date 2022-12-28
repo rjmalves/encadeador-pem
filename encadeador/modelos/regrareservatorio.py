@@ -1,11 +1,11 @@
 import pandas as pd  # type: ignore
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 
 
 class RegraReservatorio:
     def __init__(
         self,
-        _codigo_reservatorio: int | List[int],
+        _codigo_reservatorio: Union[int, List[int]],
         _codigo_usina: int,
         _tipo_restricao: str,
         _mes: int,
@@ -71,7 +71,7 @@ class RegraReservatorio:
         return self.__dict__
 
     @property
-    def codigo_reservatorio(self) -> int | List[int]:
+    def codigo_reservatorio(self) -> Union[int, List[int]]:
         return self._codigo_reservatorio
 
     @property
