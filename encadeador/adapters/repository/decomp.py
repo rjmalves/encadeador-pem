@@ -11,8 +11,8 @@ from idecomp.decomp.relgnl import RelGNL
 
 
 class AbstractDecompRepository(ABC):
-    @abstractmethod
     @property
+    @abstractmethod
     def arquivos(self) -> Arquivos:
         raise NotImplementedError
 

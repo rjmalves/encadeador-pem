@@ -15,8 +15,8 @@ from inewave.newave.pmo import PMO
 
 
 class AbstractNewaveRepository(ABC):
-    @abstractmethod
     @property
+    @abstractmethod
     def arquivos(self) -> Arquivos:
         raise NotImplementedError
 
