@@ -52,7 +52,7 @@ def cria(
         )
         if caso is not None:
             uow.casos.create(caso)
-            Log.log().info(f"Criando caso [{caso.id}] {case_name}")
+            Log.log().info(f"Criando caso {case_name}")
             uow.commit()
         return caso
 
@@ -216,22 +216,22 @@ async def sintetiza_casos_rodadas(
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     with caso_uow:
         casos = caso_uow.casos.list()
-    df_casos = pd.DataFrame(
-        data={
-            "id": [c.id for c in casos],
-            "nome": [c.nome for c in casos],
-            "caminho": [c.caminho for c in casos],
-            "ano": [c.ano for c in casos],
-            "mes": [c.mes for c in casos],
-            "revisao": [c.revisao for c in casos],
-            "programa": [c.programa.value for c in casos],
-            "estado": [c.estado.value for c in casos],
-            "tempo_execucao": [c.tempo_execucao for c in casos],
-            "numero_flexibilizacoes": [
-                c.numero_flexibilizacoes for c in casos
-            ],
-        }
-    )
+        df_casos = pd.DataFrame(
+            data={
+                "id": [c.id for c in casos],
+                "nome": [c.nome for c in casos],
+                "caminho": [c.caminho for c in casos],
+                "ano": [c.ano for c in casos],
+                "mes": [c.mes for c in casos],
+                "revisao": [c.revisao for c in casos],
+                "programa": [c.programa.value for c in casos],
+                "estado": [c.estado.value for c in casos],
+                "tempo_execucao": [c.tempo_execucao for c in casos],
+                "numero_flexibilizacoes": [
+                    c.numero_flexibilizacoes for c in casos
+                ],
+            }
+        )
     df_rodadas = await rodada_handlers.sintetiza_rodadas(rodada_uow)
     return df_casos, df_rodadas
 

@@ -28,7 +28,7 @@ def cria(
         )
         if estudo is not None:
             uow.estudos.create(estudo)
-            Log.log().info(f"Criando estudo [{estudo.id}] {command.nome}")
+            Log.log().info(f"Criando estudo {command.nome}")
             uow.commit()
         return estudo
 
@@ -73,14 +73,14 @@ def atualiza(
 async def sintetiza_estudo(uow: AbstractEstudoUnitOfWork) -> pd.DataFrame:
     with uow:
         estudos = uow.estudos.list()
-    return pd.DataFrame(
-        data={
-            "id": [c.id for c in estudos],
-            "nome": [c.nome for c in estudos],
-            "caminho": [c.caminho for c in estudos],
-            "estado": [c.estado.value for c in estudos],
-        }
-    )
+        return pd.DataFrame(
+            data={
+                "id": [c.id for c in estudos],
+                "nome": [c.nome for c in estudos],
+                "caminho": [c.caminho for c in estudos],
+                "estado": [c.estado.value for c in estudos],
+            }
+        )
 
 
 async def sintetiza_resultados(
