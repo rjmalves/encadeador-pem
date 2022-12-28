@@ -135,12 +135,14 @@ class MonitorEstudo:
         """
         with self._estudo_uow:
             estudo = self._estudo_uow.estudos.read(self._estudo_id)
-            caso_atual = estudo.proximo_caso
-        if caso_atual is not None:
+            proximo_caso = estudo.proximo_caso
+            nome = proximo_caso.nome
+            id_caso = proximo_caso.id
+        if proximo_caso is not None:
             await self.__sintetiza_estudo()
-            Log.log().info(f"Estudo - Próximo caso: {caso_atual.nome}")
+            Log.log().info(f"Estudo - Próximo caso: {nome}")
             self._monitor_atual = MonitorCaso(
-                caso_atual.id, self._caso_uow, self._rodada_uow
+                id_caso, self._caso_uow, self._rodada_uow
             )
             self._monitor_atual.observa(self.callback_evento)
             await self._monitor_atual.inicializa()
