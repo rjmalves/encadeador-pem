@@ -168,13 +168,13 @@ class MonitorEstudo:
                 await self.callback_evento(
                     TransicaoEstudo.PREPARA_EXECUCAO_ERRO
                 )
-        else:
-            comando_inicializa_estudo = commands.InicializaEstudo(
-                estudo.id, self._diretorios_casos
-            )
-            handlers.inicializa(
-                comando_inicializa_estudo, self._estudo_uow, self._caso_uow
-            )
+
+        comando_inicializa_estudo = commands.InicializaEstudo(
+            estudo.id, self._diretorios_casos
+        )
+        handlers.inicializa(
+            comando_inicializa_estudo, self._estudo_uow, self._caso_uow
+        )
         await self.callback_evento(TransicaoEstudo.PREPARA_EXECUCAO_SUCESSO)
 
     async def _handler_prepara_execucao_sucesso(self):

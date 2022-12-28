@@ -28,6 +28,7 @@ def cria(
         )
         if estudo is not None:
             uow.estudos.create(estudo)
+            Log.log().info(f"Criando estudo [{estudo.id}] {command.nome}")
             uow.commit()
         return estudo
 

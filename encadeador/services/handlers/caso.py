@@ -52,6 +52,7 @@ def cria(
         )
         if caso is not None:
             uow.casos.create(caso)
+            Log.log().info(f"Criando caso [{caso.id}] {case_name}")
             uow.commit()
         return caso
 
