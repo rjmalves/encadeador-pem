@@ -7,12 +7,10 @@ from zipfile import ZipFile
 from pathlib import Path
 
 
-from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.adapters.repository.newave import (
     AbstractNewaveRepository,
     FSNewaveRepository,
 )
-from encadeador.utils.terminal import converte_codificacao
 
 
 NEWAVE_OUT_ZIP_PATTERN = "saidas_.*zip"
@@ -50,9 +48,6 @@ class FSNewaveUnitOfWork(AbstractNewaveUnitOfWork):
 
     def __enter__(self) -> "FSNewaveUnitOfWork":
         chdir(self._newave_path)
-        converte_codificacao(
-            self._newave_path, Configuracoes().script_converte_codificacao
-        )
         self._newave = FSNewaveRepository(self._newave_path)
         return super().__enter__()
 

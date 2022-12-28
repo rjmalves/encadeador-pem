@@ -3,13 +3,10 @@ from os import chdir, curdir
 from typing import Dict
 from pathlib import Path
 
-
-from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.adapters.repository.decomp import (
     AbstractDecompRepository,
     FSDecompRepository,
 )
-from encadeador.utils.terminal import converte_codificacao
 
 
 NEWAVE_OUT_ZIP_PATTERN = "saidas_.*zip"
@@ -39,9 +36,6 @@ class FSDecompUnitOfWork(AbstractDecompUnitOfWork):
 
     def __enter__(self) -> "FSDecompUnitOfWork":
         chdir(self._decomp_path)
-        converte_codificacao(
-            self._decomp_path, Configuracoes().script_converte_codificacao
-        )
         self._decomp = FSDecompRepository(self._decomp_path)
         return super().__enter__()
 

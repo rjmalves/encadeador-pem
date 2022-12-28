@@ -30,15 +30,15 @@ class PreparadorCaso:
             raise ValueError(f"Caso não suportado")
 
     @abstractmethod
-    def prepara(self, **kwargs) -> bool:
+    async def prepara(self, **kwargs) -> bool:
         pass
 
     @abstractmethod
-    def corrige_erro_convergencia(self) -> bool:
+    async def corrige_erro_convergencia(self) -> bool:
         pass
 
     @abstractmethod
-    def flexibiliza_criterio_convergencia(self) -> bool:
+    async def flexibiliza_criterio_convergencia(self) -> bool:
         pass
 
     @property
@@ -70,7 +70,7 @@ class PreparadorNEWAVE(PreparadorCaso):
         cvar.valores_constantes = par_cvar
         Log.log().info(f"Valores de CVAR alterados: {par_cvar}")
 
-    def prepara(self) -> bool:
+    async def prepara(self) -> bool:
         Log.log().info(f"Preparando caso do NEWAVE: {self.caso.nome}")
         self.__deleta_cortes_ultimo_newave()
         uow = nw_factory(
@@ -78,7 +78,7 @@ class PreparadorNEWAVE(PreparadorCaso):
         )
         with uow:
             if Configuracoes().adequa_decks_newave:
-                dger = uow.newave.get_dger()
+                dger = await uow.newave.get_dger()
                 self.__adequa_dger(dger)
                 uow.newave.set_dger(dger)
                 cvar = uow.newave.get_cvar()
@@ -87,14 +87,14 @@ class PreparadorNEWAVE(PreparadorCaso):
             Log.log().info("Adequação do caso concluída com sucesso")
             return True
 
-    def corrige_erro_convergencia(self) -> bool:
+    async def corrige_erro_convergencia(self) -> bool:
         Log.log().info(
             "Não há correção de erro de convergência no NEWAVE: "
             + f"{self.caso.nome}"
         )
         return True
 
-    def flexibiliza_criterio_convergencia(self) -> bool:
+    async def flexibiliza_criterio_convergencia(self) -> bool:
         Log.log().info(
             "Não há flexibilização de critério de convergência no NEWAVE: "
             + f"{self.caso.nome}"
@@ -145,13 +145,13 @@ class PreparadorDECOMP(PreparadorCaso):
         self.__adequa_titulo_estudo(dadger)
         self.__adequa_numero_iteracoes(dadger)
 
-    def prepara(self) -> bool:
+    async def prepara(self) -> bool:
         Log.log().info(f"Preparando caso do DECOMP: {self.caso.nome}")
         dc_uow = dc_factory(
             "FS", join(Configuracoes().caminho_base_estudo, self.caso.caminho)
         )
         with dc_uow:
-            dadger = dc_uow.decomp.get_dadger()
+            dadger = await dc_uow.decomp.get_dadger()
             # Adequa os registros FC (cortes e cortesh)
             caso_cortes = self.__ultimo_newave()
             if (
@@ -168,13 +168,13 @@ class PreparadorDECOMP(PreparadorCaso):
             Log.log().info("Adequação do caso concluída com sucesso")
         return True
 
-    def corrige_erro_convergencia(self) -> bool:
+    async def corrige_erro_convergencia(self) -> bool:
         Log.log().info(f"Previnindo gap negativo no DECOMP: {self.caso.nome}")
         dc_uow = dc_factory(
             "FS", join(Configuracoes().caminho_base_estudo, self.caso.caminho)
         )
         with dc_uow:
-            dadger = dc_uow.decomp.get_dadger()
+            dadger = await dc_uow.decomp.get_dadger()
             existe_rt_crista = dadger.rt(restricao="CRISTA") is not None
             existe_rt_desvio = dadger.rt(restricao="DESVIO") is not None
             if existe_rt_crista and existe_rt_desvio:
@@ -194,14 +194,14 @@ class PreparadorDECOMP(PreparadorCaso):
             dc_uow.decomp.set_dadger(dadger)
         return True
 
-    def flexibiliza_criterio_convergencia(self) -> bool:
+    async def flexibiliza_criterio_convergencia(self) -> bool:
         Log.log().info(f"Aumentando gap do DECOMP: {self.caso.nome}")
         dc_uow = dc_factory(
             "FS",
             join(Configuracoes().caminho_base_estudo, self.caso.caminho),
         )
         with dc_uow:
-            dadger = dc_uow.decomp.get_dadger()
+            dadger = await dc_uow.decomp.get_dadger()
             if dadger.gp.gap >= Configuracoes().gap_maximo_decomp:
                 Log.log().error(
                     f"Máximo gap atingido no DECOMP: {self.caso.nome}"

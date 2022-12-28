@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict
+import pathlib
 from idecomp.decomp.caso import Caso as ArquivoCaso
 from idecomp.decomp.arquivos import Arquivos
 from idecomp.decomp.dadger import Dadger
@@ -8,6 +9,8 @@ from idecomp.decomp.hidr import Hidr
 from idecomp.decomp.inviabunic import InviabUnic
 from idecomp.decomp.relato import Relato
 from idecomp.decomp.relgnl import RelGNL
+from encadeador.modelos.configuracoes import Configuracoes
+from encadeador.utils.encoding import converte_codificacao
 
 
 class AbstractDecompRepository(ABC):
@@ -17,7 +20,7 @@ class AbstractDecompRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_dadger(self) -> Dadger:
+    async def get_dadger(self) -> Dadger:
         raise NotImplementedError
 
     @abstractmethod
@@ -65,7 +68,11 @@ class FSDecompRepository(AbstractDecompRepository):
     def arquivos(self) -> Arquivos:
         return self.__arquivos
 
-    def get_dadger(self) -> Dadger:
+    async def get_dadger(self) -> Dadger:
+        caminho = pathlib.Path(self.__path).joinpath(self.arquivos.dadger)
+        await converte_codificacao(
+            caminho, Configuracoes().script_converte_codificacao
+        )
         return Dadger.le_arquivo(self.__path, self.arquivos.dadger)
 
     def get_dadgnl(self) -> DadGNL:

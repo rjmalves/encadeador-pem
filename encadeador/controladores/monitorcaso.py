@@ -223,7 +223,7 @@ class MonitorCaso:
         Log.log().info(f"Caso {self._caso_id}: erro na convergência")
 
         comando = commands.CorrigeErroConvergenciaCaso(self._caso_id)
-        if handlers.corrige_erro_convergencia(comando, self._caso_uow):
+        if await handlers.corrige_erro_convergencia(comando, self._caso_uow):
             await self.callback_evento(
                 TransicaoCaso.INICIO_EXECUCAO_SOLICITADA
             )
@@ -237,7 +237,9 @@ class MonitorCaso:
     async def _handler_nao_convergiu(self):
         Log.log().info(f"Caso {self._caso_id}: não convergiu")
         comando = commands.FlexibilizaCriterioConvergenciaCaso(self._caso_id)
-        if handlers.flexibiliza_criterio_convergencia(comando, self._caso_uow):
+        if await handlers.flexibiliza_criterio_convergencia(
+            comando, self._caso_uow
+        ):
             await self.callback_evento(
                 TransicaoCaso.INICIO_EXECUCAO_SOLICITADA
             )

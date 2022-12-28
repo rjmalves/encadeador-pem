@@ -89,7 +89,7 @@ async def prepara(
             c for c in uow.casos.list_by_estudo(caso.id_estudo) if c < caso
         ]
         preparador = PreparadorCaso.factory(caso, casos_anteriores)
-        sucesso_prepara = preparador.prepara()
+        sucesso_prepara = await preparador.prepara()
         sucesso_encadeia = True
         sucesso_regras = True
         # PREMISSA: só encadeia se tiver decomps anteriores.
@@ -252,7 +252,7 @@ async def sintetiza_casos_rodadas(
     return df_casos, df_rodadas
 
 
-def corrige_erro_convergencia(
+async def corrige_erro_convergencia(
     command: commands.CorrigeErroConvergenciaCaso, uow: AbstractCasoUnitOfWork
 ) -> bool:
     with uow:
@@ -261,7 +261,7 @@ def corrige_erro_convergencia(
         return preparador.corrige_erro_convergencia()
 
 
-def flexibiliza_criterio_convergencia(
+async def flexibiliza_criterio_convergencia(
     command: commands.FlexibilizaCriterioConvergenciaCaso,
     uow: AbstractCasoUnitOfWork,
 ) -> bool:

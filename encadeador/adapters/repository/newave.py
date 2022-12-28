@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict
+import pathlib
 from inewave.newave.caso import Caso as ArquivoCaso
 from inewave.newave.arquivos import Arquivos
 from inewave.newave.dger import DGer
@@ -12,6 +13,8 @@ from inewave.newave.adterm import AdTerm
 from inewave.newave.term import Term
 from inewave.newave.re import RE
 from inewave.newave.pmo import PMO
+from encadeador.modelos.configuracoes import Configuracoes
+from encadeador.utils.encoding import converte_codificacao
 
 
 class AbstractNewaveRepository(ABC):
@@ -21,7 +24,7 @@ class AbstractNewaveRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_dger(self) -> DGer:
+    async def get_dger(self) -> DGer:
         raise NotImplementedError
 
     @abstractmethod
@@ -109,7 +112,11 @@ class FSNewaveRepository(AbstractNewaveRepository):
     def arquivos(self) -> Arquivos:
         return self.__arquivos
 
-    def get_dger(self) -> DGer:
+    async def get_dger(self) -> DGer:
+        caminho = pathlib.Path(self.__path).joinpath(self.arquivos.dger)
+        await converte_codificacao(
+            caminho, Configuracoes().script_converte_codificacao
+        )
         return DGer.le_arquivo(self.__path, self.arquivos.dger)
 
     def set_dger(self, d: DGer):
