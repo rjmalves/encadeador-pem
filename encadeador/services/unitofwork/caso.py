@@ -36,7 +36,7 @@ class AbstractCasoUnitOfWork(ABC):
 
 
 class JSONCasoUnitOfWork(AbstractCasoUnitOfWork):
-    def __init__(self, path: str = Configuracoes.caminho_base_estudo):
+    def __init__(self, path: str = Configuracoes().caminho_base_estudo):
         self._path = path
 
     def __enter__(self) -> "JSONCasoUnitOfWork":

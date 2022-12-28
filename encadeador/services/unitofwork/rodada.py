@@ -36,7 +36,7 @@ class AbstractRodadaUnitOfWork(ABC):
 
 
 class JSONRodadaUnitOfWork(AbstractRodadaUnitOfWork):
-    def __init__(self, path: str = Configuracoes.caminho_base_estudo):
+    def __init__(self, path: str = Configuracoes().caminho_base_estudo):
         self._path = path
 
     def __enter__(self) -> "JSONRodadaUnitOfWork":

@@ -160,8 +160,8 @@ class MonitorEstudo:
             estudo = self._estudo_uow.estudos.read(self._estudo_id)
         if not estudo:
             comando_cria_estudo = commands.CriaEstudo(
-                Configuracoes.caminho_base_estudo,
-                Configuracoes.nome_estudo,
+                Configuracoes().caminho_base_estudo,
+                Configuracoes().nome_estudo,
             )
             estudo = handlers.cria(comando_cria_estudo, self._estudo_uow)
             if not estudo:

@@ -139,7 +139,7 @@ class PreparadorDECOMP(PreparadorCaso):
         dadger.te.titulo = ProgramRules.decomp_case_name(ano, mes, rv)
 
     def __adequa_numero_iteracoes(self, dadger: Dadger):
-        dadger.ni.iteracoes = Configuracoes.maximo_iteracoes_decomp
+        dadger.ni.iteracoes = Configuracoes().maximo_iteracoes_decomp
 
     def __adequa_dadger(self, dadger: Dadger):
         Log.log().info(f"Adequando caso do DECOMP: {self.caso.nome}")
@@ -196,7 +196,7 @@ class PreparadorDECOMP(PreparadorCaso):
         dc_uow = dc_factory("FS", self.caso.caminho)
         with dc_uow:
             dadger = dc_uow.decomp.get_dadger()
-            if dadger.gp.gap >= Configuracoes.gap_maximo_decomp:
+            if dadger.gp.gap >= Configuracoes().gap_maximo_decomp:
                 Log.log().error(
                     f"Máximo gap atingido no DECOMP: {self.caso.nome}"
                 )
