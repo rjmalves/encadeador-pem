@@ -181,6 +181,7 @@ class MonitorEstudo:
 
     async def _handler_prepara_execucao_sucesso(self):
         Log.log().info("Estudo: preparado com sucesso")
+        await self.__sintetiza_estudo()
         await self._transicao_estudo(TransicaoEstudo.PREPARA_EXECUCAO_SUCESSO)
 
     async def _handler_prepara_execucao_erro(self):

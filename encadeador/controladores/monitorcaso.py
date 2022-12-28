@@ -154,19 +154,19 @@ class MonitorCaso:
 
     async def _handler_inicializado(self):
         Log.log().info(f"Caso {self._caso_id}: inicializado")
-        self._transicao_caso(TransicaoCaso.INICIALIZADO)
+        await self._transicao_caso(TransicaoCaso.INICIALIZADO)
 
     async def _handler_prepara_execucao_solicitada(self):
         Log.log().info(f"Caso {self._caso_id}: iniciando preparação do caso")
         comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.PREPARANDO)
         handlers.atualiza(comando, self._caso_uow)
-        self._transicao_caso(TransicaoCaso.PREPARA_EXECUCAO_SOLICITADA)
+        await self._transicao_caso(TransicaoCaso.PREPARA_EXECUCAO_SOLICITADA)
 
     async def _handler_prepara_execucao_sucesso(self):
         Log.log().info(f"Caso {self._caso_id}: caso preparado com sucesso")
         comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.PREPARADO)
         handlers.atualiza(comando, self._caso_uow)
-        self._transicao_caso(TransicaoCaso.PREPARA_EXECUCAO_SUCESSO)
+        await self._transicao_caso(TransicaoCaso.PREPARA_EXECUCAO_SUCESSO)
 
     async def _handler_prepara_execucao_erro(self):
         Log.log().info(f"Caso {self._caso_id}: erro na preparação do caso")
@@ -182,12 +182,12 @@ class MonitorCaso:
             self._caso_id, EstadoCaso.INICIANDO_EXECUCAO
         )
         handlers.atualiza(comando, self._caso_uow)
-        self._transicao_caso(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
+        await self._transicao_caso(TransicaoCaso.INICIO_EXECUCAO_SOLICITADA)
         await self.__submete()
 
     async def _handler_inicio_execucao_sucesso(self):
         Log.log().info(f"Caso {self._caso_id}: início da execução com sucesso")
-        self._transicao_caso(TransicaoCaso.INICIO_EXECUCAO_SUCESSO)
+        await self._transicao_caso(TransicaoCaso.INICIO_EXECUCAO_SUCESSO)
         comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.EXECUTANDO)
         handlers.atualiza(comando, self._caso_uow)
         await self.__sintetiza_casos_rodadas()
@@ -285,7 +285,7 @@ class MonitorCaso:
         comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.CONCLUIDO)
         handlers.atualiza(comando, self._caso_uow)
         await self.__sintetiza_casos_rodadas()
-        self._transicao_caso(TransicaoCaso.CONCLUIDO)
+        await self._transicao_caso(TransicaoCaso.CONCLUIDO)
 
     async def _handler_erro(self):
         await self.__sintetiza_casos_rodadas()
