@@ -552,14 +552,14 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
 
     def variaveis_encadeadas_newave(self, variavel: str):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
-        # Confere se as variáveis está dentro das: GNL, TVIAGEM, EARM, ENA
+        # Confere se as variáveis está dentro das: GNL, TVIAGEM, VARM, ENA
         valor = valor.split(",")
-        variaveis_validas = set(["", "GNL", "EARM", "ENA"])
+        variaveis_validas = set(["", "GNL", "VARM", "ENA"])
         if not set(valor).issubset(variaveis_validas):
             raise ValueError(
                 f"Variáveis encadeadas (NEWAVE) informadas {valor}"
                 + " são inválidas. "
-                + " Válidas: EARM, GNL, ENA"
+                + " Válidas: VARM, GNL, ENA"
             )
         self._configuracoes._variaveis_encadeadas_newave = valor
         # Fluent method
@@ -567,14 +567,14 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
 
     def variaveis_encadeadas_decomp(self, variavel: str):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
-        # Confere se as variáveis está dentro das: GNL, TVIAGEM, EARM, ENA
+        # Confere se as variáveis está dentro das: GNL, TVIAGEM, VARM, ENA
         valor = valor.split(",")
-        variaveis_validas = set(["", "GNL", "TVIAGEM", "EARM"])
+        variaveis_validas = set(["", "GNL", "TVIAGEM", "VARM"])
         if not set(valor).issubset(variaveis_validas):
             raise ValueError(
                 f"Variáveis encadeadas (DECOMP) informadas {valor}"
                 + " são inválidas. "
-                + " Válidas: EARM, TVIAGEM, GNL, ENA"
+                + " Válidas: VARM, TVIAGEM, GNL"
             )
         self._configuracoes._variaveis_encadeadas_decomp = valor
         # Fluent method
