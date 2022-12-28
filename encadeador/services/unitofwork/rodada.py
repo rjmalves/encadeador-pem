@@ -60,6 +60,13 @@ class JSONRodadaUnitOfWork(AbstractRodadaUnitOfWork):
         pass
 
 
+DEFAULT_SESSION_FACTORY = sessionmaker(
+    bind=create_engine(
+        sqlite_url(),
+    )
+)
+
+
 class SQLRodadaUnitOfWork(AbstractRodadaUnitOfWork):
     def __init__(
         self,
