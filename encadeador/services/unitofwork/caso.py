@@ -61,7 +61,7 @@ class JSONCasoUnitOfWork(AbstractCasoUnitOfWork):
         pass
 
 
-DEFAULT_SESSION_FACTORY = lambda _: sessionmaker(
+DEFAULT_SESSION_FACTORY = lambda: sessionmaker(
     bind=create_engine(
         sqlite_url(),
     )
