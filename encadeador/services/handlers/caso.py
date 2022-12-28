@@ -1,6 +1,7 @@
 from typing import Optional, Dict, Tuple
 import pandas as pd
 import pathlib
+from os.path import join
 from encadeador.controladores.preparadorcaso import PreparadorCaso
 from encadeador.adapters.repository.apis import (
     EncadeadorAPIRepository,
@@ -156,7 +157,7 @@ async def submete(
         cmd = commands.CriaRodada(
             caso.programa.value,
             versao,
-            caso.caminho,
+            join(Configuracoes().caminho_base_estudo, caso.caminho),
             processadores,
             command.id_caso,
         )
