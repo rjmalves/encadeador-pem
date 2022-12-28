@@ -64,9 +64,6 @@ class PreparadorNEWAVE(PreparadorCaso):
         ano = self.caso.ano
         mes = self.caso.mes
         dger.nome_caso = ProgramRules.newave_case_name(ano, mes)
-        opcao_parpa = Configuracoes().opcao_parpa
-        dger.consideracao_media_anual_afluencias = opcao_parpa
-        Log.log().info(f"Opção do PAR(p)-A alterada: {opcao_parpa}")
 
     def __adequa_cvar(self, cvar: CVAR):
         par_cvar = Configuracoes().cvar
