@@ -11,7 +11,7 @@ import encadeador.domain.commands as commands
 
 async def submete(
     command: commands.CriaRodada, uow: AbstractRodadaUnitOfWork
-) -> Optional[Rodada]:
+) -> Optional[int]:
     with uow:
         run = Run(
             programName=command.programa,
@@ -32,6 +32,7 @@ async def submete(
         rodada = Rodada.from_run(createdRun, command.id_caso)
         uow.rodadas.create(rodada)
         uow.commit()
+        return createdRun.runId
 
 
 async def monitora(
