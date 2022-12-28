@@ -233,7 +233,7 @@ class MonitorEstudo:
 
     async def _handler_inicio_proximo_caso(self):
         if self.__existe_proximo_caso():
-            self.__inicializa_proximo_caso()
+            await self.__inicializa_proximo_caso()
         else:
             await self.callback_evento(TransicaoEstudo.CONCLUIDO)
 

@@ -110,7 +110,6 @@ class PreparaEstudo(Command):
 @dataclass
 class MonitoraEstudo(Command):
     id_caso: int
-    gerenciador: str
 
 
 @dataclass
