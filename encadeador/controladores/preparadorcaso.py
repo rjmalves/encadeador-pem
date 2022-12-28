@@ -76,7 +76,9 @@ class PreparadorNEWAVE(PreparadorCaso):
     def prepara(self) -> bool:
         Log.log().info(f"Preparando caso do NEWAVE: {self.caso.nome}")
         self.__deleta_cortes_ultimo_newave()
-        uow = nw_factory("FS", self.caso.caminho)
+        uow = nw_factory(
+            "FS", join(Configuracoes().caminho_base_estudo, self.caso.caminho)
+        )
         with uow:
             if Configuracoes().adequa_decks_newave:
                 dger = uow.newave.get_dger()
@@ -148,7 +150,9 @@ class PreparadorDECOMP(PreparadorCaso):
 
     def prepara(self) -> bool:
         Log.log().info(f"Preparando caso do DECOMP: {self.caso.nome}")
-        dc_uow = dc_factory("FS", self.caso.caminho)
+        dc_uow = dc_factory(
+            "FS", join(Configuracoes().caminho_base_estudo, self.caso.caminho)
+        )
         with dc_uow:
             dadger = dc_uow.decomp.get_dadger()
             # Adequa os registros FC (cortes e cortesh)
