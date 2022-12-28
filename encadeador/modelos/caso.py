@@ -74,6 +74,32 @@ class Caso:
         else:
             return data_caso >= data_o
 
+    def __gt__(self, o: object):
+        if not isinstance(o, Caso):
+            return False
+        data_caso = datetime(self.ano, self.mes, 1)
+        data_o = datetime(o.ano, o.mes, 1)
+        if data_caso == data_o:
+            if self.revisao == o.revisao:
+                if (self.programa == Programa.DECOMP) and (
+                    o.programa == Programa.NEWAVE
+                ):
+                    return True
+                elif self.programa == o.programa:
+                    return False
+                else:
+                    return False
+            else:
+                return self.revisao > o.revisao
+        else:
+            return data_caso > data_o
+
+    def __le__(self, o: object):
+        return not self.__gt__(o)
+
+    def __lt__(self, o: object):
+        return not self.__ge__(o)
+
     @property
     def tempo_execucao(self) -> float:
         return sum([j.tempo_execucao for j in self.rodadas])
