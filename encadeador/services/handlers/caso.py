@@ -83,6 +83,7 @@ async def prepara(
     with uow:
         # Lista os casos anteriores
         caso = uow.casos.read(command.id_caso)
+        Log.log().info(f"Caso {caso.nome}: preparando")
         casos_anteriores = [
             c for c in uow.casos.list_by_estudo(caso.id_estudo) if c < caso
         ]
@@ -95,6 +96,7 @@ async def prepara(
             len([c for c in casos_anteriores if c.programa == Programa.DECOMP])
             > 0
         ):
+            Log.log().info(f"Caso {caso.nome}: encadeando")
             variaveis = ProgramRules.program_chaining_variables(caso.programa)
             if variaveis is not None:
                 for v in variaveis:
@@ -111,24 +113,29 @@ async def prepara(
                         Log.log().info(f"Encadeamento de {v}:")
                         for r in res:
                             Log.log().info(str(r))
-        # PREMISSA: só aplica regras de reservatórios
-        # se tiver decomps anteriores
-        regras_convertidas = [
-            ReservoirRule.from_regra(r) for r in command.regras_reservatorios
-        ]
-        res = await RegrasReservatoriosAPIRepository.aplica_regras(
-            casos_anteriores, caso, regras_convertidas
-        )
-        if isinstance(res, HTTPResponse):
-            Log.log().warning(
-                "Erro da aplicação de regras de reservatórios:"
-                + f" [{res.code}] {res.detail}"
-            )
-            sucesso_regras = False
-        else:
-            Log.log().info("Regras de reservatórios aplicadas:")
-            for r in res:
-                Log.log().info(str(r))
+            # PREMISSA: só aplica regras de reservatórios
+            # se tiver decomps anteriores
+            regras_convertidas = [
+                ReservoirRule.from_regra(r)
+                for r in command.regras_reservatorios
+            ]
+            if len(regras_convertidas) > 0:
+                Log.log().info(
+                    f"Caso {caso.nome}: aplicando regras de reservatórios"
+                )
+                res = await RegrasReservatoriosAPIRepository.aplica_regras(
+                    casos_anteriores, caso, regras_convertidas
+                )
+                if isinstance(res, HTTPResponse):
+                    Log.log().warning(
+                        "Erro da aplicação de regras de reservatórios:"
+                        + f" [{res.code}] {res.detail}"
+                    )
+                    sucesso_regras = False
+                else:
+                    Log.log().info("Regras de reservatórios aplicadas:")
+                    for r in res:
+                        Log.log().info(str(r))
 
         return all([sucesso_prepara, sucesso_encadeia, sucesso_regras])
 
@@ -153,6 +160,7 @@ async def submete(
             processadores,
             command.id_caso,
         )
+        Log.log().info(f"Caso {caso.nome}: submetendo")
         rodada = await rodada_handlers.submete(cmd, rodada_uow)
         if rodada is not None:
             caso.estado = EstadoCaso.EXECUTANDO
@@ -185,6 +193,7 @@ def atualiza(
     with uow:
         caso = uow.casos.read(command.id_caso)
         if caso is not None:
+            Log.log().info(f"Caso {caso.nome} -> {command.estado.value}")
             caso.estado = command.estado
             uow.casos.update(caso)
             uow.commit()
@@ -198,6 +207,7 @@ async def flexibiliza(
         caso = uow.casos.read(command.id_caso)
         if caso is not None:
             if caso.numero_flexibilizacoes < command.max_flex:
+                Log.log().info(f"Caso {caso.nome}: flexibilizando")
                 res = await FlexibilizadorAPIRepository.flexibiliza(caso)
                 if isinstance(res, HTTPResponse):
                     Log.log().error(
@@ -214,6 +224,7 @@ async def flexibiliza(
 async def sintetiza_casos_rodadas(
     caso_uow: AbstractCasoUnitOfWork, rodada_uow: AbstractRodadaUnitOfWork
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    Log.log().info(f"Sintetizando casos e rodadas")
     with caso_uow:
         casos = caso_uow.casos.list()
         df_casos = pd.DataFrame(
