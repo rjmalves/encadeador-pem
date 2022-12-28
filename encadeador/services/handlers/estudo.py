@@ -22,7 +22,7 @@ def cria(
 ) -> Optional[Estudo]:
     with uow:
         estudo = Estudo(
-            command.caminho,
+            str(command.caminho),
             command.nome,
             EstadoEstudo.NAO_INICIADO,
         )

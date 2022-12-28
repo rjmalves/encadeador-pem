@@ -2,14 +2,14 @@ from enum import Enum
 
 
 class EstadoEstudo(Enum):
-    NAO_INICIADO = 1
-    INICIADO = 2
-    EXECUTANDO = 3
-    CONCLUIDO = 4
-    ERRO = 5
+    NAO_INICIADO = "NAO_INICIADO"
+    INICIADO = "INICIADO"
+    EXECUTANDO = "EXECUTANDO"
+    CONCLUIDO = "CONCLUIDO"
+    ERRO = "ERRO"
 
     @staticmethod
-    def factory(valor: int) -> "EstadoEstudo":
+    def factory(valor: str) -> "EstadoEstudo":
         for estado in EstadoEstudo:
             if estado.value == valor:
                 return estado
