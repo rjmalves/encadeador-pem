@@ -14,7 +14,7 @@ class LeitorArquivos:
         def __processa_subdiretorios(diretorios: str) -> List[str]:
             casos: List[str] = []
             for d in diretorios:
-                caminho = Path(Configuracoes.caminho_base_estudo).joinpath(d)
+                caminho = Path(Configuracoes().caminho_base_estudo).joinpath(d)
                 subdiretorios = [
                     a for a in listdir(caminho) if caminho.joinpath(a).is_dir()
                 ]
