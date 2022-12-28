@@ -26,6 +26,7 @@ async def submete(
                 f"Erro na submissão {str(run)}: [{res.code}] {res.detail}"
             )
             return None
+        Log.log().info(f"Criada rodada {str(run)}")
         run.runId = res
         rodada = Rodada.from_run(run, command.id_caso)
         uow.rodadas.create(rodada)
