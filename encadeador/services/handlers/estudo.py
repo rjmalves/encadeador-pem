@@ -10,6 +10,7 @@ from encadeador.services.unitofwork.estudo import AbstractEstudoUnitOfWork
 import encadeador.services.handlers.caso as handlers_caso
 import encadeador.domain.commands as commands
 from encadeador.domain.programs import ProgramRules
+from encadeador.utils.log import Log
 
 # TODO - no futuro, quando toda a aplicação for
 # orientada a eventos, o logging deve ser praticamente
@@ -20,12 +21,6 @@ def cria(
     command: commands.CriaEstudo, uow: AbstractEstudoUnitOfWork
 ) -> Optional[Estudo]:
     with uow:
-        case_data = ProgramRules.case_from_path(command.caminho)
-        if case_data is None:
-            return None
-        case_name = ProgramRules.case_name_from_data(*case_data)
-        if case_name is None:
-            return None
         estudo = Estudo(
             command.caminho,
             command.nome,
