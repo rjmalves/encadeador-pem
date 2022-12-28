@@ -183,7 +183,7 @@ class MonitorEstudo:
 
     async def _handler_prepara_execucao_erro(self):
         Log.log().info("Estudo: erro na preparação")
-        self.callback_evento(TransicaoEstudo.ERRO)
+        await self.callback_evento(TransicaoEstudo.ERRO)
 
     async def _handler_inicio_execucao_solicitada(self):
         comando = commands.AtualizaEstudo(

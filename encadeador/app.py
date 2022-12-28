@@ -91,7 +91,7 @@ class App:
 
     async def executa(self):
         while True:
-            asyncio.sleep(INTERVALO_POLL)
+            await asyncio.sleep(INTERVALO_POLL)
             Log.log().debug("Tentando monitorar...")
             if not self._executando:
                 continue
