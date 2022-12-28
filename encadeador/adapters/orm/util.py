@@ -15,7 +15,7 @@ def start_mappers():
         Caso,
         tabela_casos,
         properties={
-            "_rodadas": relationship(
+            "rodadas": relationship(
                 rodada_mapper,
                 collection_class=list,
             )
@@ -25,7 +25,7 @@ def start_mappers():
         Estudo,
         tabela_estudos,
         properties={
-            "_casos": relationship(
+            "casos": relationship(
                 caso_mapper,
                 collection_class=list,
             )
