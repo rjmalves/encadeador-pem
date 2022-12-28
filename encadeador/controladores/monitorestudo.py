@@ -247,7 +247,7 @@ class MonitorEstudo:
         Log.log().debug(
             "Estudo: caso preparado com sucesso. Iniciando execução."
         )
-        self._monitor_atual.inicia_execucao()
+        await self._monitor_atual.inicia_execucao()
 
     async def _handler_inicio_execucao_solicitada_caso(self):
         Log.log().debug("Estudo: início da execução do caso solicitada")

@@ -142,6 +142,9 @@ class MonitorCaso:
         Realiza o monitoramento do estado do caso e também do
         job associado.
         """
+        if self._rodada_id is None:
+            Log.log().info(f"Não existe rodada ativa para o caso")
+            return
         comando = commands.MonitoraCaso(self._caso_id, self._rodada_id)
         transicao = await handlers.monitora(
             comando, self._caso_uow, self._rodada_uow
