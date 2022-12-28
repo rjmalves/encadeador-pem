@@ -24,7 +24,7 @@ def cria(
         estudo = Estudo(
             command.caminho,
             command.nome,
-            EstadoCaso.NAO_INICIADO,
+            EstadoEstudo.NAO_INICIADO,
         )
         if estudo is not None:
             uow.estudos.create(estudo)

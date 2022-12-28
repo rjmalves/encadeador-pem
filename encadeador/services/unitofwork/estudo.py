@@ -73,7 +73,6 @@ class SQLEstudoUnitOfWork(AbstractEstudoUnitOfWork):
 
     def __enter__(self) -> "SQLEstudoUnitOfWork":
         self._session: Session = self._session_factory()
-        print(self._session.get_bind().url)
         self._estudos = SQLEstudoRepository(self._session)
         return super().__enter__()
 
