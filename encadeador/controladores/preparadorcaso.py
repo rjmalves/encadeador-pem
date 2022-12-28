@@ -169,7 +169,9 @@ class PreparadorDECOMP(PreparadorCaso):
 
     def corrige_erro_convergencia(self) -> bool:
         Log.log().info(f"Previnindo gap negativo no DECOMP: {self.caso.nome}")
-        dc_uow = dc_factory("FS", self.caso.caminho)
+        dc_uow = dc_factory(
+            "FS", join(Configuracoes().caminho_base_estudo, self.caso.caminho)
+        )
         with dc_uow:
             dadger = dc_uow.decomp.get_dadger()
             existe_rt_crista = dadger.rt(restricao="CRISTA") is not None
@@ -193,7 +195,10 @@ class PreparadorDECOMP(PreparadorCaso):
 
     def flexibiliza_criterio_convergencia(self) -> bool:
         Log.log().info(f"Aumentando gap do DECOMP: {self.caso.nome}")
-        dc_uow = dc_factory("FS", self.caso.caminho)
+        dc_uow = dc_factory(
+            "FS",
+            join(Configuracoes().caminho_base_estudo, self.caso.caminho),
+        )
         with dc_uow:
             dadger = dc_uow.decomp.get_dadger()
             if dadger.gp.gap >= Configuracoes().gap_maximo_decomp:

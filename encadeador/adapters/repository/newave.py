@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import Dict
-from encadeador.modelos.configuracoes import Configuracoes
-from os.path import join
 from inewave.newave.caso import Caso as ArquivoCaso
 from inewave.newave.arquivos import Arquivos
 from inewave.newave.dger import DGer
@@ -97,7 +95,7 @@ class AbstractNewaveRepository(ABC):
 
 class FSNewaveRepository(AbstractNewaveRepository):
     def __init__(self, path: str):
-        self.__path = join(Configuracoes().caminho_base_estudo, path)
+        self.__path = path
         self.__caso = ArquivoCaso.le_arquivo(self.__path)
         self.__arquivos = Arquivos.le_arquivo(
             self.__path, self.__caso.arquivos

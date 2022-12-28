@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import Dict
-from os.path import join
-from encadeador.modelos.configuracoes import Configuracoes
 from idecomp.decomp.caso import Caso as ArquivoCaso
 from idecomp.decomp.arquivos import Arquivos
 from idecomp.decomp.dadger import Dadger
@@ -53,7 +51,7 @@ class AbstractDecompRepository(ABC):
 
 class FSDecompRepository(AbstractDecompRepository):
     def __init__(self, path: str):
-        self.__path = join(Configuracoes().caminho_base_estudo, path)
+        self.__path = path
         self.__caso = ArquivoCaso.le_arquivo(self.__path)
         self.__arquivos = Arquivos.le_arquivo(
             self.__path, self.__caso.arquivos
