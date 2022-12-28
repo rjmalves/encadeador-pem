@@ -687,7 +687,7 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
         # Confere se a variável é válida
         variaveis_validas = set(["PARQUET", "CSV"])
-        if valor in variaveis_validas:
+        if valor not in variaveis_validas:
             raise ValueError(
                 f"Formato de síntese informado {valor}"
                 + " é inválido. "
