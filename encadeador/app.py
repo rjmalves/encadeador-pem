@@ -17,7 +17,7 @@ from encadeador.utils.log import Log
 # mais.. mas tem outras coisas que vão precisar mudar também.
 
 UOW_KIND = "SQL"
-INTERVALO_POLL = 5.0
+INTERVALO_POLL = 30.0
 ESTUDO_ID = 1
 
 

@@ -88,5 +88,5 @@ async def sintetiza_resultados(
 ):
     with uow:
         estudo = uow.estudos.read(command.id_estudo)
-    sintetizador = Sintetizador(estudo.casos_concluidos)
-    await sintetizador.sintetiza_resultados()
+        sintetizador = Sintetizador(estudo.casos_concluidos)
+        await sintetizador.sintetiza_resultados()

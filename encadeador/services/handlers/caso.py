@@ -176,7 +176,11 @@ async def monitora(
     rodada_uow: AbstractRodadaUnitOfWork,
 ) -> Optional[TransicaoCaso]:
     cmd = commands.MonitoraRodada(command.id_rodada)
+    with caso_uow:
+        caso = caso_uow.casos.read(command.id_caso)
+        nome = caso.nome
     rodada = await rodada_handlers.monitora(cmd, rodada_uow)
+    Log.log().info(f"Monitorando caso {nome}: {rodada.estado.value}")
     if rodada is not None:
         MAPA_ESTADO_TRANSICAO: Dict[RunStatus, TransicaoCaso] = {
             RunStatus.SUCCESS: TransicaoCaso.CONCLUIDO,
