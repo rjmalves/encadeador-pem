@@ -21,6 +21,7 @@ async def submete(
             jobArgs=[command.numero_processadores],
         )
         res = await ModelAPIRepository.create_run(run)
+        Log.log().info(f"ID da rodada: {res}")
         if isinstance(res, HTTPResponse):
             Log.log().warning(
                 f"Erro na submissão {str(run)}: [{res.code}] {res.detail}"

@@ -28,7 +28,7 @@ class ModelAPIRepository:
                 if r.status != 200:
                     return HTTPResponse(code=r.status, detail=await r.text())
                 else:
-                    jobData = await r.json()
+                    jobData = await r.text()
                     return [Run.parse_raw(j) for j in jobData]
 
     @staticmethod
@@ -39,7 +39,7 @@ class ModelAPIRepository:
                 if r.status != 200:
                     return HTTPResponse(code=r.status, detail=await r.text())
                 else:
-                    jobData = await r.json()
+                    jobData = await r.text()
                     return Run.parse_raw(jobData)
 
     @staticmethod
