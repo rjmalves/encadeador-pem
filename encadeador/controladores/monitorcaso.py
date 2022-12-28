@@ -166,6 +166,7 @@ class MonitorCaso:
         Log.log().info(f"Caso {self._caso_id}: caso preparado com sucesso")
         comando = commands.AtualizaCaso(self._caso_id, EstadoCaso.PREPARADO)
         handlers.atualiza(comando, self._caso_uow)
+        await self.__sintetiza_casos_rodadas()
         await self._transicao_caso(TransicaoCaso.PREPARA_EXECUCAO_SUCESSO)
 
     async def _handler_prepara_execucao_erro(self):
