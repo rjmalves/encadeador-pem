@@ -81,7 +81,7 @@ class Rodada:
 
     @classmethod
     def from_run(cls, run: Run, id_caso: int) -> "Rodada":
-        return cls(
+        r = cls(
             run.name,
             run.status,
             run.jobId,
@@ -93,3 +93,6 @@ class Rodada:
             run.programVersion,
             id_caso,
         )
+        if run.runId is not None:
+            r.id = run.runId
+        return r
