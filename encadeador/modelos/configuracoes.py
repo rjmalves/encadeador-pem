@@ -661,9 +661,11 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
         return self
 
     def formato_armazenamento_dados(self, variavel: str):
-        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
+        valor = BuilderConfiguracoesENV.__le_e_confere_variavel(
+            variavel
+        ).strip()
         # Confere se as variáveis está dentro das: JSON, SQL
-        variaveis_validas = set(["", "JSON", "SQL"])
+        variaveis_validas = set(["JSON", "SQL"])
         if valor in variaveis_validas:
             raise ValueError(
                 f"Modo de armazenamento informado {valor}"
