@@ -115,7 +115,6 @@ class FSNewaveRepository(AbstractNewaveRepository):
     def set_dger(self, d: DGer):
         d.escreve_arquivo(self.__path, self.__arquivos.dger)
 
-    @abstractmethod
     def get_hidr(self) -> Hidr:
         return Hidr.le_arquivo(self.__path, "hidr.dat")
 
