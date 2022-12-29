@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from os import chdir, curdir
-from typing import Dict
+from typing import Dict, Type
 from pathlib import Path
 
 from encadeador.adapters.repository.decomp import (
@@ -34,7 +34,7 @@ class FSDecompUnitOfWork(AbstractDecompUnitOfWork):
         self._current_path = Path(curdir).resolve()
         self._decomp_path = path
 
-    def __enter__(self) -> "FSDecompUnitOfWork":
+    def __enter__(self) -> "AbstractDecompUnitOfWork":
         chdir(self._decomp_path)
         self._decomp = FSDecompRepository(self._decomp_path)
         return super().__enter__()
@@ -52,7 +52,7 @@ class FSDecompUnitOfWork(AbstractDecompUnitOfWork):
 
 
 def factory(kind: str, *args, **kwargs) -> AbstractDecompUnitOfWork:
-    mappings: Dict[str, AbstractDecompUnitOfWork] = {
+    mappings: Dict[str, Type[AbstractDecompUnitOfWork]] = {
         "FS": FSDecompUnitOfWork,
     }
     return mappings[kind](*args, **kwargs)

@@ -1,5 +1,5 @@
 from typing import Optional
-import pandas as pd
+import pandas as pd  # type: ignore
 from encadeador.adapters.repository.apis import ModelAPIRepository
 from encadeador.services.unitofwork.rodada import AbstractRodadaUnitOfWork
 from encadeador.modelos.run import Run
@@ -28,6 +28,12 @@ async def submete(
             )
             return None
         createdRun = await ModelAPIRepository.read_run(res)
+        if isinstance(createdRun, HTTPResponse):
+            Log.log().warning(
+                "Erro na leitura da leitura criada:"
+                + f" [{createdRun.code}] {createdRun.detail}"
+            )
+            return None
         Log.log().info(f"Criada rodada {str(createdRun)}")
         rodada = Rodada.from_run(createdRun, command.id_caso)
         uow.rodadas.create(rodada)
@@ -72,9 +78,10 @@ async def deleta(
                     f"Erro na deleção [rodada {command.id}]:"
                     + f" [{res.code}] {res.detail}"
                 )
-                return None
+                return False
             uow.rodadas.delete(command.id)
             uow.commit()
+        return True
 
 
 async def sintetiza_rodadas(uow: AbstractRodadaUnitOfWork) -> pd.DataFrame:

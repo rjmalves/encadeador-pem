@@ -125,7 +125,11 @@ class MonitorEstudo:
     def __existe_proximo_caso(self) -> bool:
         with self._estudo_uow:
             estudo = self._estudo_uow.estudos.read(self._estudo_id)
-            return estudo.proximo_caso is not None
+            if estudo is None:
+                Log.log().error("Erro ao acessar estudo")
+                return False
+            else:
+                return estudo.proximo_caso is not None
 
     async def __inicializa_proximo_caso(self):
         """

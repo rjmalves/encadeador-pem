@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from typing import Dict
-from config import sqlite_url
+from sqlalchemy.orm import Session  # type: ignore
+from typing import Dict, Type
+from config import default_session_factory
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.adapters.repository.rodada import (
     AbstractRodadaRepository,
@@ -39,7 +38,7 @@ class JSONRodadaUnitOfWork(AbstractRodadaUnitOfWork):
     def __init__(self, path: str = Configuracoes().caminho_base_estudo):
         self._path = path
 
-    def __enter__(self) -> "JSONRodadaUnitOfWork":
+    def __enter__(self) -> "AbstractRodadaUnitOfWork":
         self._rodadas = JSONRodadaRepository(self._path)
         return super().__enter__()
 
@@ -47,7 +46,7 @@ class JSONRodadaUnitOfWork(AbstractRodadaUnitOfWork):
         super().__exit__(*args)
 
     @property
-    def rodadas(self) -> JSONRodadaRepository:
+    def rodadas(self) -> AbstractRodadaRepository:
         return self._rodadas
 
     def commit(self):
@@ -60,18 +59,11 @@ class JSONRodadaUnitOfWork(AbstractRodadaUnitOfWork):
         pass
 
 
-DEFAULT_SESSION_FACTORY = lambda: sessionmaker(
-    bind=create_engine(
-        sqlite_url(),
-    )
-)
-
-
 class SQLRodadaUnitOfWork(AbstractRodadaUnitOfWork):
-    def __init__(self, session_factory=DEFAULT_SESSION_FACTORY):
+    def __init__(self, session_factory=default_session_factory):
         self._session_factory = session_factory()
 
-    def __enter__(self) -> "SQLRodadaUnitOfWork":
+    def __enter__(self) -> "AbstractRodadaUnitOfWork":
         self._session: Session = self._session_factory()
         self._rodadas = SQLRodadaRepository(self._session)
         return super().__enter__()
@@ -81,7 +73,7 @@ class SQLRodadaUnitOfWork(AbstractRodadaUnitOfWork):
         self._session.close()
 
     @property
-    def rodadas(self) -> SQLRodadaRepository:
+    def rodadas(self) -> AbstractRodadaRepository:
         return self._rodadas
 
     def commit(self):
@@ -95,7 +87,7 @@ class SQLRodadaUnitOfWork(AbstractRodadaUnitOfWork):
 
 
 def factory(kind: str, *args, **kwargs) -> AbstractRodadaUnitOfWork:
-    mappings: Dict[str, AbstractRodadaUnitOfWork] = {
+    mappings: Dict[str, Type[AbstractRodadaUnitOfWork]] = {
         "SQL": SQLRodadaUnitOfWork,
         "JSON": JSONRodadaUnitOfWork,
     }

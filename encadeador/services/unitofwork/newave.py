@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from os import chdir, curdir, remove, listdir
 import re
-from typing import Optional, Dict
+from typing import Optional, Dict, Type
 from os.path import isfile
 from zipfile import ZipFile
 from pathlib import Path
@@ -46,7 +46,7 @@ class FSNewaveUnitOfWork(AbstractNewaveUnitOfWork):
         self._current_path = Path(curdir).resolve()
         self._newave_path = path
 
-    def __enter__(self) -> "FSNewaveUnitOfWork":
+    def __enter__(self) -> "AbstractNewaveUnitOfWork":
         chdir(self._newave_path)
         self._newave = FSNewaveRepository(self._newave_path)
         return super().__enter__()
@@ -76,12 +76,18 @@ class FSNewaveUnitOfWork(AbstractNewaveUnitOfWork):
         if zipname is not None:
             with ZipFile(zipname, "r") as obj_zip:
                 for a in cortes:
+                    if a is None:
+                        return False
                     if not isfile(a):
                         obj_zip.extract(a)
+            return True
+        return False
 
     def deleta_cortes(self) -> bool:
         arqs = [self.newave.arquivos.cortes, self.newave.arquivos.cortesh]
         for a in arqs:
+            if a is None:
+                return False
             if not isfile(a):
                 return False
             remove(a)
@@ -92,7 +98,7 @@ class FSNewaveUnitOfWork(AbstractNewaveUnitOfWork):
 
 
 def factory(kind: str, *args, **kwargs) -> AbstractNewaveUnitOfWork:
-    mappings: Dict[str, AbstractNewaveUnitOfWork] = {
+    mappings: Dict[str, Type[AbstractNewaveUnitOfWork]] = {
         "FS": FSNewaveUnitOfWork,
     }
     return mappings[kind](*args, **kwargs)

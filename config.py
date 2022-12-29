@@ -1,5 +1,6 @@
 from encadeador.adapters.orm import registry
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine  # type: ignore
+from sqlalchemy.orm import sessionmaker  # type: ignore
 from encadeador.adapters.orm.util import start_mappers
 from encadeador.utils.log import Log
 from encadeador.modelos.configuracoes import Configuracoes
@@ -15,3 +16,11 @@ def start_db():
     engine = create_engine(SQLITE_URL)
     registry.metadata.create_all(engine)
     start_mappers()
+
+
+def default_session_factory() -> sessionmaker:
+    return sessionmaker(
+        bind=create_engine(
+            sqlite_url(),
+        )
+    )

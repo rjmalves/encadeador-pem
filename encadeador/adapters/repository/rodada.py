@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from sqlalchemy import select, update, delete  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Type
 from pathlib import Path
 from os.path import exists
 from os import makedirs
@@ -86,6 +86,9 @@ class JSONRodadaRepository(AbstractRodadaRepository):
 
     @staticmethod
     def __to_json(rodada: Rodada) -> dict:
+        fim_exec = None
+        if rodada.instante_fim_execucao is not None:
+            fim_exec = rodada.instante_fim_execucao.isoformat()
         return {
             "id": rodada.id,
             "nome": rodada.nome,
@@ -93,7 +96,7 @@ class JSONRodadaRepository(AbstractRodadaRepository):
             "id_job": rodada.id_job,
             "caminho": rodada.caminho,
             "instante_inicio_execucao": rodada.instante_inicio_execucao.isoformat(),
-            "instante_fim_execucao": rodada.instante_fim_execucao.isoformat(),
+            "instante_fim_execucao": fim_exec,
             "numero_processadores": rodada.numero_processadores,
             "nome_programa": rodada.nome_programa,
             "versao_programa": rodada.versao_programa,
@@ -172,7 +175,7 @@ class JSONRodadaRepository(AbstractRodadaRepository):
 
 
 def factory(kind: str, *args, **kwargs) -> AbstractRodadaRepository:
-    mappings: Dict[str, AbstractRodadaRepository] = {
+    mappings: Dict[str, Type[AbstractRodadaRepository]] = {
         "SQL": SQLRodadaRepository,
         "JSON": JSONRodadaRepository,
     }

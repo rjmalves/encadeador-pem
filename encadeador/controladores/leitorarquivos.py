@@ -11,7 +11,7 @@ from encadeador.modelos.regrareservatorio import RegraReservatorio
 class LeitorArquivos:
     @staticmethod
     def carrega_lista_casos() -> List[str]:
-        def __processa_subdiretorios(diretorios: str) -> List[str]:
+        def __processa_subdiretorios(diretorios: List[str]) -> List[str]:
             casos: List[str] = []
             for d in diretorios:
                 caminho = Path(Configuracoes().caminho_base_estudo).joinpath(d)

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from sqlalchemy import select, update, delete  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Type
 from pathlib import Path
 from os.path import exists
 from os import makedirs
@@ -36,7 +36,7 @@ class AbstractEstudoRepository(ABC):
         raise NotImplementedError
 
 
-class SQLEstudoRepository(ABC):
+class SQLEstudoRepository(AbstractEstudoRepository):
     def __init__(self, session: Session):
         self.__session = session
 
@@ -113,7 +113,7 @@ class JSONEstudoRepository(AbstractEstudoRepository):
         with open(self.__path, "r") as file:
             estudos = [JSONEstudoRepository.__from_json(c) for c in load(file)]
             for e in estudos:
-                e._casos = self.__casos_repository.list_by_estudo(e.id)
+                e.casos = self.__casos_repository.list_by_estudo(e.id)
             return estudos
 
     def __write_file(self, estudos: List[Estudo]):
@@ -151,7 +151,7 @@ class JSONEstudoRepository(AbstractEstudoRepository):
 
 
 def factory(kind: str, *args, **kwargs) -> AbstractEstudoRepository:
-    mappings: Dict[str, AbstractEstudoRepository] = {
+    mappings: Dict[str, Type[AbstractEstudoRepository]] = {
         "SQL": SQLEstudoRepository,
         "JSON": JSONEstudoRepository,
     }

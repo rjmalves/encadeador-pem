@@ -12,7 +12,7 @@ from encadeador.domain.programs import ProgramRules
 from encadeador.utils.log import Log
 from inewave.newave import DGer, CVAR  # type: ignore
 from idecomp.decomp.dadger import Dadger
-from idecomp.decomp.modelos.dadger import RT
+from idecomp.decomp.modelos.dadger import RT, FC
 
 
 class PreparadorCaso:
@@ -27,10 +27,10 @@ class PreparadorCaso:
         elif caso.programa == Programa.DECOMP:
             return PreparadorDECOMP(caso, casos_anteriores)
         else:
-            raise ValueError(f"Caso não suportado")
+            raise ValueError("Caso não suportado")
 
     @abstractmethod
-    async def prepara(self, **kwargs) -> bool:
+    async def prepara(self) -> bool:
         pass
 
     @abstractmethod
@@ -110,6 +110,7 @@ class PreparadorDECOMP(PreparadorCaso):
         for c in reversed(self._casos_anteriores):
             if c.programa == Programa.NEWAVE:
                 return c
+        return None
 
     def __extrai_cortes_ultimo_newave(self, c: Optional[Caso]):
         if c is not None:
@@ -127,18 +128,46 @@ class PreparadorDECOMP(PreparadorCaso):
         nw_uow = nw_factory("FS", caso_cortes.caminho)
         with nw_uow:
             arq = nw_uow.newave.arquivos
-        dadger.fc("NEWV21").caminho = join(caso_cortes.caminho, arq.cortesh)
-        dadger.fc("NEWCUT").caminho = join(caso_cortes.caminho, arq.cortes)
+            arq_cortes = arq.cortes
+            arq_cortesh = arq.cortesh
+        if arq_cortesh is None:
+            Log.log().error(
+                "Nome do arquivo de cabeçalho de cortes não especificado"
+            )
+            return False
+        if arq_cortes is None:
+            Log.log().error("Nome do arquivo de cortes não especificado")
+            return False
+        fc_cortesh = dadger.fc("NEWV21")
+        if not isinstance(fc_cortesh, FC):
+            Log.log().error("Caso não possui registro FC NEWV21")
+            return False
+        else:
+            fc_cortesh.caminho = join(caso_cortes.caminho, arq_cortesh)
+        fc_cortes = dadger.fc("NEWCUT")
+        if not isinstance(fc_cortes, FC):
+            Log.log().error("Caso não possui registro FC NEWCUT")
+            return False
+        else:
+            fc_cortes.caminho = join(caso_cortes.caminho, arq_cortes)
         return True
 
     def __adequa_titulo_estudo(self, dadger: Dadger):
         ano = self.caso.ano
         mes = self.caso.mes
         rv = self.caso.revisao
-        dadger.te.titulo = ProgramRules.decomp_case_name(ano, mes, rv)
+        reg_te = dadger.te
+        if reg_te is None:
+            Log.log().warning("Caso não possui registro TE")
+        else:
+            reg_te.titulo = ProgramRules.decomp_case_name(ano, mes, rv)
 
     def __adequa_numero_iteracoes(self, dadger: Dadger):
-        dadger.ni.iteracoes = Configuracoes().maximo_iteracoes_decomp
+        reg_ni = dadger.ni
+        if reg_ni is None:
+            Log.log().warning("Caso não possui registro NI")
+        else:
+            reg_ni.iteracoes = Configuracoes().maximo_iteracoes_decomp
 
     def __adequa_dadger(self, dadger: Dadger):
         Log.log().info(f"Adequando caso do DECOMP: {self.caso.nome}")
@@ -183,14 +212,20 @@ class PreparadorDECOMP(PreparadorCaso):
                     + f" {self.caso.nome}"
                 )
                 return False
+            reg_te = dadger.te
+            if reg_te is None:
+                Log.log().error(
+                    "Não existe registro TE no caso:" + f" {self.caso.nome}"
+                )
+                return False
             if not existe_rt_crista:
                 rt = RT()
                 rt.restricao = "CRISTA"
-                dadger.cria_registro(dadger.te, rt)
+                dadger.cria_registro(reg_te, rt)
             if not existe_rt_desvio:
                 rt = RT()
                 rt.restricao = "DESVIO"
-                dadger.cria_registro(dadger.te, rt)
+                dadger.cria_registro(reg_te, rt)
             dc_uow.decomp.set_dadger(dadger)
         return True
 
@@ -202,11 +237,23 @@ class PreparadorDECOMP(PreparadorCaso):
         )
         with dc_uow:
             dadger = await dc_uow.decomp.get_dadger()
-            if dadger.gp.gap >= Configuracoes().gap_maximo_decomp:
+            reg_gp = dadger.gp
+            if reg_gp is None:
+                Log.log().error(
+                    f"Não encontrado registro GP: {self.caso.nome}"
+                )
+                return False
+            gap_atual = reg_gp.gap
+            if gap_atual is None:
+                Log.log().error(
+                    f"Registro GP não possui gap configurado: {self.caso.nome}"
+                )
+                return False
+            if gap_atual >= Configuracoes().gap_maximo_decomp:
                 Log.log().error(
                     f"Máximo gap atingido no DECOMP: {self.caso.nome}"
                 )
                 return False
-            dadger.gp.gap *= 10
+            reg_gp.gap = 10 * gap_atual
             dc_uow.decomp.set_dadger(dadger)
         return True

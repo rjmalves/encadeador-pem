@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from sqlalchemy import select, update, delete  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Type
 from pathlib import Path
 from os.path import exists
 from os import makedirs
@@ -41,7 +41,7 @@ class AbstractCasoRepository(ABC):
         raise NotImplementedError
 
 
-class SQLCasoRepository(ABC):
+class SQLCasoRepository(AbstractCasoRepository):
     def __init__(self, session: Session):
         self.__session = session
 
@@ -173,7 +173,7 @@ class JSONCasoRepository(AbstractCasoRepository):
 
 
 def factory(kind: str, *args, **kwargs) -> AbstractCasoRepository:
-    mappings: Dict[str, AbstractCasoRepository] = {
+    mappings: Dict[str, Type[AbstractCasoRepository]] = {
         "SQL": SQLCasoRepository,
         "JSON": JSONCasoRepository,
     }

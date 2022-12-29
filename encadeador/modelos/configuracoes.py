@@ -4,7 +4,7 @@ from os.path import isfile, join
 from abc import abstractmethod
 import re
 from typing import List
-import validators
+import validators  # type: ignore
 
 from encadeador.utils.log import Log
 from encadeador.utils.singleton import Singleton
@@ -151,7 +151,7 @@ class Configuracoes(metaclass=Singleton):
         return self._processadores_decomp
 
     @property
-    def variaveis_encadeadas_newave(self) -> str:
+    def variaveis_encadeadas_newave(self) -> List[str]:
         """
         Variáveis a serem encadeadas para NEWAVE no estudo. Podem ser:
 
@@ -162,7 +162,7 @@ class Configuracoes(metaclass=Singleton):
         return self._variaveis_encadeadas_newave
 
     @property
-    def variaveis_encadeadas_decomp(self) -> str:
+    def variaveis_encadeadas_decomp(self) -> List[str]:
         """
         Variáveis a serem encadeadas para DECOMP no estudo. Podem ser:
 

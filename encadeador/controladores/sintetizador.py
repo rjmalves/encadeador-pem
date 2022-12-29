@@ -9,7 +9,6 @@ from encadeador.utils.log import Log
 from encadeador.adapters.repository.synthesis import (
     factory as synthesis_factory,
 )
-from encadeador.utils.log import Log
 from encadeador.adapters.repository.apis import ResultAPIRepository
 
 VARIAVEIS_GERAIS_NEWAVE = ["CONVERGENCIA", "TEMPO", "CUSTOS"]

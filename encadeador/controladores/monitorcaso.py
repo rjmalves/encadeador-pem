@@ -143,7 +143,7 @@ class MonitorCaso:
         job associado.
         """
         if self._rodada_id is None:
-            Log.log().info(f"Não existe rodada ativa para o caso")
+            Log.log().info("Não existe rodada ativa para o caso")
             return
         comando = commands.MonitoraCaso(self._caso_id, self._rodada_id)
         transicao = await handlers.monitora(

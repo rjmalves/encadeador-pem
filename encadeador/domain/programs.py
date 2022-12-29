@@ -2,8 +2,6 @@ from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.modelos.programa import Programa
 from pathlib import Path
 from typing import Tuple, Dict, Optional, List
-from os.path import join
-from os import listdir
 
 
 class ProgramRules:
@@ -57,7 +55,7 @@ class ProgramRules:
 
     @staticmethod
     def program_chaining_variables(program: Programa) -> Optional[List[str]]:
-        mapping: Dict[Programa, int] = {
+        mapping: Dict[Programa, List[str]] = {
             Programa.NEWAVE: ProgramRules.newave_chaining_variables(),
             Programa.DECOMP: ProgramRules.decomp_chaining_variables(),
         }

@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from typing import Dict
-from config import sqlite_url
+from sqlalchemy.orm import Session  # type: ignore
+from typing import Dict, Type
+from config import default_session_factory
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.adapters.repository.estudo import (
     AbstractEstudoRepository,
@@ -39,7 +38,7 @@ class JSONEstudoUnitOfWork(AbstractEstudoUnitOfWork):
     def __init__(self, path: str = Configuracoes().caminho_base_estudo):
         self._path = path
 
-    def __enter__(self) -> "JSONEstudoUnitOfWork":
+    def __enter__(self) -> "AbstractEstudoUnitOfWork":
         self._estudos = JSONEstudoRepository(self._path)
         return super().__enter__()
 
@@ -60,18 +59,11 @@ class JSONEstudoUnitOfWork(AbstractEstudoUnitOfWork):
         pass
 
 
-DEFAULT_SESSION_FACTORY = lambda: sessionmaker(
-    bind=create_engine(
-        sqlite_url(),
-    )
-)
-
-
 class SQLEstudoUnitOfWork(AbstractEstudoUnitOfWork):
-    def __init__(self, session_factory=DEFAULT_SESSION_FACTORY):
+    def __init__(self, session_factory=default_session_factory):
         self._session_factory = session_factory()
 
-    def __enter__(self) -> "SQLEstudoUnitOfWork":
+    def __enter__(self) -> "AbstractEstudoUnitOfWork":
         self._session: Session = self._session_factory()
         self._estudos = SQLEstudoRepository(self._session)
         return super().__enter__()
@@ -81,7 +73,7 @@ class SQLEstudoUnitOfWork(AbstractEstudoUnitOfWork):
         self._session.close()
 
     @property
-    def estudos(self) -> SQLEstudoRepository:
+    def estudos(self) -> AbstractEstudoRepository:
         return self._estudos
 
     def commit(self):
@@ -95,7 +87,7 @@ class SQLEstudoUnitOfWork(AbstractEstudoUnitOfWork):
 
 
 def factory(kind: str, *args, **kwargs) -> AbstractEstudoUnitOfWork:
-    mappings: Dict[str, AbstractEstudoUnitOfWork] = {
+    mappings: Dict[str, Type[AbstractEstudoUnitOfWork]] = {
         "SQL": SQLEstudoUnitOfWork,
         "JSON": JSONEstudoUnitOfWork,
     }

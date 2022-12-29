@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict
+from typing import Dict, Type
 import pathlib
 from inewave.newave.caso import Caso as ArquivoCaso
 from inewave.newave.arquivos import Arquivos
@@ -113,9 +113,12 @@ class FSNewaveRepository(AbstractNewaveRepository):
         return self.__arquivos
 
     async def get_dger(self) -> DGer:
-        caminho = pathlib.Path(self.__path).joinpath(self.arquivos.dger)
+        arq_dger = self.arquivos.dger
+        if arq_dger is None:
+            raise FileNotFoundError("Nome do arquivo dger não especificado")
+        caminho = pathlib.Path(self.__path).joinpath(arq_dger)
         await converte_codificacao(
-            caminho, Configuracoes().script_converte_codificacao
+            str(caminho), Configuracoes().script_converte_codificacao
         )
         return DGer.le_arquivo(self.__path, self.arquivos.dger)
 
@@ -134,13 +137,13 @@ class FSNewaveRepository(AbstractNewaveRepository):
     def get_confhd(self) -> Confhd:
         return Confhd.le_arquivo(self.__path, self.arquivos.confhd)
 
-    def set_confhd(self, d: CVAR):
+    def set_confhd(self, d: Confhd):
         d.escreve_arquivo(self.__path, self.__arquivos.confhd)
 
     def get_modif(self) -> Modif:
         return Modif.le_arquivo(self.__path, self.arquivos.modif)
 
-    def set_modif(self, d: CVAR):
+    def set_modif(self, d: Modif):
         d.escreve_arquivo(self.__path, self.__arquivos.modif)
 
     def get_eafpast(self) -> EafPast:
@@ -172,7 +175,7 @@ class FSNewaveRepository(AbstractNewaveRepository):
 
 
 # TODO
-class S3NewaveRepository(ABC):
+class S3NewaveRepository(AbstractNewaveRepository):
     def __init__(self, url: str):
         self.__url = url
 
@@ -182,7 +185,7 @@ class S3NewaveRepository(ABC):
 
 
 def factory(kind: str, *args, **kwargs) -> AbstractNewaveRepository:
-    mappings: Dict[str, AbstractNewaveRepository] = {
+    mappings: Dict[str, Type[AbstractNewaveRepository]] = {
         "FS": FSNewaveRepository,
         "S3": S3NewaveRepository,
     }

@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import List
 
 from encadeador.modelos.programa import Programa
-from encadeador.modelos.runstatus import RunStatus
 from encadeador.modelos.rodada import Rodada
 from encadeador.modelos.estadocaso import EstadoCaso
 
@@ -26,7 +25,7 @@ class Caso:
         estado: EstadoCaso,
         id_estudo: int,
     ) -> None:
-        self.id = None
+        self.id: int = None  # type: ignore
         self.caminho = str(caminho)
         self.nome = nome
         self.ano = ano

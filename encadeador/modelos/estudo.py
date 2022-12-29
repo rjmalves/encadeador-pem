@@ -7,7 +7,7 @@ from encadeador.modelos.programa import Programa
 
 class Estudo:
     def __init__(self, caminho: str, nome: str, estado: EstadoEstudo):
-        self.id = None
+        self.id: int = None  # type: ignore
         self.caminho = caminho
         self.nome = nome
         self.estado = estado

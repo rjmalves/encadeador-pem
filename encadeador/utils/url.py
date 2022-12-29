@@ -1,4 +1,4 @@
-import base62
+import base62  # type: ignore
 
 
 def base62_encode(content: str) -> str:

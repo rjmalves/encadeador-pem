@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Tuple
-import pandas as pd
+import pandas as pd  # type: ignore
 import pathlib
 from os.path import join
 from encadeador.controladores.preparadorcaso import PreparadorCaso
@@ -9,19 +9,19 @@ from encadeador.adapters.repository.apis import (
     FlexibilizadorAPIRepository,
 )
 from encadeador.modelos.configuracoes import Configuracoes
-from encadeador.utils.log import Log
-from encadeador.internal.httpresponse import HTTPResponse
 from encadeador.modelos.estadocaso import EstadoCaso
 from encadeador.modelos.transicaocaso import TransicaoCaso
-from encadeador.services.unitofwork.caso import AbstractCasoUnitOfWork
-from encadeador.services.unitofwork.rodada import AbstractRodadaUnitOfWork
 from encadeador.modelos.caso import Caso
 from encadeador.modelos.runstatus import RunStatus
 from encadeador.modelos.programa import Programa
 from encadeador.modelos.reservoirrule import ReservoirRule
+from encadeador.internal.httpresponse import HTTPResponse
 import encadeador.domain.commands as commands
 from encadeador.domain.programs import ProgramRules
+from encadeador.services.unitofwork.caso import AbstractCasoUnitOfWork
+from encadeador.services.unitofwork.rodada import AbstractRodadaUnitOfWork
 import encadeador.services.handlers.rodada as rodada_handlers
+from encadeador.utils.log import Log
 
 # TODO - no futuro, quando toda a aplicação for
 # orientada a eventos, o logging deve ser praticamente
@@ -80,10 +80,13 @@ def inicializa(
 
 async def prepara(
     command: commands.PreparaCaso, uow: AbstractCasoUnitOfWork
-) -> Optional[Caso]:
+) -> bool:
     with uow:
         # Lista os casos anteriores
         caso = uow.casos.read(command.id_caso)
+        if caso is None:
+            Log.log().error(f"Caso {command.id_caso}: não encontrado")
+            return False
         Log.log().info(f"Caso {caso.nome}: preparando")
         casos_anteriores = [
             c for c in uow.casos.list_by_estudo(caso.id_estudo) if c < caso
@@ -101,19 +104,19 @@ async def prepara(
             variaveis = ProgramRules.program_chaining_variables(caso.programa)
             if variaveis is not None:
                 for v in variaveis:
-                    res = await EncadeadorAPIRepository.encadeia(
+                    chain_reponse = await EncadeadorAPIRepository.encadeia(
                         casos_anteriores, caso, v
                     )
-                    if isinstance(res, HTTPResponse):
+                    if isinstance(chain_reponse, HTTPResponse):
                         Log.log().warning(
                             "Erro no encadeamento:"
-                            + f" [{res.code}] {res.detail}"
+                            + f" [{chain_reponse.code}] {chain_reponse.detail}"
                         )
                         sucesso_encadeia = False
                     else:
                         Log.log().info(f"Encadeamento de {v}:")
-                        for r in res:
-                            Log.log().info(str(r))
+                        for chain in chain_reponse:
+                            Log.log().info(str(chain))
             # PREMISSA: só aplica regras de reservatórios
             # se tiver decomps anteriores
             regras_convertidas = [
@@ -124,19 +127,21 @@ async def prepara(
                 Log.log().info(
                     f"Caso {caso.nome}: aplicando regras de reservatórios"
                 )
-                res = await RegrasReservatoriosAPIRepository.aplica_regras(
-                    casos_anteriores, caso, regras_convertidas
+                rules_reponse = (
+                    await RegrasReservatoriosAPIRepository.aplica_regras(
+                        casos_anteriores, caso, regras_convertidas
+                    )
                 )
-                if isinstance(res, HTTPResponse):
+                if isinstance(rules_reponse, HTTPResponse):
                     Log.log().warning(
                         "Erro da aplicação de regras de reservatórios:"
-                        + f" [{res.code}] {res.detail}"
+                        + f" [{rules_reponse.code}] {rules_reponse.detail}"
                     )
                     sucesso_regras = False
                 else:
                     Log.log().info("Regras de reservatórios aplicadas:")
-                    for r in res:
-                        Log.log().info(str(r))
+                    for rule in rules_reponse:
+                        Log.log().info(str(rule))
 
         return all([sucesso_prepara, sucesso_encadeia, sucesso_regras])
 
@@ -153,7 +158,17 @@ async def submete(
             Log.log().error(f"Caso {command.id_caso} não encontrado")
             return None
         versao = ProgramRules.program_version(caso.programa)
+        if versao is None:
+            Log.log().error(
+                f"Versão não encontrada para {caso.programa.value}"
+            )
+            return None
         processadores = ProgramRules.program_processor_count(caso.programa)
+        if processadores is None:
+            Log.log().error(
+                f"Num. processadores não encontrado para {caso.programa.value}"
+            )
+            return None
         cmd = commands.CriaRodada(
             caso.programa.value,
             versao,
@@ -168,6 +183,7 @@ async def submete(
             caso_uow.casos.update(caso)
             caso_uow.commit()
             return rodada
+        return None
 
 
 async def monitora(
@@ -178,10 +194,21 @@ async def monitora(
     cmd = commands.MonitoraRodada(command.id_rodada)
     with caso_uow:
         caso = caso_uow.casos.read(command.id_caso)
+        if caso is None:
+            Log.log().error(
+                f"Monitorando caso {command.id_caso}: não encontrado"
+            )
+            return None
         nome = caso.nome
     rodada = await rodada_handlers.monitora(cmd, rodada_uow)
-    Log.log().info(f"Monitorando caso {nome}: {rodada.estado.value}")
-    if rodada is not None:
+    if rodada is None:
+        Log.log().error(
+            f"Monitorando caso {nome}:"
+            + f" rodada {command.id_rodada} não encontrada"
+        )
+        return None
+    else:
+        Log.log().info(f"Monitorando caso {nome}: {rodada.estado.value}")
         MAPA_ESTADO_TRANSICAO: Dict[RunStatus, TransicaoCaso] = {
             RunStatus.SUCCESS: TransicaoCaso.CONCLUIDO,
             RunStatus.INFEASIBLE: TransicaoCaso.INVIAVEL,
@@ -224,12 +251,13 @@ async def flexibiliza(
                     return TransicaoCaso.FLEXIBILIZACAO_SUCESSO
             else:
                 return TransicaoCaso.ERRO_MAX_FLEX
+        return None
 
 
 async def sintetiza_casos_rodadas(
     caso_uow: AbstractCasoUnitOfWork, rodada_uow: AbstractRodadaUnitOfWork
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    Log.log().info(f"Sintetizando casos e rodadas")
+    Log.log().info("Sintetizando casos e rodadas")
     with caso_uow:
         casos = caso_uow.casos.list()
         df_casos = pd.DataFrame(
@@ -257,8 +285,14 @@ async def corrige_erro_convergencia(
 ) -> bool:
     with uow:
         caso = uow.casos.read(command.id_caso)
-        preparador = PreparadorCaso.factory(caso, [])
-        return preparador.corrige_erro_convergencia()
+        if caso is None:
+            Log.log().error(
+                "Erro ao acessar caso para corrigir" + " erro de convergência"
+            )
+            return False
+        else:
+            preparador = PreparadorCaso.factory(caso, [])
+            return await preparador.corrige_erro_convergencia()
 
 
 async def flexibiliza_criterio_convergencia(
@@ -267,5 +301,9 @@ async def flexibiliza_criterio_convergencia(
 ) -> bool:
     with uow:
         caso = uow.casos.read(command.id_caso)
-        preparador = PreparadorCaso.factory(caso, [])
-        return preparador.flexibiliza_criterio_convergencia()
+        if caso is None:
+            Log.log().error("Erro ao acessar caso para flex. convergência")
+            return False
+        else:
+            preparador = PreparadorCaso.factory(caso, [])
+            return await preparador.flexibiliza_criterio_convergencia()

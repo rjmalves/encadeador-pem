@@ -1,6 +1,5 @@
 from typing import Optional
-import pandas as pd
-from encadeador.modelos.estadocaso import EstadoCaso
+import pandas as pd  # type: ignore
 from encadeador.modelos.estadoestudo import EstadoEstudo
 from encadeador.modelos.estudo import Estudo
 from encadeador.controladores.monitorcaso import MonitorCaso
@@ -9,7 +8,6 @@ from encadeador.services.unitofwork.caso import AbstractCasoUnitOfWork
 from encadeador.services.unitofwork.estudo import AbstractEstudoUnitOfWork
 import encadeador.services.handlers.caso as handlers_caso
 import encadeador.domain.commands as commands
-from encadeador.domain.programs import ProgramRules
 from encadeador.utils.log import Log
 
 # TODO - no futuro, quando toda a aplicação for
@@ -55,7 +53,7 @@ def inicializa(
 async def monitora(
     command: commands.MonitoraEstudo,
     monitor: MonitorCaso,
-) -> bool:
+):
     await monitor.monitora()
 
 
@@ -88,5 +86,8 @@ async def sintetiza_resultados(
 ):
     with uow:
         estudo = uow.estudos.read(command.id_estudo)
-        sintetizador = Sintetizador(estudo.casos_concluidos)
-        await sintetizador.sintetiza_resultados()
+        if estudo is None:
+            Log.log().error("Erro ao acessar estudo para síntese")
+        else:
+            sintetizador = Sintetizador(estudo.casos_concluidos)
+            await sintetizador.sintetiza_resultados()

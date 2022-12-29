@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict
+from typing import Dict, Type
 import pathlib
 from idecomp.decomp.caso import Caso as ArquivoCaso
 from idecomp.decomp.arquivos import Arquivos
@@ -71,7 +71,7 @@ class FSDecompRepository(AbstractDecompRepository):
     async def get_dadger(self) -> Dadger:
         caminho = pathlib.Path(self.__path).joinpath(self.arquivos.dadger)
         await converte_codificacao(
-            caminho, Configuracoes().script_converte_codificacao
+            str(caminho), Configuracoes().script_converte_codificacao
         )
         return Dadger.le_arquivo(self.__path, self.arquivos.dadger)
 
@@ -100,7 +100,7 @@ class FSDecompRepository(AbstractDecompRepository):
 
 
 # TODO
-class S3DecompRepository(ABC):
+class S3DecompRepository(AbstractDecompRepository):
     def __init__(self, url: str):
         self.__url = url
 
@@ -110,7 +110,7 @@ class S3DecompRepository(ABC):
 
 
 def factory(kind: str, *args, **kwargs) -> AbstractDecompRepository:
-    mappings: Dict[str, AbstractDecompRepository] = {
+    mappings: Dict[str, Type[AbstractDecompRepository]] = {
         "FS": FSDecompRepository,
         "S3": S3DecompRepository,
     }

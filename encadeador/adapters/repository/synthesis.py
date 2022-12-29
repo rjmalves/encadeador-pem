@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-import pandas as pd
+import pandas as pd  # type: ignore
 from typing import Dict, Type
 from encadeador.utils.log import Log
 
@@ -45,4 +45,4 @@ def factory(kind: str, *args, **kwargs) -> AbstractSynthesisRepository:
         msg = f"Formato de síntese {kind} não suportado"
         Log.log().error(msg)
         raise ValueError(msg)
-    return mapping.get(kind)(*args, **kwargs)
+    return mapping.get(kind, ParquetSynthesisRepository)(*args, **kwargs)

@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from typing import Dict
-from config import sqlite_url
+from sqlalchemy.orm import Session  # type: ignore
+from typing import Dict, Type
+from config import default_session_factory
 
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.adapters.repository.caso import (
@@ -40,7 +39,7 @@ class JSONCasoUnitOfWork(AbstractCasoUnitOfWork):
     def __init__(self, path: str = Configuracoes().caminho_base_estudo):
         self._path = path
 
-    def __enter__(self) -> "JSONCasoUnitOfWork":
+    def __enter__(self) -> "AbstractCasoUnitOfWork":
         self._casos = JSONCasoRepository(self._path)
         return super().__enter__()
 
@@ -61,18 +60,11 @@ class JSONCasoUnitOfWork(AbstractCasoUnitOfWork):
         pass
 
 
-DEFAULT_SESSION_FACTORY = lambda: sessionmaker(
-    bind=create_engine(
-        sqlite_url(),
-    )
-)
-
-
 class SQLCasoUnitOfWork(AbstractCasoUnitOfWork):
-    def __init__(self, session_factory=DEFAULT_SESSION_FACTORY):
+    def __init__(self, session_factory=default_session_factory):
         self._session_factory = session_factory()
 
-    def __enter__(self) -> "SQLCasoUnitOfWork":
+    def __enter__(self) -> "AbstractCasoUnitOfWork":
         self._session: Session = self._session_factory()
         self._casos = SQLCasoRepository(self._session)
         return super().__enter__()
@@ -96,7 +88,7 @@ class SQLCasoUnitOfWork(AbstractCasoUnitOfWork):
 
 
 def factory(kind: str, *args, **kwargs) -> AbstractCasoUnitOfWork:
-    mappings: Dict[str, AbstractCasoUnitOfWork] = {
+    mappings: Dict[str, Type[AbstractCasoUnitOfWork]] = {
         "SQL": SQLCasoUnitOfWork,
         "JSON": SQLCasoUnitOfWork,
     }
