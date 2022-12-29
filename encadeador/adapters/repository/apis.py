@@ -1,10 +1,9 @@
 import aiohttp
-from typing import Dict, List, Union, Optional
+from typing import List, Union, Optional
 from os.path import join
 import json
 import asyncio
 import io
-import pathlib
 import pandas as pd
 
 from encadeador.modelos.configuracoes import Configuracoes
@@ -15,7 +14,6 @@ from encadeador.modelos.flexibilizationresult import FlexibilizationResult
 from encadeador.modelos.reservoirrule import ReservoirRule
 from encadeador.modelos.reservoirgrouprule import ReservoirGroupRule
 from encadeador.modelos.caso import Caso
-from encadeador.utils.log import Log
 from encadeador.utils.url import base62_encode
 
 
@@ -190,7 +188,7 @@ class ResultAPIRepository:
                 ]
             )
             for c, df in zip(casos, ret):
-                ano_mes_rv = pathlib.Path(c).parts[-2]
+                ano_mes_rv = f"{c.ano}_{str(c.mes).zfill(2)}_rv{c.revisao}"
                 if df is not None:
                     df_cols = df.columns.to_list()
                     df["caso"] = ano_mes_rv
