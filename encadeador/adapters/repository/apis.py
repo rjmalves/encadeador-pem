@@ -98,6 +98,7 @@ class EncadeadorAPIRepository:
                     return HTTPResponse(code=r.status, detail=await r.text())
                 else:
                     chainData = ast.literal_eval(await r.text())
+                    Log.log().info(type(chainData))
                     Log.log().info(chainData)
                     return [ChainingResult.parse_raw(j) for j in chainData]
 
