@@ -126,9 +126,10 @@ class FlexibilizadorAPIRepository:
                     return HTTPResponse(code=r.status, detail=await r.text())
                 else:
                     Log.log().info(await r.text())
-                    flexData = ast.literal_eval(await r.text())
+                    flexData = json.dumps(await r.text())
+                    Log.log().info(flexData)
                     return [
-                        FlexibilizationResult.parse_raw(json.dumps(j))
+                        FlexibilizationResult.parse_raw(j)
                         for j in flexData["result"]
                     ]
 
