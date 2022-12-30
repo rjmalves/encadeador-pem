@@ -296,7 +296,7 @@ class MonitorCaso:
     async def _handler_erro(self):
         await self.__sintetiza_casos_rodadas()
         Log.log().error(f"Caso {self._caso_id}: Erro. ")
-        self._transicao_caso(TransicaoCaso.ERRO)
+        await self._transicao_caso(TransicaoCaso.ERRO)
 
     async def __sintetiza_casos_rodadas(self):
         df_casos, df_rodadas = await handlers.sintetiza_casos_rodadas(

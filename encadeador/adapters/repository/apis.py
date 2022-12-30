@@ -14,6 +14,7 @@ from encadeador.modelos.flexibilizationresult import FlexibilizationResult
 from encadeador.modelos.reservoirrule import ReservoirRule
 from encadeador.modelos.reservoirgrouprule import ReservoirGroupRule
 from encadeador.modelos.caso import Caso
+from encadeador.utils.log import Log
 from encadeador.utils.url import base62_encode
 
 
@@ -88,6 +89,7 @@ class EncadeadorAPIRepository:
             },
             "variable": variavel,
         }
+        Log.log().info(f"Requisição: {req}")
         async with aiohttp.ClientSession() as session:
             url = Configuracoes().encadeador_service
             async with session.post(url, json=req) as r:
@@ -112,6 +114,7 @@ class FlexibilizadorAPIRepository:
             ),
             "program": caso.programa.value,
         }
+        Log.log().info(f"Requisição: {req}")
         async with aiohttp.ClientSession() as session:
             url = Configuracoes().flexibilizador_service
             async with session.post(url, json=req) as r:
@@ -155,6 +158,7 @@ class RegrasReservatoriosAPIRepository:
             },
             "rules": [json.loads(r.json()) for r in regras],
         }
+        Log.log().info(f"Requisição: {req}")
         async with aiohttp.ClientSession() as session:
             url = Configuracoes().regras_reservatorios_service
             async with session.post(url, json=req) as r:
