@@ -51,7 +51,11 @@ def cria(
             EstadoCaso.NAO_INICIADO,
             command.id_estudo,
         )
-        if caso is not None:
+        existing_cases = uow.casos.list()
+        for c in existing_cases:
+            if relpath == c.caminho:
+                return c
+        else:
             uow.casos.create(caso)
             Log.log().info(f"Criando caso {case_name}")
             uow.commit()
