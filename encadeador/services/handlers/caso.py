@@ -252,6 +252,9 @@ async def flexibiliza(
                     )
                     return TransicaoCaso.FLEXIBILIZACAO_ERRO
                 else:
+                    Log.log().info(f"Flexibilização:")
+                    for flex in res:
+                        Log.log().info(str(flex))
                     return TransicaoCaso.FLEXIBILIZACAO_SUCESSO
             else:
                 return TransicaoCaso.ERRO_MAX_FLEX

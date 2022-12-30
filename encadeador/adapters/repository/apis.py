@@ -126,7 +126,6 @@ class FlexibilizadorAPIRepository:
                     return HTTPResponse(code=r.status, detail=await r.text())
                 else:
                     flexData = json.loads(await r.text())
-                    Log.log().info(flexData)
                     return [
                         FlexibilizationResult.parse_raw(json.dumps(j))
                         for j in flexData["result"]
@@ -172,7 +171,6 @@ class RegrasReservatoriosAPIRepository:
                     return HTTPResponse(code=r.status, detail=await r.text())
                 else:
                     ruleData = json.loads(await r.text())
-                    Log.log().info(ruleData)
                     return [
                         ReservoirGroupRule.parse_raw(json.dumps(j))
                         for j in ruleData["result"]
