@@ -53,7 +53,9 @@ class PreparadorNEWAVE(PreparadorCaso):
     def __deleta_cortes_ultimo_newave(self):
         for c in reversed(self._casos_anteriores):
             if c.programa == Programa.NEWAVE:
-                uow = nw_factory("FS", c.caminho)
+                uow = nw_factory(
+                    "FS", join(Configuracoes().caminho_base_estudo, c.caminho)
+                )
                 with uow:
                     Log.log().info(
                         "Deletando cortes do último NEWAVE: " + f"{c.caminho}"
@@ -114,7 +116,9 @@ class PreparadorDECOMP(PreparadorCaso):
 
     def __extrai_cortes_ultimo_newave(self, c: Optional[Caso]):
         if c is not None:
-            uow = nw_factory("FS", c.caminho)
+            uow = nw_factory(
+                "FS", join(Configuracoes().caminho_base_estudo, c.caminho)
+            )
             with uow:
                 Log.log().info(
                     "Extraindo cortes do último NEWAVE: " + f"{c.caminho}"
@@ -125,7 +129,10 @@ class PreparadorDECOMP(PreparadorCaso):
         # Verifica se é necessário e extrai os cortes
         self.__extrai_cortes_ultimo_newave(caso_cortes)
         # Altera os registros FC
-        nw_uow = nw_factory("FS", caso_cortes.caminho)
+        nw_uow = nw_factory(
+            "FS",
+            join(Configuracoes().caminho_base_estudo, caso_cortes.caminho),
+        )
         with nw_uow:
             arq = nw_uow.newave.arquivos
             arq_cortes = arq.cortes
@@ -143,13 +150,21 @@ class PreparadorDECOMP(PreparadorCaso):
             Log.log().error("Caso não possui registro FC NEWV21")
             return False
         else:
-            fc_cortesh.caminho = join(caso_cortes.caminho, arq_cortesh)
+            fc_cortesh.caminho = join(
+                Configuracoes().caminho_base_estudo,
+                caso_cortes.caminho,
+                arq_cortesh,
+            )
         fc_cortes = dadger.fc("NEWCUT")
         if not isinstance(fc_cortes, FC):
             Log.log().error("Caso não possui registro FC NEWCUT")
             return False
         else:
-            fc_cortes.caminho = join(caso_cortes.caminho, arq_cortes)
+            fc_cortes.caminho = join(
+                Configuracoes().caminho_base_estudo,
+                caso_cortes.caminho,
+                arq_cortes,
+            )
         return True
 
     def __adequa_titulo_estudo(self, dadger: Dadger):
