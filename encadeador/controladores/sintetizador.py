@@ -53,7 +53,7 @@ class Sintetizador:
                 )
         for v in VARIAVEIS_OPERACAO_NEWAVE:
             df = await ResultAPIRepository.resultados_1o_estagio_casos(
-                casos_newave, v, filtros={"estagio": 1}
+                casos_newave, v
             )
             if df is None:
                 Log.log().info(f"Variável {v} não encontrada")
@@ -79,7 +79,7 @@ class Sintetizador:
                 )
         for v in VARIAVEIS_OPERACAO_DECOMP:
             df = await ResultAPIRepository.resultados_1o_estagio_casos(
-                casos_decomp, v, filtros={"estagio": 1, "cenario": "mean"}
+                casos_decomp, v
             )
             if df is None:
                 Log.log().info(f"Variável {v} não encontrada")

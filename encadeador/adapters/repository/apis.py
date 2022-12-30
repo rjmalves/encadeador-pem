@@ -174,7 +174,7 @@ class ResultAPIRepository:
     async def resultados_1o_estagio_casos(
         casos: List[Caso],
         variavel: str,
-        filtros: dict = {"estagio": 1, "cenario": "mean"},
+        filtros: dict = {"estagio": 1, "preprocessing": "FULL"},
     ) -> Optional[pd.DataFrame]:
         valid_dfs: List[pd.DataFrame] = []
         async with aiohttp.ClientSession() as session:
