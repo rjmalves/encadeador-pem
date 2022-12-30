@@ -171,7 +171,7 @@ class RegrasReservatoriosAPIRepository:
                 if r.status != 200:
                     return HTTPResponse(code=r.status, detail=await r.text())
                 else:
-                    ruleData = ast.literal_eval(await r.text())
+                    ruleData = json.loads(await r.text())
                     Log.log().info(ruleData)
                     return [
                         ReservoirGroupRule.parse_raw(json.dumps(j))
