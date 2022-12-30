@@ -130,7 +130,7 @@ class FlexibilizadorAPIRepository:
                     Log.log().info(flexData)
                     return [
                         FlexibilizationResult.parse_raw(j)
-                        for j in flexData["result"]
+                        for j in str(flexData["result"])
                     ]
 
 
