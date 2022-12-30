@@ -4,6 +4,7 @@ from os.path import join
 import json
 import asyncio
 import io
+import ast
 import pandas as pd  # type: ignore
 
 from encadeador.modelos.configuracoes import Configuracoes
@@ -96,7 +97,7 @@ class EncadeadorAPIRepository:
                 if r.status != 200:
                     return HTTPResponse(code=r.status, detail=await r.text())
                 else:
-                    chainData = await r.text()
+                    chainData = ast.literal_eval(await r.text())
                     return [ChainingResult.parse_raw(j) for j in chainData]
 
 
@@ -121,7 +122,7 @@ class FlexibilizadorAPIRepository:
                 if r.status != 200:
                     return HTTPResponse(code=r.status, detail=await r.text())
                 else:
-                    flexData = await r.text()
+                    flexData = ast.literal_eval(await r.text())
                     return [
                         FlexibilizationResult.parse_raw(j) for j in flexData
                     ]
@@ -165,8 +166,8 @@ class RegrasReservatoriosAPIRepository:
                 if r.status != 200:
                     return HTTPResponse(code=r.status, detail=await r.text())
                 else:
-                    flexData = await r.text()
-                    return [ReservoirGroupRule.parse_raw(j) for j in flexData]
+                    ruleData = ast.literal_eval(await r.text())
+                    return [ReservoirGroupRule.parse_raw(j) for j in ruleData]
 
 
 class ResultAPIRepository:
