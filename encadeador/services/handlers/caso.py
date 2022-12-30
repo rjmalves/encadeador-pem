@@ -100,10 +100,10 @@ async def prepara(
         sucesso_encadeia = True
         sucesso_regras = True
         # PREMISSA: só encadeia se tiver decomps anteriores.
-        if (
-            len([c for c in casos_anteriores if c.programa == Programa.DECOMP])
-            > 0
-        ):
+        decomps_anteriores = [
+            c for c in casos_anteriores if c.programa == Programa.DECOMP
+        ]
+        if len(decomps_anteriores) > 0:
             Log.log().info(f"Caso {caso.nome}: encadeando")
             variaveis = ProgramRules.program_chaining_variables(caso.programa)
             if variaveis is not None:
@@ -133,7 +133,7 @@ async def prepara(
                 )
                 rules_reponse = (
                     await RegrasReservatoriosAPIRepository.aplica_regras(
-                        casos_anteriores, caso, regras_convertidas
+                        decomps_anteriores, caso, regras_convertidas
                     )
                 )
                 if isinstance(rules_reponse, HTTPResponse):
