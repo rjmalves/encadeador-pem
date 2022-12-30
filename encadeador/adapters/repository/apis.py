@@ -125,6 +125,7 @@ class FlexibilizadorAPIRepository:
                 if r.status != 200:
                     return HTTPResponse(code=r.status, detail=await r.text())
                 else:
+                    Log.log().info(await r.text())
                     flexData = ast.literal_eval(await r.text())
                     return [
                         FlexibilizationResult.parse_raw(json.dumps(j))
