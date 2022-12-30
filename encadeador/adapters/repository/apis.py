@@ -89,9 +89,9 @@ class EncadeadorAPIRepository:
             },
             "variable": variavel,
         }
-        Log.log().info(f"Requisição: [{url}] {req}")
         async with aiohttp.ClientSession() as session:
             url = Configuracoes().encadeador_service
+            Log.log().info(f"Requisição: [{url}] {req}")
             async with session.post(url, json=req) as r:
                 if r.status != 200:
                     return HTTPResponse(code=r.status, detail=await r.text())
@@ -114,9 +114,9 @@ class FlexibilizadorAPIRepository:
             ),
             "program": caso.programa.value,
         }
-        Log.log().info(f"Requisição: [{url}] {req}")
         async with aiohttp.ClientSession() as session:
             url = Configuracoes().flexibilizador_service
+            Log.log().info(f"Requisição: [{url}] {req}")
             async with session.post(url, json=req) as r:
                 if r.status != 200:
                     return HTTPResponse(code=r.status, detail=await r.text())
