@@ -98,6 +98,7 @@ class EncadeadorAPIRepository:
                     return HTTPResponse(code=r.status, detail=await r.text())
                 else:
                     chainData = ast.literal_eval(await r.text())
+                    Log.log().info(chainData)
                     return [ChainingResult.parse_raw(j) for j in chainData]
 
 
@@ -167,6 +168,7 @@ class RegrasReservatoriosAPIRepository:
                     return HTTPResponse(code=r.status, detail=await r.text())
                 else:
                     ruleData = ast.literal_eval(await r.text())
+                    Log.log().info(ruleData)
                     return [ReservoirGroupRule.parse_raw(j) for j in ruleData]
 
 
