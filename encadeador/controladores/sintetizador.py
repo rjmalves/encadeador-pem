@@ -41,6 +41,7 @@ class Sintetizador:
             c for c in self.casos_concluidos if c.programa == Programa.NEWAVE
         ]
         Log.log().info("Realizando síntese dos resultados de NEWAVE")
+        makedirs(self._diretorio_newave, exist_ok=True)
         for v in VARIAVEIS_GERAIS_NEWAVE:
             df = await ResultAPIRepository.resultados_1o_estagio_casos(
                 casos_newave, v, filtros={}
@@ -67,6 +68,7 @@ class Sintetizador:
             c for c in self.casos_concluidos if c.programa == Programa.DECOMP
         ]
         Log.log().info("Realizando síntese dos resultados de DECOMP")
+        makedirs(self._diretorio_decomp, exist_ok=True)
         for v in VARIAVEIS_GERAIS_DECOMP:
             df = await ResultAPIRepository.resultados_1o_estagio_casos(
                 casos_decomp, v, filtros={}
