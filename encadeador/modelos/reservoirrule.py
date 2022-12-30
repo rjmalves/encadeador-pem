@@ -64,4 +64,5 @@ class ReservoirRule(BaseModel):
             maxVolume=regra.volume_maximo,
             minLimit=regra.limite_minimo,
             maxLimit=regra.limite_maximo,
+            frequency=regra.periodicidade,
         )
