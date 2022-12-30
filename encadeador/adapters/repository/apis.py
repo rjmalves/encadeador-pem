@@ -99,7 +99,7 @@ class EncadeadorAPIRepository:
                 else:
                     chainData = ast.literal_eval(await r.text())
                     return [
-                        ChainingResult.parse_raw(j)
+                        ChainingResult.parse_raw(json.dumps(j))
                         for j in chainData["result"]
                     ]
 
@@ -127,7 +127,7 @@ class FlexibilizadorAPIRepository:
                 else:
                     flexData = ast.literal_eval(await r.text())
                     return [
-                        FlexibilizationResult.parse_raw(str(j))
+                        FlexibilizationResult.parse_raw(json.dumps(j))
                         for j in flexData["result"]
                     ]
 
@@ -173,7 +173,7 @@ class RegrasReservatoriosAPIRepository:
                     ruleData = ast.literal_eval(await r.text())
                     Log.log().info(ruleData)
                     return [
-                        ReservoirGroupRule.parse_raw(str(j))
+                        ReservoirGroupRule.parse_raw(json.dumps(j))
                         for j in ruleData["result"]
                     ]
 
