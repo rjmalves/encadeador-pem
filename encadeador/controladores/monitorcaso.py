@@ -224,9 +224,7 @@ class MonitorCaso:
 
         comando = commands.CorrigeErroConvergenciaCaso(self._caso_id)
         if await handlers.corrige_erro_convergencia(comando, self._caso_uow):
-            await self.callback_evento(
-                TransicaoCaso.INICIO_EXECUCAO_SOLICITADA
-            )
+            await self.callback_evento(TransicaoCaso.INVIAVEL)
         else:
             comando = commands.AtualizaCaso(
                 self._caso_id, EstadoCaso.ERRO_EXECUCAO
