@@ -136,10 +136,14 @@ class Sintetizador:
             Configuracoes().diretorio_sintese,
         )
         self._diretorio_newave = join(
-            self._diretorio_sintese, Configuracoes().nome_diretorio_newave
+            self._diretorio_sintese,
+            Configuracoes().nome_diretorio_newave,
+            Configuracoes().diretorio_sintese,
         )
         self._diretorio_decomp = join(
-            self._diretorio_sintese, Configuracoes().nome_diretorio_decomp
+            self._diretorio_sintese,
+            Configuracoes().nome_diretorio_decomp,
+            Configuracoes().diretorio_sintese,
         )
         self.__repositorio_sintese = synthesis_factory(
             Configuracoes().formato_sintese
