@@ -13,7 +13,7 @@ from encadeador.adapters.repository.newave import (
 )
 
 
-NEWAVE_OUT_ZIP_PATTERN = "saidas_.*zip"
+NEWAVE_OUT_ZIP_PATTERN = "cortes_.*zip"
 
 
 class AbstractNewaveUnitOfWork(ABC):

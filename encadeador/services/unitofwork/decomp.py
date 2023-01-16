@@ -9,9 +9,6 @@ from encadeador.adapters.repository.decomp import (
 )
 
 
-NEWAVE_OUT_ZIP_PATTERN = "saidas_.*zip"
-
-
 class AbstractDecompUnitOfWork(ABC):
     def __enter__(self) -> "AbstractDecompUnitOfWork":
         return self
