@@ -108,6 +108,8 @@ async def prepara(
             variaveis = ProgramRules.program_chaining_variables(caso.programa)
             if variaveis is not None:
                 for v in variaveis:
+                    if len(v) == 0:
+                        continue
                     chain_reponse = await EncadeadorAPIRepository.encadeia(
                         casos_anteriores, caso, v
                     )
