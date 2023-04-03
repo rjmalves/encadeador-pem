@@ -14,8 +14,8 @@ DIR_BASE = pathlib.Path().resolve()
 
 load_dotenv(join(DIR_BASE, "encadeia.cfg"), override=True)
 
-if __name__ == "__main__":
 
+def main():
     Log.configura_logging(DIR_BASE)
     Configuracoes.le_variaveis_ambiente()
     start_db()
@@ -23,3 +23,7 @@ if __name__ == "__main__":
     app = App()
     asyncio.run(app.inicializa())
     asyncio.run(app.executa())
+
+
+if __name__ == "__main__":
+    main()
