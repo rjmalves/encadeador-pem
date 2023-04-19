@@ -1,6 +1,7 @@
-from os.path import join
+from os.path import join, exists
 from os import makedirs
 from typing import List
+import pandas as pd
 
 from encadeador.modelos.caso import Caso
 from encadeador.modelos.configuracoes import Configuracoes
@@ -214,9 +215,30 @@ class Sintetizador:
                     df, join(self._diretorio_newave, v)
                 )
         for v in VARIAVEIS_OPERACAO_NEWAVE:
-            df = await ResultAPIRepository.resultados_1o_estagio_casos(
-                casos_newave, v
-            )
+            # Filtra quais casos ainda não foram sintetizados
+            caminho_sintese = join(self._diretorio_newave, v)
+            if exists(caminho_sintese):
+                sintese_atual = self.__repositorio_sintese.read(
+                    caminho_sintese
+                )
+                ano_mes_rv_sintetizados = sintese_atual["caso"].unique()
+                ano_mes_rv_casos = [
+                    f"{c.ano}_{str(c.mes).zfill(2)}_rv{c.revisao}"
+                    for c in casos_newave
+                ]
+                casos_faltantes = [
+                    c
+                    for a, c in zip(ano_mes_rv_casos, casos_newave)
+                    if a not in ano_mes_rv_sintetizados
+                ]
+                df = await ResultAPIRepository.resultados_1o_estagio_casos(
+                    casos_faltantes, v
+                )
+                df = pd.concat([sintese_atual, df], ignore_index=True)
+            else:
+                df = await ResultAPIRepository.resultados_1o_estagio_casos(
+                    casos_newave, v
+                )
             if df is None:
                 Log.log().info(f"Variável {v} não encontrada")
             else:
@@ -241,9 +263,30 @@ class Sintetizador:
                     df, join(self._diretorio_decomp, v)
                 )
         for v in VARIAVEIS_OPERACAO_DECOMP:
-            df = await ResultAPIRepository.resultados_1o_estagio_casos(
-                casos_decomp, v
-            )
+            # Filtra quais casos ainda não foram sintetizados
+            caminho_sintese = join(self._diretorio_decomp, v)
+            if exists(caminho_sintese):
+                sintese_atual = self.__repositorio_sintese.read(
+                    caminho_sintese
+                )
+                ano_mes_rv_sintetizados = sintese_atual["caso"].unique()
+                ano_mes_rv_casos = [
+                    f"{c.ano}_{str(c.mes).zfill(2)}_rv{c.revisao}"
+                    for c in casos_decomp
+                ]
+                casos_faltantes = [
+                    c
+                    for a, c in zip(ano_mes_rv_casos, casos_decomp)
+                    if a not in ano_mes_rv_sintetizados
+                ]
+                df = await ResultAPIRepository.resultados_1o_estagio_casos(
+                    casos_faltantes, v
+                )
+                df = pd.concat([sintese_atual, df], ignore_index=True)
+            else:
+                df = await ResultAPIRepository.resultados_1o_estagio_casos(
+                    casos_decomp, v
+                )
             if df is None:
                 Log.log().info(f"Variável {v} não encontrada")
             else:
