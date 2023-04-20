@@ -205,6 +205,7 @@ class Sintetizador:
         Log.log().info("Realizando síntese dos resultados de NEWAVE")
         makedirs(self._diretorio_newave, exist_ok=True)
         for v in VARIAVEIS_GERAIS_NEWAVE:
+            Log.log().info(f"Sintetizando {v}")
             df = await ResultAPIRepository.resultados_1o_estagio_casos(
                 casos_newave, v, filtros={}
             )
@@ -215,6 +216,7 @@ class Sintetizador:
                     df, join(self._diretorio_newave, v)
                 )
         for v in VARIAVEIS_OPERACAO_NEWAVE:
+            Log.log().info(f"Sintetizando {v}")
             # Filtra quais casos ainda não foram sintetizados
             caminho_sintese = join(self._diretorio_newave, v)
             if exists(caminho_sintese):
@@ -253,6 +255,7 @@ class Sintetizador:
         Log.log().info("Realizando síntese dos resultados de DECOMP")
         makedirs(self._diretorio_decomp, exist_ok=True)
         for v in VARIAVEIS_GERAIS_DECOMP:
+            Log.log().info(f"Sintetizando {v}")
             df = await ResultAPIRepository.resultados_1o_estagio_casos(
                 casos_decomp, v, filtros={}
             )
@@ -263,6 +266,7 @@ class Sintetizador:
                     df, join(self._diretorio_decomp, v)
                 )
         for v in VARIAVEIS_OPERACAO_DECOMP:
+            Log.log().info(f"Sintetizando {v}")
             # Filtra quais casos ainda não foram sintetizados
             caminho_sintese = join(self._diretorio_decomp, v)
             if exists(caminho_sintese):
