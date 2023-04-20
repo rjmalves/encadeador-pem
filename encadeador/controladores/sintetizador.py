@@ -233,11 +233,15 @@ class Sintetizador:
                     for a, c in zip(ano_mes_rv_casos, casos_newave)
                     if a not in ano_mes_rv_sintetizados
                 ]
+                Log.log().info(
+                    f"Casos faltantes: {[a for a in ano_mes_rv_casos if a not in ano_mes_rv_sintetizados]}"
+                )
                 df = await ResultAPIRepository.resultados_1o_estagio_casos(
                     casos_faltantes, v
                 )
                 df = pd.concat([sintese_atual, df], ignore_index=True)
             else:
+                Log.log().info("Casos faltantes: todos.")
                 df = await ResultAPIRepository.resultados_1o_estagio_casos(
                     casos_newave, v
                 )
@@ -283,11 +287,15 @@ class Sintetizador:
                     for a, c in zip(ano_mes_rv_casos, casos_decomp)
                     if a not in ano_mes_rv_sintetizados
                 ]
+                Log.log().info(
+                    f"Casos faltantes: {[a for a in ano_mes_rv_casos if a not in ano_mes_rv_sintetizados]}"
+                )
                 df = await ResultAPIRepository.resultados_1o_estagio_casos(
                     casos_faltantes, v
                 )
                 df = pd.concat([sintese_atual, df], ignore_index=True)
             else:
+                Log.log().info("Casos faltantes: todos")
                 df = await ResultAPIRepository.resultados_1o_estagio_casos(
                     casos_decomp, v
                 )
