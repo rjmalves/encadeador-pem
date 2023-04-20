@@ -219,10 +219,13 @@ class Sintetizador:
             Log.log().info(f"Sintetizando {v}")
             # Filtra quais casos ainda não foram sintetizados
             caminho_sintese = join(self._diretorio_newave, v)
-            if exists(caminho_sintese):
+            try:
                 sintese_atual = self.__repositorio_sintese.read(
                     caminho_sintese
                 )
+            except FileNotFoundError:
+                sintese_atual = None
+            if sintese_atual is not None:
                 ano_mes_rv_sintetizados = sintese_atual["caso"].unique()
                 ano_mes_rv_casos = [
                     f"{c.ano}_{str(c.mes).zfill(2)}_rv{c.revisao}"
@@ -248,9 +251,7 @@ class Sintetizador:
             if df is None:
                 Log.log().info(f"Variável {v} não encontrada")
             else:
-                self.__repositorio_sintese.write(
-                    df, join(self._diretorio_newave, v)
-                )
+                self.__repositorio_sintese.write(df, caminho_sintese)
 
     async def sintetiza_decomps(self):
         casos_decomp = [
@@ -273,10 +274,13 @@ class Sintetizador:
             Log.log().info(f"Sintetizando {v}")
             # Filtra quais casos ainda não foram sintetizados
             caminho_sintese = join(self._diretorio_decomp, v)
-            if exists(caminho_sintese):
+            try:
                 sintese_atual = self.__repositorio_sintese.read(
                     caminho_sintese
                 )
+            except FileNotFoundError:
+                sintese_atual = None
+            if sintese_atual is not None:
                 ano_mes_rv_sintetizados = sintese_atual["caso"].unique()
                 ano_mes_rv_casos = [
                     f"{c.ano}_{str(c.mes).zfill(2)}_rv{c.revisao}"
