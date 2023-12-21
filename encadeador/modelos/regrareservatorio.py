@@ -1,11 +1,11 @@
 import pandas as pd  # type: ignore
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 
 
 class RegraReservatorio:
     def __init__(
         self,
-        _codigo_reservatorio: int,
+        _codigo_reservatorio: Union[int, List[int]],
         _codigo_usina: int,
         _tipo_restricao: str,
         _mes: int,
@@ -71,7 +71,7 @@ class RegraReservatorio:
         return self.__dict__
 
     @property
-    def codigo_reservatorio(self) -> int:
+    def codigo_reservatorio(self) -> Union[int, List[int]]:
         return self._codigo_reservatorio
 
     @property
@@ -106,10 +106,22 @@ class RegraReservatorio:
     def limite_minimo(self) -> Optional[float]:
         return self._limite_minimo
 
+    @limite_minimo.setter
+    def limite_minimo(self, lim: float):
+        self._limite_minimo = lim
+
     @property
     def limite_maximo(self) -> Optional[float]:
         return self._limite_maximo
 
+    @limite_maximo.setter
+    def limite_maximo(self, lim: float):
+        self._limite_maximo = lim
+
     @property
     def periodicidade(self) -> str:
         return self._periodicidade
+
+    @property
+    def legenda_faixa(self) -> str:
+        return self._legenda_faixa

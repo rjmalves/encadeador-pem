@@ -3,6 +3,7 @@ from enum import Enum, auto
 
 class TransicaoCaso(Enum):
     CRIADO = auto()
+    INICIALIZADO = auto()
     PREPARA_EXECUCAO_SOLICITADA = auto()
     PREPARA_EXECUCAO_SUCESSO = auto()
     PREPARA_EXECUCAO_ERRO = auto()
@@ -17,3 +18,5 @@ class TransicaoCaso(Enum):
     ERRO = auto()
     ERRO_MAX_FLEX = auto()
     ERRO_DADOS = auto()
+    ERRO_CONVERGENCIA = auto()
+    NAO_CONVERGIU = auto()

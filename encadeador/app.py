@@ -1,13 +1,14 @@
-from os import chdir
-import time
+import asyncio
 from typing import Callable, Dict
 
-from encadeador.modelos.configuracoes import Configuracoes
+from encadeador.services.unitofwork.rodada import factory as rodada_uow_factory
+from encadeador.services.unitofwork.caso import factory as caso_uow_factory
+from encadeador.services.unitofwork.estudo import factory as estudo_uow_factory
+
+from encadeador.controladores.leitorarquivos import LeitorArquivos
 from encadeador.controladores.monitorestudo import MonitorEstudo
 from encadeador.modelos.transicaoestudo import TransicaoEstudo
 from encadeador.utils.log import Log
-
-INTERVALO_POLL = 5.0
 
 
 # TODO - Aqui pode ser o lugar para ocorrer DI no futuro
@@ -15,14 +16,23 @@ INTERVALO_POLL = 5.0
 # os singletons. Se precisar de multithreading, tem que pensar
 # mais.. mas tem outras coisas que vão precisar mudar também.
 
+UOW_KIND = "SQL"
+INTERVALO_POLL = 30.0
+ESTUDO_ID = 1
+
 
 class App:
     def __init__(self) -> None:
-        self._monitor = MonitorEstudo()
-        self._monitor.observa(self.callback_evento)
+        self._lista_casos = LeitorArquivos.carrega_lista_casos()
+        self._regras_reservatorio = (
+            LeitorArquivos.carrega_regras_reservatorios()
+        )
+        self._regras_inviabilidades = (
+            LeitorArquivos.carrega_regras_inviabilidades()
+        )
         self._executando = False
 
-    def callback_evento(self, evento: TransicaoEstudo):
+    async def callback_evento(self, evento: TransicaoEstudo):
         """
         Esta função é usada para implementar o Observer Pattern.
         Quando chamada, significa que ocorreu algo com o estudo.
@@ -32,7 +42,7 @@ class App:
         """
         regras = self._regras()
         if evento in regras.keys():
-            regras[evento]()
+            await regras[evento]()
         else:
             Log.log().warning(f"Evento não capturado: {evento.name}")
 
@@ -44,41 +54,46 @@ class App:
                 TransicaoEstudo.PREPARA_EXECUCAO_SUCESSO
             ): self._handler_prepara_execucao_sucesso,
             (
-                TransicaoEstudo.INICIO_EXECUCAO_SOLICITADA
-            ): self._handler_inicio_execucao_solicitada,
-            (
                 TransicaoEstudo.INICIO_EXECUCAO_SUCESSO
             ): self._handler_inicio_execucao_sucesso,
             (TransicaoEstudo.CONCLUIDO): self._handler_concluido,
             (TransicaoEstudo.ERRO): self._handler_erro,
         }
 
-    def _handler_prepara_execucao_sucesso(self):
-        self._monitor.inicia()
+    async def _handler_prepara_execucao_sucesso(self):
+        await self._monitor.inicia()
 
-    def _handler_inicio_execucao_solicitada(self):
-        Log.log().info(f"Iniciando Encadeador - {Configuracoes().nome_estudo}")
-
-    def _handler_inicio_execucao_sucesso(self):
+    async def _handler_inicio_execucao_sucesso(self):
         self._executando = True
 
-    def _handler_concluido(self):
+    async def _handler_concluido(self):
         self.__finaliza(0)
 
-    def _handler_erro(self):
+    async def _handler_erro(self):
         self.__finaliza(1)
 
     def __finaliza(self, codigo: int):
         Log.log().info("Finalizando Encadeador")
         exit(codigo)
 
-    def executa(self):
-        self._monitor.prepara()
+    async def inicializa(self):
+        self._monitor = MonitorEstudo(
+            ESTUDO_ID,
+            estudo_uow_factory(UOW_KIND),
+            caso_uow_factory(UOW_KIND),
+            rodada_uow_factory(UOW_KIND),
+            self._lista_casos,
+            self._regras_reservatorio,
+            self._regras_inviabilidades,
+        )
+        self._monitor.observa(self.callback_evento)
+        await self._monitor.prepara()
+
+    async def executa(self):
         while True:
-            chdir(Configuracoes().caminho_base_estudo)
-            time.sleep(INTERVALO_POLL)
+            await asyncio.sleep(INTERVALO_POLL)
             Log.log().debug("Tentando monitorar...")
             if not self._executando:
                 continue
             Log.log().debug("Monitorando...")
-            self._monitor.monitora()
+            await self._monitor.monitora()
