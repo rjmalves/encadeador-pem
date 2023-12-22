@@ -10,7 +10,7 @@ from encadeador.services.unitofwork.newave import factory as nw_factory
 from encadeador.services.unitofwork.decomp import factory as dc_factory
 from encadeador.domain.programs import ProgramRules
 from encadeador.utils.log import Log
-from inewave.newave import DGer, CVAR  # type: ignore
+from inewave.newave import Dger, Cvar  # type: ignore
 from idecomp.decomp.dadger import Dadger
 from idecomp.decomp.modelos.dadger import RT, FC
 
@@ -62,15 +62,15 @@ class PreparadorNEWAVE(PreparadorCaso):
                     )
                     uow.deleta_cortes()
 
-    def __adequa_dger(self, dger: DGer):
+    def __adequa_dger(self, dger: Dger):
         ano = self.caso.ano
         mes = self.caso.mes
         dger.nome_caso = ProgramRules.newave_case_name(ano, mes)
 
-    def __adequa_cvar(self, cvar: CVAR):
+    def __adequa_cvar(self, cvar: Cvar):
         par_cvar = Configuracoes().cvar
         cvar.valores_constantes = par_cvar
-        Log.log().info(f"Valores de CVAR alterados: {par_cvar}")
+        Log.log().info(f"Valores de Cvar alterados: {par_cvar}")
 
     async def prepara(self) -> bool:
         Log.log().info(f"Preparando caso do NEWAVE: {self.caso.nome}")

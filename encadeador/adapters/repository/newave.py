@@ -1,18 +1,19 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Type
+from os.path import join
 import pathlib
 from inewave.newave.caso import Caso as ArquivoCaso
 from inewave.newave.arquivos import Arquivos
-from inewave.newave.dger import DGer
+from inewave.newave.dger import Dger
 from inewave.newave.hidr import Hidr
-from inewave.newave.cvar import CVAR
+from inewave.newave.cvar import Cvar
 from inewave.newave.confhd import Confhd
 from inewave.newave.modif import Modif
-from inewave.newave.eafpast import EafPast
-from inewave.newave.adterm import AdTerm
+from inewave.newave.eafpast import Eafpast
+from inewave.newave.adterm import Adterm
 from inewave.newave.term import Term
-from inewave.newave.re import RE
-from inewave.newave.pmo import PMO
+from inewave.newave.re import Re
+from inewave.newave.pmo import Pmo
 from encadeador.modelos.configuracoes import Configuracoes
 from encadeador.utils.encoding import converte_codificacao
 
@@ -24,11 +25,11 @@ class AbstractNewaveRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_dger(self) -> DGer:
+    async def get_dger(self) -> Dger:
         raise NotImplementedError
 
     @abstractmethod
-    def set_dger(self, d: DGer):
+    def set_dger(self, d: Dger):
         raise NotImplementedError
 
     @abstractmethod
@@ -36,11 +37,11 @@ class AbstractNewaveRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_cvar(self) -> CVAR:
+    def get_cvar(self) -> Cvar:
         raise NotImplementedError
 
     @abstractmethod
-    def set_cvar(self, d: CVAR):
+    def set_cvar(self, d: Cvar):
         raise NotImplementedError
 
     @abstractmethod
@@ -60,19 +61,19 @@ class AbstractNewaveRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_eafpast(self) -> EafPast:
+    def get_eafpast(self) -> Eafpast:
         raise NotImplementedError
 
     @abstractmethod
-    def set_eafpast(self, d: EafPast):
+    def set_eafpast(self, d: Eafpast):
         raise NotImplementedError
 
     @abstractmethod
-    def get_adterm(self) -> AdTerm:
+    def get_adterm(self) -> Adterm:
         raise NotImplementedError
 
     @abstractmethod
-    def set_adterm(self, d: AdTerm):
+    def set_adterm(self, d: Adterm):
         raise NotImplementedError
 
     @abstractmethod
@@ -84,24 +85,24 @@ class AbstractNewaveRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_re(self) -> RE:
+    def get_re(self) -> Re:
         raise NotImplementedError
 
     @abstractmethod
-    def set_re(self, d: RE):
+    def set_re(self, d: Re):
         raise NotImplementedError
 
     @abstractmethod
-    def get_pmo(self) -> PMO:
+    def get_pmo(self) -> Pmo:
         raise NotImplementedError
 
 
 class FSNewaveRepository(AbstractNewaveRepository):
     def __init__(self, path: str):
         self.__path = path
-        self.__caso = ArquivoCaso.le_arquivo(self.__path)
-        self.__arquivos = Arquivos.le_arquivo(
-            self.__path, self.__caso.arquivos
+        self.__caso = ArquivoCaso.read(join(self.__path, "caso.dat"))
+        self.__arquivos = Arquivos.read(
+            join(self.__path, self.__caso.arquivos)
         )
 
     @property
@@ -112,7 +113,7 @@ class FSNewaveRepository(AbstractNewaveRepository):
     def arquivos(self) -> Arquivos:
         return self.__arquivos
 
-    async def get_dger(self) -> DGer:
+    async def get_dger(self) -> Dger:
         arq_dger = self.arquivos.dger
         if arq_dger is None:
             raise FileNotFoundError("Nome do arquivo dger não especificado")
@@ -120,58 +121,58 @@ class FSNewaveRepository(AbstractNewaveRepository):
         await converte_codificacao(
             str(caminho), Configuracoes().script_converte_codificacao
         )
-        return DGer.le_arquivo(self.__path, self.arquivos.dger)
+        return Dger.read(str(caminho))
 
-    def set_dger(self, d: DGer):
-        d.escreve_arquivo(self.__path, self.__arquivos.dger)
+    def set_dger(self, d: Dger):
+        d.write(join(self.__path, self.__arquivos.dger))
 
     def get_hidr(self) -> Hidr:
-        return Hidr.le_arquivo(self.__path, "hidr.dat")
+        return Hidr.read(join(self.__path, "hidr.dat"))
 
-    def get_cvar(self) -> CVAR:
-        return CVAR.le_arquivo(self.__path, self.arquivos.cvar)
+    def get_cvar(self) -> Cvar:
+        return Cvar.read(join(self.__path, self.arquivos.cvar))
 
-    def set_cvar(self, d: CVAR):
-        d.escreve_arquivo(self.__path, self.__arquivos.cvar)
+    def set_cvar(self, d: Cvar):
+        d.write(join(self.__path, self.__arquivos.cvar))
 
     def get_confhd(self) -> Confhd:
-        return Confhd.le_arquivo(self.__path, self.arquivos.confhd)
+        return Confhd.read(join(self.__path, self.arquivos.confhd))
 
     def set_confhd(self, d: Confhd):
-        d.escreve_arquivo(self.__path, self.__arquivos.confhd)
+        d.write(join(self.__path, self.__arquivos.confhd))
 
     def get_modif(self) -> Modif:
-        return Modif.le_arquivo(self.__path, self.arquivos.modif)
+        return Modif.read(join(self.__path, self.arquivos.modif))
 
     def set_modif(self, d: Modif):
-        d.escreve_arquivo(self.__path, self.__arquivos.modif)
+        d.write(join(self.__path, self.__arquivos.modif))
 
-    def get_eafpast(self) -> EafPast:
-        return EafPast.le_arquivo(self.__path, self.arquivos.vazpast)
+    def get_eafpast(self) -> Eafpast:
+        return Eafpast.read(join(self.__path, self.arquivos.vazpast))
 
-    def set_eafpast(self, d: EafPast):
-        d.escreve_arquivo(self.__path, self.__arquivos.vazpast)
+    def set_eafpast(self, d: Eafpast):
+        d.write(join(self.__path, self.__arquivos.vazpast))
 
-    def get_adterm(self) -> AdTerm:
-        return AdTerm.le_arquivo(self.__path, self.arquivos.adterm)
+    def get_adterm(self) -> Adterm:
+        return Adterm.read(join(self.__path, self.arquivos.adterm))
 
-    def set_adterm(self, d: AdTerm):
-        d.escreve_arquivo(self.__path, self.__arquivos.adterm)
+    def set_adterm(self, d: Adterm):
+        d.write(join(self.__path, self.__arquivos.adterm))
 
     def get_term(self) -> Term:
-        return Term.le_arquivo(self.__path, self.arquivos.term)
+        return Term.read(join(self.__path, self.arquivos.term))
 
     def set_term(self, d: Term):
-        d.escreve_arquivo(self.__path, self.__arquivos.term)
+        d.write(join(self.__path, self.__arquivos.term))
 
-    def get_re(self) -> RE:
-        return RE.le_arquivo(self.__path, self.arquivos.re)
+    def get_re(self) -> Re:
+        return Re.read(join(self.__path, self.arquivos.re))
 
-    def set_re(self, d: RE):
-        d.escreve_arquivo(self.__path, self.__arquivos.re)
+    def set_re(self, d: Re):
+        d.write(join(self.__path, self.__arquivos.re))
 
-    def get_pmo(self) -> PMO:
-        return PMO.le_arquivo(self.__path, self.arquivos.pmo)
+    def get_pmo(self) -> Pmo:
+        return Pmo.read(join(self.__path, self.arquivos.pmo))
 
 
 # TODO

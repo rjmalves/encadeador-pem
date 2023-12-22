@@ -1,21 +1,23 @@
 from idecomp.decomp.relato import Relato
-from idecomp.decomp.relgnl import RelGNL
+from idecomp.decomp.relgnl import Relgnl
 import pandas as pd  # type: ignore
 
 
 class ProcessadorDecomp:
     @staticmethod
-    def gt_percentual(relato: Relato, relgnl: RelGNL, col: str) -> pd.DataFrame:
+    def gt_percentual(
+        relato: Relato, relgnl: Relgnl, col: str
+    ) -> pd.DataFrame:
         def extrai_gts_semana(relato: Relato, semana: int) -> pd.DataFrame:
-            gt = relato.geracao_termica_subsistema[
-                ["Subsistema", f"Estágio {semana}"]
+            gt = relato.geracao_termica_submercado[
+                ["nome_submercado", f"estagio_{semana}"]
             ]
-            gt = gt.set_index("Subsistema")
+            gt = gt.set_index("nome_submercado")
             gt = gt.drop(index="FC")
             return gt
 
         def extrai_gts_min_max_semana(
-            relato: Relato, relgnl: RelGNL, semana: int
+            relato: Relato, relgnl: Relgnl, semana: int
         ) -> pd.DataFrame:
             merc = relato.dados_mercado
             term = relato.dados_termicas
@@ -24,21 +26,23 @@ class ProcessadorDecomp:
 
             # Filtra somente as informações de Sª semana do relato e do
             # relgnl
-            term_1s = term.loc[term["Estágio"] == semana, :].copy()
-            term_1s_gnl = termg.loc[termg["Estágio"] == semana, :].copy()
+            term_1s = term.loc[term["estagio"] == semana, :].copy()
+            term_1s_gnl = termg.loc[termg["estagio"] == semana, :].copy()
             term_1s_gnl.columns = term_1s.columns
             term_1s = pd.concat([term_1s, term_1s_gnl], ignore_index=True)
             term_1s
-            merc_1s = merc.loc[merc["Estágio"] == semana, :].copy()
+            merc_1s = merc.loc[merc["estagio"] == semana, :].copy()
             merc_1s
             # Considera as disponibilidades das térmicas nos
             # GTmin e GTmax
             for idx, lin in term_1s.iterrows():
-                filtro = disp["Código"] == int(lin["Código"])
-                taxa_disp = float(disp.loc[filtro, f"Estágio {semana}"]) / 100.0
+                filtro = disp["codigo_usina"] == int(lin["codigo_usina"])
+                taxa_disp = (
+                    float(disp.loc[filtro, f"estagio_{semana}"]) / 100.0
+                )
                 for pat in [1, 2, 3]:
-                    c_min = f"GT Min Pat. {pat}"
-                    c_max = f"GT Max Pat. {pat}"
+                    c_min = f"geracao_minima_patamar_{pat}"
+                    c_max = f"geracao_maxima_patamar_{pat}"
                     gt_min = term_1s.loc[idx, c_min]
                     gt_max = term_1s.loc[idx, c_max]
                     term_1s.loc[idx, c_min] = taxa_disp * float(gt_min)
@@ -46,98 +50,110 @@ class ProcessadorDecomp:
 
             # Faz o cálculo de GTmin e GTmax agrupando os patamares com
             # as durações
-            cmi = "GT Min"
-            cma = "GT Max"
-            subs = term_1s["Subsistema"].unique()
+            cmi = "geracao_minima"
+            cma = "geracao_maxima"
+            subs = term_1s["nome_submercado"].unique()
             for s in subs:
-                fil = term_1s["Subsistema"] == s
+                fil = term_1s["nome_submercado"] == s
                 dp1 = float(
-                    merc_1s.loc[merc_1s["Subsistema"] == s, "Patamar 1"]
+                    merc_1s.loc[merc_1s["nome_submercado"] == s, "patamar_1"]
                 )
                 dp2 = float(
-                    merc_1s.loc[merc_1s["Subsistema"] == s, "Patamar 2"]
+                    merc_1s.loc[merc_1s["nome_submercado"] == s, "patamar_2"]
                 )
                 dp3 = float(
-                    merc_1s.loc[merc_1s["Subsistema"] == s, "Patamar 3"]
+                    merc_1s.loc[merc_1s["nome_submercado"] == s, "patamar_3"]
                 )
                 dur_total = dp1 + dp2 + dp3
                 dp1 /= dur_total
                 dp2 /= dur_total
                 dp3 /= dur_total
                 term_1s.loc[fil, cmi] = (
-                    term_1s.loc[fil, "GT Min Pat. 1"] * dp1
-                    + term_1s.loc[fil, "GT Min Pat. 2"] * dp2
-                    + term_1s.loc[fil, "GT Min Pat. 3"] * dp3
+                    term_1s.loc[fil, "geracao_minima_patamar_1"] * dp1
+                    + term_1s.loc[fil, "geracao_minima_patamar_2"] * dp2
+                    + term_1s.loc[fil, "geracao_minima_patamar_3"] * dp3
                 )
                 term_1s.loc[fil, cma] = (
-                    term_1s.loc[fil, "GT Max Pat. 1"] * dp1
-                    + term_1s.loc[fil, "GT Max Pat. 2"] * dp2
-                    + term_1s.loc[fil, "GT Max Pat. 3"] * dp3
+                    term_1s.loc[fil, "geracao_maxima_patamar_1"] * dp1
+                    + term_1s.loc[fil, "geracao_maxima_patamar_2"] * dp2
+                    + term_1s.loc[fil, "geracao_maxima_patamar_3"] * dp3
                 )
 
             # Obtém o GTmin e GTmax por subsistema
-            term_grupo = term_1s.groupby("Subsistema").sum()[[cmi, cma]]
+            term_grupo = term_1s.groupby("nome_submercado").sum()[[cmi, cma]]
             return term_grupo
 
         def extrai_gt_percentual_semana(
-            relato: Relato, relgnl: RelGNL, semana: int
+            relato: Relato, relgnl: Relgnl, semana: int
         ) -> pd.DataFrame:
             df_gt = extrai_gts_semana(relato, semana)
             df_gt_min_max = extrai_gts_min_max_semana(relato, relgnl, semana)
-            df_gt_min_max["GT"] = df_gt[f"Estágio {semana}"].copy()
-            df_gt_min_max["Subsistema"] = df_gt_min_max.index
+            df_gt_min_max["geracao"] = df_gt[f"estagio_{semana}"].copy()
+            df_gt_min_max["nome_submercado"] = df_gt_min_max.index
             df_gt_min_max = df_gt_min_max[
-                ["Subsistema", "GT Min", "GT", "GT Max"]
+                [
+                    "nome_submercado",
+                    "geracao_minima",
+                    "geracao",
+                    "geracao_maxima",
+                ]
             ]
             df_gt_min_max = df_gt_min_max.reset_index(drop=True)
             # Adiciona dados totais para o SIN
             soma_gt = df_gt_min_max.sum(axis=0)
-            df_gt_min_max.loc[4, "Subsistema"] = "SIN"
-            df_gt_min_max.loc[4, "GT Min"] = float(soma_gt.loc["GT Min"])
-            df_gt_min_max.loc[4, "GT"] = float(soma_gt.loc["GT"])
-            df_gt_min_max.loc[4, "GT Max"] = float(soma_gt.loc["GT Max"])
+            df_gt_min_max.loc[4, "nome_submercado"] = "SIN"
+            df_gt_min_max.loc[4, "geracao_minima"] = float(
+                soma_gt.loc["geracao_minima"]
+            )
+            df_gt_min_max.loc[4, "geracao"] = float(soma_gt.loc["geracao"])
+            df_gt_min_max.loc[4, "geracao_maxima"] = float(
+                soma_gt.loc["geracao_maxima"]
+            )
             return df_gt_min_max
 
         df_completo = pd.DataFrame()
         n_semanas = len(list(relato.volume_util_reservatorios.columns)) - 3
         for i in range(1, n_semanas + 1):
             df = extrai_gt_percentual_semana(relato, relgnl, i)
-            df["Estágio"] = i
+            df["estagio"] = i
             if df_completo.empty:
                 df_completo = df
             else:
                 df_completo = pd.concat([df_completo, df], ignore_index=True)
 
         # Reordena as columas do dataframe
-        cols_sem_estagio = [c for c in df_completo.columns if c != "Estágio"]
-        dfc = df_completo[["Estágio"] + cols_sem_estagio].copy()
+        cols_sem_estagio = [c for c in df_completo.columns if c != "estagio"]
+        dfc = df_completo[["estagio"] + cols_sem_estagio].copy()
 
-        dfc.loc[:, "GT Percentual Max"] = 100 * dfc["GT"] / dfc["GT Max"]
-        dfc.loc[:, "GT Percentual Flex"] = 100 * (
-            (dfc["GT"] - dfc["GT Min"]) / (dfc["GT Max"] - dfc["GT Min"])
+        dfc.loc[:, "geracao_percentual_maxima"] = (
+            100 * dfc["geracao"] / dfc["geracao_maxima"]
+        )
+        dfc.loc[:, "geracao_percentual_flexivel"] = 100 * (
+            (dfc["geracao"] - dfc["geracao_minima"])
+            / (dfc["geracao_maxima"] - dfc["geracao_minima"])
         )
 
         # Transforma só para o DF com percentual da máxima, no padrão
         # das demais variáveis
-        estagios = dfc["Estágio"].unique()
-        subsistemas = dfc["Subsistema"].unique()
-        cols = ["Subsistema"] + [f"Estágio {e}" for e in estagios]
+        estagios = dfc["estagio"].unique()
+        subsistemas = dfc["nome_submercado"].unique()
+        cols = ["nome_submercado"] + [f"estagio_{e}" for e in estagios]
         df_final = pd.DataFrame(columns=cols)
         for i, s in enumerate(subsistemas):
-            df_final.loc[i, "Subsistema"] = s
-            gt = dfc.loc[dfc["Subsistema"] == s, col].to_numpy()
-            df_final.loc[i, [f"Estágio {e}" for e in estagios]] = gt
+            df_final.loc[i, "nome_submercado"] = s
+            gt = dfc.loc[dfc["nome_submercado"] == s, col].to_numpy()
+            df_final.loc[i, [f"estagio_{e}" for e in estagios]] = gt
 
         return df_final
 
     @staticmethod
-    def gt_percentual_maxima(relato: Relato, relgnl: RelGNL):
+    def gt_percentual_maxima(relato: Relato, relgnl: Relgnl):
         return ProcessadorDecomp.gt_percentual(
-            relato, relgnl, "GT Percentual Max"
+            relato, relgnl, "geracao_percentual_maxima"
         )
 
     @staticmethod
-    def gt_percentual_flexivel(relato: Relato, relgnl: RelGNL):
+    def gt_percentual_flexivel(relato: Relato, relgnl: Relgnl):
         return ProcessadorDecomp.gt_percentual(
-            relato, relgnl, "GT Percentual Flex"
+            relato, relgnl, "geracao_percentual_flexivel"
         )
