@@ -124,70 +124,116 @@ class FSNewaveRepository(AbstractNewaveRepository):
         return Dger.read(str(caminho))
 
     def set_dger(self, d: Dger):
-        d.write(join(self.__path, self.__arquivos.dger))
+        arq = self.arquivos.dger
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo dger não especificado")
+        d.write(join(self.__path, arq))
 
     def get_hidr(self) -> Hidr:
         return Hidr.read(join(self.__path, "hidr.dat"))
 
     def get_cvar(self) -> Cvar:
-        return Cvar.read(join(self.__path, self.arquivos.cvar))
+        arq = self.arquivos.cvar
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo cvar não especificado")
+        return Cvar.read(join(self.__path, arq))
 
     def set_cvar(self, d: Cvar):
-        d.write(join(self.__path, self.__arquivos.cvar))
+        arq = self.arquivos.cvar
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo cvar não especificado")
+        d.write(join(self.__path, arq))
 
     def get_confhd(self) -> Confhd:
-        return Confhd.read(join(self.__path, self.arquivos.confhd))
+        arq = self.arquivos.confhd
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo confhd não especificado")
+        return Confhd.read(join(self.__path, arq))
 
     def set_confhd(self, d: Confhd):
-        d.write(join(self.__path, self.__arquivos.confhd))
+        arq = self.arquivos.confhd
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo confhd não especificado")
+        d.write(join(self.__path, arq))
 
     def get_modif(self) -> Modif:
-        return Modif.read(join(self.__path, self.arquivos.modif))
+        arq = self.arquivos.modif
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo modif não especificado")
+        return Modif.read(join(self.__path, arq))
 
     def set_modif(self, d: Modif):
-        d.write(join(self.__path, self.__arquivos.modif))
+        arq = self.arquivos.modif
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo modif não especificado")
+        d.write(join(self.__path, arq))
 
     def get_eafpast(self) -> Eafpast:
-        return Eafpast.read(join(self.__path, self.arquivos.vazpast))
+        arq = self.arquivos.vazpast
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo eafpast não especificado")
+
+        return Eafpast.read(join(self.__path, arq))
 
     def set_eafpast(self, d: Eafpast):
-        d.write(join(self.__path, self.__arquivos.vazpast))
+        arq = self.arquivos.vazpast
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo eafpast não especificado")
+
+        d.write(join(self.__path, arq))
 
     def get_adterm(self) -> Adterm:
-        return Adterm.read(join(self.__path, self.arquivos.adterm))
+        arq = self.arquivos.adterm
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo adterm não especificado")
+
+        return Adterm.read(join(self.__path, arq))
 
     def set_adterm(self, d: Adterm):
-        d.write(join(self.__path, self.__arquivos.adterm))
+        arq = self.arquivos.adterm
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo adterm não especificado")
+
+        d.write(join(self.__path, arq))
 
     def get_term(self) -> Term:
-        return Term.read(join(self.__path, self.arquivos.term))
+        arq = self.arquivos.term
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo term não especificado")
+
+        return Term.read(join(self.__path, arq))
 
     def set_term(self, d: Term):
-        d.write(join(self.__path, self.__arquivos.term))
+        arq = self.arquivos.term
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo term não especificado")
+
+        d.write(join(self.__path, arq))
 
     def get_re(self) -> Re:
-        return Re.read(join(self.__path, self.arquivos.re))
+        arq = self.arquivos.re
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo re não especificado")
+
+        return Re.read(join(self.__path, arq))
 
     def set_re(self, d: Re):
-        d.write(join(self.__path, self.__arquivos.re))
+        arq = self.arquivos.re
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo re não especificado")
+
+        d.write(join(self.__path, arq))
 
     def get_pmo(self) -> Pmo:
-        return Pmo.read(join(self.__path, self.arquivos.pmo))
+        arq = self.arquivos.pmo
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo pmo não especificado")
 
-
-# TODO
-class S3NewaveRepository(AbstractNewaveRepository):
-    def __init__(self, url: str):
-        self.__url = url
-
-    @property
-    def arquivos(self) -> Arquivos:
-        raise NotImplementedError
+        return Pmo.read(join(self.__path, arq))
 
 
 def factory(kind: str, *args, **kwargs) -> AbstractNewaveRepository:
     mappings: Dict[str, Type[AbstractNewaveRepository]] = {
         "FS": FSNewaveRepository,
-        "S3": S3NewaveRepository,
     }
     return mappings[kind](*args, **kwargs)

@@ -1,7 +1,7 @@
-from os.path import join, exists
+from os.path import join
 from os import makedirs
 from typing import List
-import pandas as pd
+import pandas as pd  # type: ignore
 
 from encadeador.modelos.caso import Caso
 from encadeador.modelos.configuracoes import Configuracoes
@@ -267,9 +267,12 @@ class Sintetizador:
                     for a, c in zip(ano_mes_rv_casos, casos_newave)
                     if a not in ano_mes_rv_sintetizados
                 ]
-                Log.log().info(
-                    f"Casos faltantes: {[a for a in ano_mes_rv_casos if a not in ano_mes_rv_sintetizados]}"
-                )
+                casos_faltantes_log = [
+                    a
+                    for a in ano_mes_rv_casos
+                    if a not in ano_mes_rv_sintetizados
+                ]
+                Log.log().info(f"Casos faltantes: {casos_faltantes_log}")
                 df = await ResultAPIRepository.resultados_1o_estagio_casos(
                     casos_faltantes, v
                 )
@@ -322,9 +325,12 @@ class Sintetizador:
                     for a, c in zip(ano_mes_rv_casos, casos_decomp)
                     if a not in ano_mes_rv_sintetizados
                 ]
-                Log.log().info(
-                    f"Casos faltantes: {[a for a in ano_mes_rv_casos if a not in ano_mes_rv_sintetizados]}"
-                )
+                casos_faltantes_log = [
+                    a
+                    for a in ano_mes_rv_casos
+                    if a not in ano_mes_rv_sintetizados
+                ]
+                Log.log().info(f"Casos faltantes: {casos_faltantes_log}")
                 df = await ResultAPIRepository.resultados_1o_estagio_casos(
                     casos_faltantes, v
                 )

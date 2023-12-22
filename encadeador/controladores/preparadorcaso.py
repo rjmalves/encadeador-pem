@@ -236,11 +236,11 @@ class PreparadorDECOMP(PreparadorCaso):
             if not existe_rt_crista:
                 rt = RT()
                 rt.restricao = "CRISTA"
-                dadger.cria_registro(reg_te, rt)
+                dadger.data.add_after(reg_te, rt)
             if not existe_rt_desvio:
                 rt = RT()
                 rt.restricao = "DESVIO"
-                dadger.cria_registro(reg_te, rt)
+                dadger.data.add_after(reg_te, rt)
             dc_uow.decomp.set_dadger(dadger)
         return True
 

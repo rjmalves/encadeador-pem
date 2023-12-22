@@ -14,11 +14,17 @@ async def submete(
 ) -> Optional[int]:
     with uow:
         run = Run(
+            runId=None,
+            status=None,
+            name=None,
+            jobId=None,
+            jobWorkingDirectory=command.caminho,
+            jobStartTime=None,
+            jobEndTime=None,
+            jobReservedSlots=command.numero_processadores,
+            jobArgs=[str(command.numero_processadores)],
             programName=command.programa,
             programVersion=command.versao,
-            jobWorkingDirectory=command.caminho,
-            jobReservedSlots=command.numero_processadores,
-            jobArgs=[command.numero_processadores],
         )
         res = await ModelAPIRepository.create_run(run)
         Log.log().info(f"ID da rodada: {res}")

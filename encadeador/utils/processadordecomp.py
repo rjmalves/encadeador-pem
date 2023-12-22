@@ -9,9 +9,8 @@ class ProcessadorDecomp:
         relato: Relato, relgnl: Relgnl, col: str
     ) -> pd.DataFrame:
         def extrai_gts_semana(relato: Relato, semana: int) -> pd.DataFrame:
-            gt = relato.geracao_termica_submercado[
-                ["nome_submercado", f"estagio_{semana}"]
-            ]
+            gt: pd.DataFrame = relato.geracao_termica_submercado
+            gt = gt[["nome_submercado", f"estagio_{semana}"]]
             gt = gt.set_index("nome_submercado")
             gt = gt.drop(index="FC")
             return gt
@@ -19,10 +18,10 @@ class ProcessadorDecomp:
         def extrai_gts_min_max_semana(
             relato: Relato, relgnl: Relgnl, semana: int
         ) -> pd.DataFrame:
-            merc = relato.dados_mercado
-            term = relato.dados_termicas
-            termg = relgnl.usinas_termicas
-            disp = relato.disponibilidades_termicas
+            merc: pd.DataFrame = relato.dados_mercado
+            term: pd.DataFrame = relato.dados_termicas
+            termg: pd.DataFrame = relgnl.usinas_termicas
+            disp: pd.DataFrame = relato.disponibilidades_termicas
 
             # Filtra somente as informações de Sª semana do relato e do
             # relgnl
@@ -112,7 +111,8 @@ class ProcessadorDecomp:
             return df_gt_min_max
 
         df_completo = pd.DataFrame()
-        n_semanas = len(list(relato.volume_util_reservatorios.columns)) - 3
+        vols: pd.DataFrame = relato.volume_util_reservatorios
+        n_semanas = len(list(vols.columns)) - 3
         for i in range(1, n_semanas + 1):
             df = extrai_gt_percentual_semana(relato, relgnl, i)
             df["estagio"] = i

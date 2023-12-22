@@ -70,22 +70,42 @@ class FSDecompRepository(AbstractDecompRepository):
         return self.__arquivos
 
     async def get_dadger(self) -> Dadger:
-        caminho = pathlib.Path(self.__path).joinpath(self.arquivos.dadger)
+        arq = self.arquivos.dadger
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo dadger não especificado")
+
+        caminho = pathlib.Path(self.__path).joinpath(arq)
         await converte_codificacao(
             str(caminho), Configuracoes().script_converte_codificacao
         )
         return Dadger.read(str(caminho))
 
     def get_dadgnl(self) -> Dadgnl:
-        return Dadgnl.read(join(self.__path, self.arquivos.dadgnl))
+        arq = self.arquivos.dadgnl
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo dadgnl não especificado")
+
+        return Dadgnl.read(join(self.__path, arq))
 
     def get_hidr(self) -> Hidr:
-        return Hidr.read(join(self.__path, self.arquivos.hidr))
+        arq = self.arquivos.hidr
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo hidr não especificado")
+
+        return Hidr.read(join(self.__path, arq))
 
     def set_dadger(self, d: Dadger):
-        d.write(join(self.__path, self.__arquivos.dadger))
+        arq = self.arquivos.dadger
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo dadger não especificado")
+
+        d.write(join(self.__path, arq))
 
     def set_dadgnl(self, d: Dadgnl):
+        arq = self.arquivos.dadgnl
+        if arq is None:
+            raise FileNotFoundError("Nome do arquivo dadgnl não especificado")
+
         d.write(join(self.__path, self.__arquivos.dadgnl))
 
     def get_inviab(self) -> InviabUnic:
@@ -100,19 +120,8 @@ class FSDecompRepository(AbstractDecompRepository):
         return Relgnl.read(join(self.__path, f"relgnl.{self.__caso.arquivos}"))
 
 
-# TODO
-class S3DecompRepository(AbstractDecompRepository):
-    def __init__(self, url: str):
-        self.__url = url
-
-    @property
-    def arquivos(self) -> Arquivos:
-        raise NotImplementedError
-
-
 def factory(kind: str, *args, **kwargs) -> AbstractDecompRepository:
     mappings: Dict[str, Type[AbstractDecompRepository]] = {
         "FS": FSDecompRepository,
-        "S3": S3DecompRepository,
     }
     return mappings[kind](*args, **kwargs)
