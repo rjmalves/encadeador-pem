@@ -78,7 +78,7 @@ class FSNewaveUnitOfWork(AbstractNewaveUnitOfWork):
         # Descobre o nome do arquivo de cortes
         # relativo ao 2º mês do estudo
         dger = await self.newave.get_dger()
-        mes_inicio = dger.mes_inicio_estudo
+        mes_inicio = dger.mes_inicio_estudo + 1
         arq_cortes = f"cortes-{str(mes_inicio).zfill(3)}.dat"
 
         cortes_extrair = {
