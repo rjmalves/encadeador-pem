@@ -1,10 +1,13 @@
 import pandas as pd  # type: ignore
 from typing import List, Dict, Any, Optional
+from datetime import datetime
 
 
 class RegraReservatorio:
     def __init__(
         self,
+        _inicio_vigencia: str,
+        _fim_vigencia: str,
         _codigo_reservatorio: int,
         _codigo_usina: int,
         _tipo_restricao: str,
@@ -16,6 +19,8 @@ class RegraReservatorio:
         _periodicidade: str,
         _legenda_faixa: str,
     ):
+        self._inicio_vigencia = datetime.fromisoformat(_inicio_vigencia)
+        self._fim_vigencia = datetime.fromisoformat(_fim_vigencia)
         self._codigo_reservatorio = _codigo_reservatorio
         self._codigo_usina = _codigo_usina
         self._tipo_restricao = _tipo_restricao
@@ -28,8 +33,12 @@ class RegraReservatorio:
         self._legenda_faixa = _legenda_faixa
 
     def __str__(self) -> str:
+        format = "%Y-%m-%d"
         return (
-            f"Regra: reservatório {self._codigo_reservatorio}"
+            f"Regra: reservatório"
+            + f" [{self._inicio_vigencia.strftime(format)} -"
+            + f" {self._fim_vigencia.strftime(format)}]"
+            + f" {self._codigo_reservatorio}"
             + f" -> usina {self._codigo_usina} | {self._tipo_restricao}"
             + f" mês {self._mes}. Faixa {self._legenda_faixa}: "
             + f" ({self._volume_minimo}, {self._volume_maximo})"
@@ -45,6 +54,9 @@ class RegraReservatorio:
         for _, linha in df.iterrows():
             regras.append(
                 RegraReservatorio(
+                    linha["INICIO_VIGENCIA"],
+                    linha["FIM_VIGENCIA"],
+                    int(linha["COD_RESERVATORIO_VOL"]),
                     int(linha["COD_RESERVATORIO_VOL"]),
                     int(linha["CODIGO_USINA_RESTRICAO"]),
                     linha["TIPO_REST"],
@@ -68,7 +80,26 @@ class RegraReservatorio:
         return RegraReservatorio(**json_dict)
 
     def to_json(self) -> Dict[str, Any]:
-        return self.__dict__
+        return {
+            "_inicio_vigencia": self._inicio_vigencia.isoformat(),
+            "_fim_vigencia": self._fim_vigencia.isoformat(),
+            "_tipo_restricao": self._tipo_restricao,
+            "_mes": self._mes,
+            "_volume_minimo": self._volume_minimo,
+            "_volume_maximo": self._volume_maximo,
+            "_limite_minimo": self._limite_minimo,
+            "_limite_maximo": self._limite_maximo,
+            "_periodicidade": self._periodicidade,
+            "_legenda_faixa": self._legenda_faixa,
+        }
+
+    @property
+    def inicio_vigencia(self) -> datetime:
+        return self._inicio_vigencia
+
+    @property
+    def fim_vigencia(self) -> datetime:
+        return self._fim_vigencia
 
     @property
     def codigo_reservatorio(self) -> int:
