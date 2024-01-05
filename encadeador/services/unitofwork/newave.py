@@ -70,16 +70,29 @@ class FSNewaveUnitOfWork(AbstractNewaveUnitOfWork):
         else:
             return None
 
-    def extrai_cortes(self) -> bool:
-        cortes = [self.newave.arquivos.cortes, self.newave.arquivos.cortesh]
+    async def extrai_cortes(self) -> bool:
+        # Premissa: usa cortes por período a partir das versões
+        #  - 28.16.2 do NEWAVE
+        #  - 31.21 do DECOMP
+
+        # Descobre o nome do arquivo de cortes
+        # relativo ao 2º mês do estudo
+        dger = await self.newave.get_dger()
+        mes_inicio = dger.mes_inicio_estudo
+        arq_cortes = f"cortes-{str(mes_inicio).zfill(3)}.dat"
+
+        cortes_extrair = {
+            self.newave.arquivos.cortesh: self.newave.arquivos.cortesh,
+            arq_cortes: "cortes.dat",
+        }
         zipname = self.__out_zip_name()
         if zipname is not None:
             with ZipFile(zipname, "r") as obj_zip:
-                for a in cortes:
-                    if a is None:
+                for arq_zip, arq_extraido in cortes_extrair.items():
+                    if arq_zip is None:
                         return False
-                    if not isfile(a):
-                        obj_zip.extract(a)
+                    if not isfile(arq_extraido):
+                        obj_zip.extract(arq_zip, arq_extraido)
             return True
         return False
 

@@ -114,7 +114,7 @@ class PreparadorDECOMP(PreparadorCaso):
                 return c
         return None
 
-    def __extrai_cortes_ultimo_newave(self, c: Optional[Caso]):
+    async def __extrai_cortes_ultimo_newave(self, c: Optional[Caso]):
         if c is not None:
             uow = nw_factory(
                 "FS", join(Configuracoes().caminho_base_estudo, c.caminho)
@@ -123,11 +123,11 @@ class PreparadorDECOMP(PreparadorCaso):
                 Log.log().info(
                     "Extraindo cortes do último NEWAVE: " + f"{c.caminho}"
                 )
-                uow.extrai_cortes()
+                await uow.extrai_cortes()
 
-    def __adequa_caminho_fcf(self, dadger: Dadger, caso_cortes: Caso):
+    async def __adequa_caminho_fcf(self, dadger: Dadger, caso_cortes: Caso):
         # Verifica se é necessário e extrai os cortes
-        self.__extrai_cortes_ultimo_newave(caso_cortes)
+        await self.__extrai_cortes_ultimo_newave(caso_cortes)
         # Altera os registros FC
         nw_uow = nw_factory(
             "FS",
@@ -204,7 +204,7 @@ class PreparadorDECOMP(PreparadorCaso):
             ):
                 Log.log().error("Erro na especificação dos cortes da FCF")
                 return False
-            self.__adequa_caminho_fcf(dadger, caso_cortes)
+            await self.__adequa_caminho_fcf(dadger, caso_cortes)
             if Configuracoes().adequa_decks_decomp:
                 self.__adequa_dadger(dadger)
 
