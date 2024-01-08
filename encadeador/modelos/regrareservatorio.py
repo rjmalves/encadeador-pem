@@ -6,8 +6,8 @@ from datetime import datetime
 class RegraReservatorio:
     def __init__(
         self,
-        _inicio_vigencia: str,
-        _fim_vigencia: str,
+        _inicio_vigencia: Optional[str],
+        _fim_vigencia: Optional[str],
         _codigo_reservatorio: int,
         _codigo_usina: int,
         _tipo_restricao: str,
@@ -19,8 +19,14 @@ class RegraReservatorio:
         _periodicidade: str,
         _legenda_faixa: str,
     ):
-        self._inicio_vigencia = datetime.fromisoformat(_inicio_vigencia)
-        self._fim_vigencia = datetime.fromisoformat(_fim_vigencia)
+        self._inicio_vigencia = (
+            datetime.fromisoformat(_inicio_vigencia)
+            if _inicio_vigencia
+            else None
+        )
+        self._fim_vigencia = (
+            datetime.fromisoformat(_fim_vigencia) if _fim_vigencia else None
+        )
         self._codigo_reservatorio = _codigo_reservatorio
         self._codigo_usina = _codigo_usina
         self._tipo_restricao = _tipo_restricao
@@ -34,10 +40,18 @@ class RegraReservatorio:
 
     def __str__(self) -> str:
         format = "%Y-%m-%d"
+        inicio_vigencia = (
+            self._inicio_vigencia.strftime(format)
+            if self._inicio_vigencia
+            else "-"
+        )
+        fim_vigencia = (
+            self._fim_vigencia.strftime(format) if self._fim_vigencia else "-"
+        )
         return (
             f"Regra: reservatório"
-            + f" [{self._inicio_vigencia.strftime(format)} -"
-            + f" {self._fim_vigencia.strftime(format)}]"
+            + f" [{inicio_vigencia} -"
+            + f" {fim_vigencia}]"
             + f" {self._codigo_reservatorio}"
             + f" -> usina {self._codigo_usina} | {self._tipo_restricao}"
             + f" mês {self._mes}. Faixa {self._legenda_faixa}: "
@@ -54,8 +68,12 @@ class RegraReservatorio:
         for _, linha in df.iterrows():
             regras.append(
                 RegraReservatorio(
-                    linha["INICIO_VIGENCIA"],
-                    linha["FIM_VIGENCIA"],
+                    None
+                    if linha["INICIO_VIGENCIA"] == "-"
+                    else linha["INICIO_VIGENCIA"],
+                    None
+                    if linha["FIM_VIGENCIA"] == "-"
+                    else linha["FIM_VIGENCIA"],
                     int(linha["COD_RESERVATORIO_VOL"]),
                     int(linha["COD_RESERVATORIO_VOL"]),
                     int(linha["CODIGO_USINA_RESTRICAO"]),
@@ -80,9 +98,17 @@ class RegraReservatorio:
         return RegraReservatorio(**json_dict)
 
     def to_json(self) -> Dict[str, Any]:
+        inicio_vigencia = (
+            self._inicio_vigencia.isoformat()
+            if self._inicio_vigencia
+            else None
+        )
+        fim_vigencia = (
+            self._fim_vigencia.isoformat() if self._fim_vigencia else None
+        )
         return {
-            "_inicio_vigencia": self._inicio_vigencia.isoformat(),
-            "_fim_vigencia": self._fim_vigencia.isoformat(),
+            "_inicio_vigencia": inicio_vigencia,
+            "_fim_vigencia": fim_vigencia,
             "_tipo_restricao": self._tipo_restricao,
             "_mes": self._mes,
             "_volume_minimo": self._volume_minimo,
@@ -94,11 +120,11 @@ class RegraReservatorio:
         }
 
     @property
-    def inicio_vigencia(self) -> datetime:
+    def inicio_vigencia(self) -> Optional[datetime]:
         return self._inicio_vigencia
 
     @property
-    def fim_vigencia(self) -> datetime:
+    def fim_vigencia(self) -> Optional[datetime]:
         return self._fim_vigencia
 
     @property

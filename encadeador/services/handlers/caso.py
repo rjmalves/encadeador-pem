@@ -132,10 +132,10 @@ async def prepara(
                 vigente = True
                 inicio = r.inicio_vigencia
                 fim = r.fim_vigencia
-                if inicio is not None:
+                if inicio:
                     if data_caso < inicio:
                         vigente = False
-                elif fim is not None:
+                elif fim:
                     if data_caso > fim:
                         vigente = False
                 if vigente:
