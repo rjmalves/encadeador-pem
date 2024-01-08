@@ -5,6 +5,7 @@ from typing import Optional, Dict, Type
 from os.path import isfile
 from zipfile import ZipFile
 from pathlib import Path
+from shutil import move
 
 
 from encadeador.adapters.repository.newave import (
@@ -92,7 +93,8 @@ class FSNewaveUnitOfWork(AbstractNewaveUnitOfWork):
                     if arq_zip is None:
                         return False
                     if not isfile(arq_extraido):
-                        obj_zip.extract(arq_zip, arq_extraido)
+                        obj_zip.extract(arq_zip)
+                        move(arq_zip, arq_extraido)
             return True
         return False
 
