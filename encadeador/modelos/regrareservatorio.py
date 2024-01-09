@@ -75,7 +75,6 @@ class RegraReservatorio:
                     if linha["FIM_VIGENCIA"] == "-"
                     else linha["FIM_VIGENCIA"],
                     int(linha["COD_RESERVATORIO_VOL"]),
-                    int(linha["COD_RESERVATORIO_VOL"]),
                     int(linha["CODIGO_USINA_RESTRICAO"]),
                     linha["TIPO_REST"],
                     int(linha["MES"]),
