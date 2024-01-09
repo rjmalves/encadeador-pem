@@ -63,7 +63,7 @@ class RegraReservatorio:
     @staticmethod
     def from_csv(caminho: str) -> List["RegraReservatorio"]:
         df = pd.read_csv(caminho, index_col=None, sep=";")
-        df = df.loc[~df["COD_RESERVATORIO_VOL"].str.contains("&")]
+        df = df.loc[~df["INICIO_VIGENCIA"].str.contains("&")]
         regras: List[RegraReservatorio] = []
         for _, linha in df.iterrows():
             regras.append(
