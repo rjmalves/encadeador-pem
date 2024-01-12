@@ -11,7 +11,7 @@ São utilizados diversos serviços e APIs para a execução do estudo encadeado,
 - [result-api](https://github.com/rjmalves/result-api): API para extração de arquivos estáticos em formato .parquet com aplicação de filtros no lado do servidor.
 - [encadeador-service](https://github.com/rjmalves/encadeador-service): serviço para realização do encadeamento entre execuções dos modelos energéticos. Realiza a transferência do estado final de uma execução para o estado inicial de outra.
 - [flexibilizador-service](https://github.com/rjmalves/flexibilizador-service): serviço para realização da flexibilização de um caso. Realiza a remoção de inviabilidades por meio da flexiblização de restrições ou outros parâmetros de convergência.
-- [regras-operativas-service](https://github.com/rjmalves/regras-operativas-service): serviço para realização da aplicação de regras operativas. Realiza a alteração ou criação de restrições com base em regras operativas, atualmente suportando apenas regras do tipo VOLUME -> DEFLUÊNCIA.
+- [regras-operativas-service](https://github.com/rjmalves/regras-operativas-service): serviço para realização da aplicação de regras operativas. Realiza a alteração ou criação de restrições com base em regras operativas, atualmente suportando apenas regras do tipo VOLUME -> DEFLUÊNCIA ou VOLUME -> TURBINAMENTO.
 
 
 ## Configuração
@@ -33,8 +33,8 @@ A configuração do encadeador é feita por meio de um arquivo `.env` no diretó
 | GAP_MAXIMO_DECOMP | 0.1 | O gap máximo permitido quando o modelo não alcança o gap de convergência nas suas iterações, que é aumentado no processo de flexibilização |
 | PROCESSADORES_NEWAVE | 64 | Número de processadores utilizados para a execução do NEWAVE |
 | PROCESSADORES_DECOMP | 64 | Número de processadores utilizados para a execução do DECOMP |
-| VARIAVEIS_ENCADEADAS_NEWAVE | "VARM" | Variáveis a serem encadeadas entre os programas DECOMP e NEWAVE. Suportadas: **EARM, GNL e ENA**. |
-| VARIAVEIS_ENCADEADAS_DECOMP | "VARM,TVIAGEM" | Variáveis a serem encadeadas entre os programas DECOMP. Suportadas: **EARM, TVIAGEM, GNL e ENA**. |
+| VARIAVEIS_ENCADEADAS_NEWAVE | "VARM" | Variáveis a serem encadeadas entre os programas DECOMP e NEWAVE. Suportadas: **VARM, GNL e ENA**. |
+| VARIAVEIS_ENCADEADAS_DECOMP | "VARM,TVIAGEM" | Variáveis a serem encadeadas entre os programas DECOMP. Suportadas: **VARM, TVIAGEM, GNL e ENA**. |
 | SCRIPT_CONVERTE_CODIFICACAO | "/home/USER/converte.sh" | Script shell para realizar a conversão de arquivos de entrada textuais para UTF-8, eliminando caracteres indesejados. |
 | ARQUIVO_LISTA_CASOS | "lista_casos.txt" | Nome do arquivo de entrada que contém os casos a serem encadeados |
 | ARQUIVO_REGRAS_OPERACAO_RESERVATORIOS | "regras_reservatorios.csv" | Arquivo com as regras operativas de reservatórios do tipo VOLUME -> DEFLUÊNCIA, se houver. |
