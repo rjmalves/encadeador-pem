@@ -1,5 +1,5 @@
 from typing import List, Optional
-import pandas as pd
+import pandas as pd  # type: ignore
 
 
 class RegraReservatorioEquivalente:
@@ -71,7 +71,7 @@ class RegraReservatorioEquivalente:
         return self._codigos_reservatorios
 
     @codigos_reservatorios.setter
-    def codigos_reservatorios(self, c: int):
+    def codigos_reservatorios(self, c: List[int]):
         self._codigos_reservatorios = c
 
     @property

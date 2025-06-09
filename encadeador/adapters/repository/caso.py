@@ -59,7 +59,7 @@ class SQLCasoRepository(AbstractCasoRepository):
     def update(self, caso: Caso):
         statement = (
             update(Caso)
-            .where(Caso.id == caso.id)
+            .where(Caso.id == caso.id)  # type: ignore
             .values(
                 {
                     "estado": caso.estado,
@@ -69,7 +69,7 @@ class SQLCasoRepository(AbstractCasoRepository):
         return self.__session.execute(statement)
 
     def delete(self, id: int):
-        statement = delete(Caso).where(Caso.id == id)
+        statement = delete(Caso).where(Caso.id == id)  # type: ignore
         return self.__session.execute(statement)
 
     def list(self) -> List[Caso]:
@@ -77,7 +77,7 @@ class SQLCasoRepository(AbstractCasoRepository):
         return [j[0] for j in self.__session.execute(statement).all()]
 
     def list_by_estudo(self, id_estudo: int) -> List[Caso]:
-        statement = select(Caso).where(Caso.id_estudo == id_estudo)
+        statement = select(Caso).where(Caso.id_estudo == id_estudo)  # type: ignore
         return [j[0] for j in self.__session.execute(statement).all()]
 
 

@@ -56,7 +56,7 @@ class SQLRodadaRepository(AbstractRodadaRepository):
     def update(self, rodada: Rodada):
         statement = (
             update(Rodada)
-            .where(Rodada.id == rodada.id)
+            .where(Rodada.id == rodada.id)  # type: ignore
             .values(
                 {
                     "instante_inicio_execucao": rodada.instante_inicio_execucao,
@@ -68,7 +68,7 @@ class SQLRodadaRepository(AbstractRodadaRepository):
         return self.__session.execute(statement)
 
     def delete(self, id: int):
-        statement = delete(Rodada).where(Rodada.id == id)
+        statement = delete(Rodada).where(Rodada.id == id)  # type: ignore
         return self.__session.execute(statement)
 
     def list(self) -> List[Rodada]:
@@ -76,7 +76,7 @@ class SQLRodadaRepository(AbstractRodadaRepository):
         return [j[0] for j in self.__session.execute(statement).all()]
 
     def list_by_caso(self, id_caso: int) -> List[Rodada]:
-        statement = select(Rodada).where(Rodada.id_caso == id_caso)
+        statement = select(Rodada).where(Rodada.id_caso == id_caso)  # type: ignore
         return [j[0] for j in self.__session.execute(statement).all()]
 
 

@@ -739,7 +739,7 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
     def model_api(self, variavel: str):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
         # Confere se o caminho do diretorio é válido
-        if not validators.url(valor):
+        if not validators.url(valor, simple_host=True):
             raise ValueError(f"URL {valor} inválida.")
         self._configuracoes._model_api = valor
         # Fluent method
@@ -748,7 +748,7 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
     def result_api(self, variavel: str):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
         # Confere se o caminho do diretorio é válido
-        if not validators.url(valor):
+        if not validators.url(valor, simple_host=True):
             raise ValueError(f"URL {valor} inválida.")
         self._configuracoes._result_api = valor
         # Fluent method
@@ -757,7 +757,7 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
     def encadeador_service(self, variavel: str):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
         # Confere se o caminho do diretorio é válido
-        if not validators.url(valor):
+        if not validators.url(valor, simple_host=True):
             raise ValueError(f"URL {valor} inválida.")
         self._configuracoes._encadeador_service = valor
         # Fluent method
@@ -766,7 +766,7 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
     def flexibilizador_service(self, variavel: str):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
         # Confere se o caminho do diretorio é válido
-        if not validators.url(valor):
+        if not validators.url(valor, simple_host=True):
             raise ValueError(f"URL {valor} inválida.")
         self._configuracoes._flexibilizador_service = valor
         # Fluent method
@@ -775,7 +775,7 @@ class BuilderConfiguracoesENV(BuilderConfiguracoes):
     def regras_reservatorios_service(self, variavel: str):
         valor = BuilderConfiguracoesENV.__le_e_confere_variavel(variavel)
         # Confere se o caminho do diretorio é válido
-        if not validators.url(valor):
+        if not validators.url(valor, simple_host=True):
             raise ValueError(f"URL {valor} inválida.")
         self._configuracoes._regras_reservatorios_service = valor
         # Fluent method

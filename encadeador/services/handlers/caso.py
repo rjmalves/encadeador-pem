@@ -1,6 +1,7 @@
 from typing import Optional, Dict, Tuple
 import pandas as pd  # type: ignore
 import pathlib
+from datetime import datetime
 from os.path import join
 from encadeador.controladores.preparadorcaso import PreparadorCaso
 from encadeador.adapters.repository.apis import (
@@ -123,11 +124,27 @@ async def prepara(
                         Log.log().info(f"Encadeamento de {v}:")
                         for chain in chain_reponse:
                             Log.log().info(str(chain))
+            # PREMISSA: filtra as regras cujo período de vigência
+            # compreende o caso sendo preparado
+            data_caso = datetime(caso.ano, caso.mes, 1)
+            regras_vigentes = []
+            for r in command.regras_reservatorios:
+                vigente = True
+                inicio = r.inicio_vigencia
+                fim = r.fim_vigencia
+                if inicio:
+                    if data_caso < inicio:
+                        vigente = False
+                elif fim:
+                    if data_caso > fim:
+                        vigente = False
+                if vigente:
+                    regras_vigentes.append(r)
+
             # PREMISSA: só aplica regras de reservatórios
             # se tiver decomps anteriores
             regras_convertidas = [
-                ReservoirRule.from_regra(r)
-                for r in command.regras_reservatorios
+                ReservoirRule.from_regra(r) for r in regras_vigentes
             ]
             if len(regras_convertidas) > 0:
                 Log.log().info(

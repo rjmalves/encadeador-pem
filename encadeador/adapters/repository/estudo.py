@@ -54,7 +54,7 @@ class SQLEstudoRepository(AbstractEstudoRepository):
     def update(self, estudo: Estudo):
         statement = (
             update(Estudo)
-            .where(Estudo.id == estudo.id)
+            .where(Estudo.id == estudo.id)  # type: ignore
             .values(
                 {
                     "estado": estudo.estado,
@@ -64,7 +64,7 @@ class SQLEstudoRepository(AbstractEstudoRepository):
         return self.__session.execute(statement)
 
     def delete(self, id: int):
-        statement = delete(Estudo).where(Estudo.id == id)
+        statement = delete(Estudo).where(Estudo.id == id)  # type: ignore
         return self.__session.execute(statement)
 
     def list(self) -> List[Estudo]:

@@ -10,7 +10,7 @@ from encadeador.services.unitofwork.newave import factory as nw_factory
 from encadeador.services.unitofwork.decomp import factory as dc_factory
 from encadeador.domain.programs import ProgramRules
 from encadeador.utils.log import Log
-from inewave.newave import DGer, CVAR  # type: ignore
+from inewave.newave import Dger, Cvar  # type: ignore
 from idecomp.decomp.dadger import Dadger
 from idecomp.decomp.modelos.dadger import RT, FC
 
@@ -62,15 +62,15 @@ class PreparadorNEWAVE(PreparadorCaso):
                     )
                     uow.deleta_cortes()
 
-    def __adequa_dger(self, dger: DGer):
+    def __adequa_dger(self, dger: Dger):
         ano = self.caso.ano
         mes = self.caso.mes
         dger.nome_caso = ProgramRules.newave_case_name(ano, mes)
 
-    def __adequa_cvar(self, cvar: CVAR):
+    def __adequa_cvar(self, cvar: Cvar):
         par_cvar = Configuracoes().cvar
         cvar.valores_constantes = par_cvar
-        Log.log().info(f"Valores de CVAR alterados: {par_cvar}")
+        Log.log().info(f"Valores de Cvar alterados: {par_cvar}")
 
     async def prepara(self) -> bool:
         Log.log().info(f"Preparando caso do NEWAVE: {self.caso.nome}")
@@ -114,7 +114,7 @@ class PreparadorDECOMP(PreparadorCaso):
                 return c
         return None
 
-    def __extrai_cortes_ultimo_newave(self, c: Optional[Caso]):
+    async def __extrai_cortes_ultimo_newave(self, c: Optional[Caso]):
         if c is not None:
             uow = nw_factory(
                 "FS", join(Configuracoes().caminho_base_estudo, c.caminho)
@@ -123,11 +123,11 @@ class PreparadorDECOMP(PreparadorCaso):
                 Log.log().info(
                     "Extraindo cortes do último NEWAVE: " + f"{c.caminho}"
                 )
-                uow.extrai_cortes()
+                await uow.extrai_cortes()
 
-    def __adequa_caminho_fcf(self, dadger: Dadger, caso_cortes: Caso):
+    async def __adequa_caminho_fcf(self, dadger: Dadger, caso_cortes: Caso):
         # Verifica se é necessário e extrai os cortes
-        self.__extrai_cortes_ultimo_newave(caso_cortes)
+        await self.__extrai_cortes_ultimo_newave(caso_cortes)
         # Altera os registros FC
         nw_uow = nw_factory(
             "FS",
@@ -204,7 +204,7 @@ class PreparadorDECOMP(PreparadorCaso):
             ):
                 Log.log().error("Erro na especificação dos cortes da FCF")
                 return False
-            self.__adequa_caminho_fcf(dadger, caso_cortes)
+            await self.__adequa_caminho_fcf(dadger, caso_cortes)
             if Configuracoes().adequa_decks_decomp:
                 self.__adequa_dadger(dadger)
 
@@ -236,11 +236,11 @@ class PreparadorDECOMP(PreparadorCaso):
             if not existe_rt_crista:
                 rt = RT()
                 rt.restricao = "CRISTA"
-                dadger.cria_registro(reg_te, rt)
+                dadger.data.add_after(reg_te, rt)
             if not existe_rt_desvio:
                 rt = RT()
                 rt.restricao = "DESVIO"
-                dadger.cria_registro(reg_te, rt)
+                dadger.data.add_after(reg_te, rt)
             dc_uow.decomp.set_dadger(dadger)
         return True
 
